@@ -7,7 +7,7 @@ interface Props {
   onClear: () => void;
 }
 
-// Reuse same suit color scheme as TilePicker — vibrant mid-tones visible on dark bg
+// Vibrant mid-tone palette visible on dark background
 const SUIT_COLORS: Record<Suit, { base: string; border: string; text: string }> = {
   wan: { base: 'bg-amber-300', border: 'border-amber-600', text: 'text-amber-950' },
   tong: { base: 'bg-red-300', border: 'border-red-600', text: 'text-red-950' },
