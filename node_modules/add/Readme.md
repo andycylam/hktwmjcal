@@ -1,0 +1,62 @@
+# Add
+
+[![Test](https://github.com/ben-ng/add/actions/workflows/test.yml/badge.svg)](https://github.com/ben-ng/add/actions/workflows/test.yml)
+[![npm downloads](https://img.shields.io/npm/dm/add)](https://www.npmjs.com/package/add)
+
+A cross-browser, numerically stable way to add floats in Javascript. Produces a faithful rounding of the sum (the result is an immediate floating-point neighbor of the true value).
+
+Algorithm: Rump-Ogita-Oishi
+
+## Usage
+
+```javascript
+var add = require('add')
+  , evil = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7]
+  , dumbsum = function (a,b) { return a+b }
+
+console.log(evil.reduce(dumbsum)) => 15.299999999999999
+
+console.log(add(evil)) => 15.3
+```
+
+## Performance
+
+The performance benchmark tesll you how much slower `add` is compared to dumb addition. Run it using:
+
+```bash
+$ npm run benchmark
+```
+
+Here are some results (Arch Linux, 5.2 GHz Core i9, 32GB LPDDR5 4800MT/s RAM):
+
+```bash
+add-precise x 20,809,997 ops/sec ±1.04% (91 runs sampled)
+add-dumb x 62,114,333 ops/sec ±0.37% (99 runs sampled)
+native x 221,208,610 ops/sec ±0.35% (102 runs sampled)
+native is ~10.6 times faster than add-precise
+```
+
+## License
+
+The MIT License (MIT)
+
+Copyright (c) 2014 Ben Ng
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+

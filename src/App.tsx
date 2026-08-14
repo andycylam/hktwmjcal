@@ -5,31 +5,66 @@ import { HandRack } from './components/HandRack';
 import { ResultCard } from './components/ResultCard';
 import { calculateHandFan } from './engine/validator';
 
+const MAX_TILES_PER_TYPE = 4;
+
+function getTileCount(hand: Tile[], tile: Tile): number {
+  return hand.filter(t => t.suit === tile.suit && t.value === tile.value).length;
+}
+
 export default function App() {
   const [hand, setHand] = useState<Tile[]>([]);
   const [result, setResult] = useState<CalculationResult | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleSelectTile = (tile: Tile) => {
-    if (hand.length >= 17) {
-      alert('16張台灣麻將手牌不可超過 17 張 (16手牌 + 1胡牌)。');
+    setErrorMessage(null);
+
+    // Check duplicate limit (flowers limited to 1)
+    const isFlower = tile.suit === 'flower';
+    const limit = isFlower ? 1 : MAX_TILES_PER_TYPE;
+    const currentCount = getTileCount(hand, tile);
+
+    if (currentCount >= limit) {
+      setErrorMessage(`「${tile.label}」已達上限 (最多 ${limit} 張)，無法再加入。`);
       return;
     }
+
+    // Check total hand size
+    if (hand.length >= 17) {
+      setErrorMessage(`手牌已滿 17 張 (16張手牌 + 1張胡牌)，請先移除牌。`);
+      return;
+    }
+
     setHand([...hand, tile]);
   };
 
-  const handleRemoveTile = (index: number) => {
+  const handleRemoveType = (suit: string, value: number) => {
+    // Remove the last tile of this type from the hand
     const updated = [...hand];
-    updated.splice(index, 1);
-    setHand(updated);
+    for (let i = updated.length - 1; i >= 0; i--) {
+      if (updated[i].suit === suit && updated[i].value === value) {
+        updated.splice(i, 1);
+        setHand(updated);
+        setResult(null);
+        return;
+      }
+    }
   };
 
   const handleClear = () => {
     setHand([]);
     setResult(null);
+    setErrorMessage(null);
   };
 
   const handleCalculate = () => {
-    setResult(calculateHandFan(hand));
+    const res = calculateHandFan(hand);
+    setResult(res);
+    if (!res.isValid) {
+      setErrorMessage(res.reason || '無法計算牌型。');
+    } else {
+      setErrorMessage(null);
+    }
   };
 
   return (
@@ -39,13 +74,26 @@ export default function App() {
         <p className="text-slate-400 text-sm">Open Source HK Taiwanese Mahjong Fan Calculator</p>
       </header>
 
-      <HandRack hand={hand} onRemoveTile={handleRemoveTile} onClear={handleClear} />
-      <TilePicker onSelectTile={handleSelectTile} />
+      {/* Error / feedback banner */}
+      {errorMessage && (
+        <div className="bg-red-900/30 border border-red-500/50 text-red-300 px-4 py-2 rounded-lg text-sm text-center animate-fadeIn">
+          {errorMessage}
+        </div>
+      )}
+
+      <HandRack hand={hand} onRemoveType={handleRemoveType} onClear={handleClear} />
+      <TilePicker onSelectTile={handleSelectTile} hand={hand} />
 
       <div className="flex justify-center pt-2">
         <button
           onClick={handleCalculate}
-          className="w-full md:w-auto px-10 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-lg rounded-xl shadow-lg transition active:scale-95"
+          disabled={hand.length !== 17}
+          className={`
+            w-full md:w-auto px-10 py-3 font-bold text-lg rounded-xl shadow-lg transition
+            ${hand.length !== 17
+              ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
+              : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 active:scale-95'}
+          `}
         >
           算番 (Calculate Fan)
         </button>
