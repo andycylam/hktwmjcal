@@ -4,6 +4,7 @@ import { TilePicker } from './components/TilePicker';
 import { HandRack } from './components/HandRack';
 import { ResultCard } from './components/ResultCard';
 import { calculateHandFan } from './engine/validator';
+import { HuArea } from './components/HuArea';
 
 const MAX_TILES_PER_TYPE = 4;
 
@@ -15,6 +16,8 @@ export default function App() {
   const [hand, setHand] = useState<Tile[]>([]);
   const [result, setResult] = useState<CalculationResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [huTileId, setHuTileId] = useState<string | null>(null);
+  const huTile = hand.find(t => t.id === huTileId) || null;
 
   const handleSelectTile = (tile: Tile) => {
     setErrorMessage(null);
@@ -41,6 +44,14 @@ export default function App() {
   const handleRemoveTile = (id: string) => {
     const updated = hand.filter(t => t.id !== id);
     setHand(updated);
+    setResult(null);
+    // clear hu if the hu tile was removed
+    if (huTileId === id) setHuTileId(null);
+  };
+
+  const handleSetHu = (id: string) => {
+    // toggle
+    setHuTileId(prev => (prev === id ? null : id));
     setResult(null);
   };
 
@@ -74,8 +85,12 @@ export default function App() {
         </div>
       )}
 
-      <HandRack hand={hand} onRemoveTile={handleRemoveTile} onClear={handleClear} />
-      <TilePicker onSelectTile={handleSelectTile} hand={hand} />
+      <HandRack hand={hand} onRemoveTile={handleRemoveTile} onSetHu={handleSetHu} huTileId={huTileId} onClear={handleClear} />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <HuArea huTile={huTile} onClearHu={() => setHuTileId(null)} />
+        <TilePicker onSelectTile={handleSelectTile} hand={hand} />
+      </div>
 
       <div className="flex justify-center pt-2">
         <button

@@ -4,6 +4,8 @@ import { Tile, Suit } from '../types/mahjong';
 interface Props {
   hand: Tile[];
   onRemoveTile: (id: string) => void;
+  onSetHu: (id: string) => void;
+  huTileId?: string | null;
   onClear: () => void;
 }
 
@@ -39,19 +41,31 @@ export const HandRack: React.FC<Props> = ({ hand, onRemoveTile, onClear }) => {
         ) : (
           hand.map(t => {
             const colors = SUIT_COLORS[t.suit as Suit];
+            const isHu = huTileId === t.id;
             return (
-              <button
-                key={t.id}
-                onClick={() => onRemoveTile(t.id)}
-                className={`
-                  relative w-11 h-15 ${colors.base} ${colors.border} border-2 rounded-md
-                  flex items-center justify-center font-bold text-slate-900 shadow
-                  hover:brightness-95 active:scale-95 transition
-                `}
-                title={`移除 ${t.label}`}
-              >
-                {t.label}
-              </button>
+              <div key={t.id} className="relative">
+                <button
+                  onClick={() => onRemoveTile(t.id)}
+                  className={`
+                    relative w-11 h-15 ${colors.base} ${colors.border} border-2 rounded-md
+                    flex items-center justify-center font-bold text-slate-900 shadow
+                    hover:brightness-95 active:scale-95 transition
+                    ${isHu ? 'ring-2 ring-amber-400' : ''}
+                  `}
+                  title={`移除 ${t.label}`}
+                >
+                  {t.label}
+                </button>
+
+                <button
+                  onClick={() => onSetHu(t.id)}
+                  className={`absolute -top-2 -left-2 w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center bg-amber-500 text-slate-900 shadow transition
+                    hover:scale-105 active:scale-95`}
+                  title={isHu ? '取消 胡牌' : '設為 胡牌'}
+                >
+                  胡
+                </button>
+              </div>
             );
           })
         )}
