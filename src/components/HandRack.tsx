@@ -21,7 +21,7 @@ const SUIT_COLORS: Record<Suit, { base: string; border: string }> = {
 
 // Render tiles individually in the hand (no grouping)
 
-export const HandRack: React.FC<Props> = ({ hand, onRemoveTile, onClear }) => {
+export const HandRack: React.FC<Props> = ({ hand, onRemoveTile, onSetHu, huTileId, onClear }) => {
   return (
     <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 space-y-3">
       <div className="flex justify-between items-center">
