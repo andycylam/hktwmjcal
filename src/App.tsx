@@ -38,17 +38,10 @@ export default function App() {
     setHand([...hand, tile]);
   };
 
-  const handleRemoveType = (suit: string, value: number) => {
-    // Remove the last tile of this type from the hand
-    const updated = [...hand];
-    for (let i = updated.length - 1; i >= 0; i--) {
-      if (updated[i].suit === suit && updated[i].value === value) {
-        updated.splice(i, 1);
-        setHand(updated);
-        setResult(null);
-        return;
-      }
-    }
+  const handleRemoveTile = (id: string) => {
+    const updated = hand.filter(t => t.id !== id);
+    setHand(updated);
+    setResult(null);
   };
 
   const handleClear = () => {
@@ -81,7 +74,7 @@ export default function App() {
         </div>
       )}
 
-      <HandRack hand={hand} onRemoveType={handleRemoveType} onClear={handleClear} />
+      <HandRack hand={hand} onRemoveTile={handleRemoveTile} onClear={handleClear} />
       <TilePicker onSelectTile={handleSelectTile} hand={hand} />
 
       <div className="flex justify-center pt-2">
