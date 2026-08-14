@@ -7,6 +7,8 @@ interface Props {
   onSetHu: (id: string) => void;
   huTileId?: string | null;
   onClear: () => void;
+  declaredKongs?: string[];
+  onToggleKong?: (key: string) => void;
 }
 
 // Reuse same suit color scheme as TilePicker
@@ -21,7 +23,7 @@ const SUIT_COLORS: Record<Suit, { base: string; border: string }> = {
 
 // Render tiles individually in the hand (no grouping)
 
-export const HandRack: React.FC<Props> = ({ hand, onRemoveTile, onSetHu, huTileId, onClear }) => {
+export const HandRack: React.FC<Props> = ({ hand, onRemoveTile, onSetHu, huTileId, onClear, declaredKongs, onToggleKong }) => {
   return (
     <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 space-y-3">
       <div className="flex justify-between items-center">
@@ -42,6 +44,8 @@ export const HandRack: React.FC<Props> = ({ hand, onRemoveTile, onSetHu, huTileI
           hand.map(t => {
             const colors = SUIT_COLORS[t.suit as Suit];
             const isHu = huTileId === t.id;
+            const key = `${t.suit}_${t.value}`;
+            const isDeclaredKong = (declaredKongs || []).includes(key);
             return (
               <div key={t.id} className="relative">
                 <button
@@ -57,14 +61,27 @@ export const HandRack: React.FC<Props> = ({ hand, onRemoveTile, onSetHu, huTileI
                   {t.label}
                 </button>
 
-                <button
-                  onClick={() => onSetHu(t.id)}
-                  className={`absolute -top-2 -left-2 w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center bg-amber-500 text-slate-900 shadow transition
-                    hover:scale-105 active:scale-95`}
-                  title={isHu ? '取消 胡牌' : '設為 胡牌'}
-                >
-                  胡
-                </button>
+                <div className="absolute -top-2 -left-2 flex gap-1">
+                  <button
+                    onClick={() => onSetHu(t.id)}
+                    className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center bg-amber-500 text-slate-900 shadow transition hover:scale-105 active:scale-95`}
+                    title={isHu ? '取消 胡牌' : '設為 胡牌'}
+                  >
+                    胡
+                  </button>
+
+                  <button
+                    onClick={() => onToggleKong && onToggleKong(key)}
+                    className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center ${isDeclaredKong ? 'bg-red-500 text-white' : 'bg-slate-600 text-slate-200'} shadow transition hover:scale-105 active:scale-95`}
+                    title={isDeclaredKong ? '取消 槓' : '標記 為 槓'}
+                  >
+                    槓
+                  </button>
+                </div>
+
+                {isDeclaredKong && (
+                  <span className="absolute -top-2 -right-2 w-5 h-5 rounded-full text-xs font-black bg-red-600 text-white flex items-center justify-center">K</span>
+                )}
               </div>
             );
           })

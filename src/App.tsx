@@ -18,6 +18,7 @@ export default function App() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [huTileId, setHuTileId] = useState<string | null>(null);
   const huTile = hand.find(t => t.id === huTileId) || null;
+  const [declaredKongs, setDeclaredKongs] = useState<string[]>([]);
 
   const handleSelectTile = (tile: Tile) => {
     setErrorMessage(null);
@@ -85,11 +86,32 @@ export default function App() {
         </div>
       )}
 
-      <HandRack hand={hand} onRemoveTile={handleRemoveTile} onSetHu={handleSetHu} huTileId={huTileId} onClear={handleClear} />
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <HuArea huTile={huTile} onClearHu={() => setHuTileId(null)} />
-        <TilePicker onSelectTile={handleSelectTile} hand={hand} />
+        <div className="md:col-span-1">
+          <div className="flex gap-4">
+            <div className="flex-1">
+              <HandRack
+                hand={hand}
+                onRemoveTile={handleRemoveTile}
+                onSetHu={handleSetHu}
+                huTileId={huTileId}
+                onClear={handleClear}
+                declaredKongs={declaredKongs}
+                onToggleKong={(key: string) => {
+                  setDeclaredKongs(prev => (prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]));
+                }}
+              />
+            </div>
+
+            <div className="w-36">
+              <HuArea huTile={huTile} onClearHu={() => setHuTileId(null)} />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <TilePicker onSelectTile={handleSelectTile} hand={hand} />
+        </div>
       </div>
 
       <div className="flex justify-center pt-2">
