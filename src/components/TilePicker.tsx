@@ -39,43 +39,43 @@ const TILE_GROUPS: { name: string; suit: Suit; items: { val: number; label: stri
   }
 ];
 
-// Suit-specific color palette
+// Vibrant colors for visibility on dark background
 const SUIT_COLORS: Record<Suit, { base: string; border: string; text: string; disabled: string }> = {
   wan: {
-    base: 'bg-amber-50',
-    border: 'border-amber-700',
-    text: 'text-amber-900',
-    disabled: 'bg-amber-100/40 border-amber-700/40 text-amber-900/40'
+    base: 'bg-amber-300',
+    border: 'border-amber-600',
+    text: 'text-amber-950',
+    disabled: 'bg-amber-300/40 border-amber-600/40 text-amber-950/40'
   },
   tong: {
-    base: 'bg-red-50',
-    border: 'border-red-700',
-    text: 'text-red-800',
-    disabled: 'bg-red-100/40 border-red-700/40 text-red-800/40'
+    base: 'bg-red-300',
+    border: 'border-red-600',
+    text: 'text-red-950',
+    disabled: 'bg-red-300/40 border-red-600/40 text-red-950/40'
   },
   sou: {
-    base: 'bg-emerald-50',
-    border: 'border-emerald-700',
-    text: 'text-emerald-900',
-    disabled: 'bg-emerald-100/40 border-emerald-700/40 text-emerald-900/40'
+    base: 'bg-emerald-300',
+    border: 'border-emerald-600',
+    text: 'text-emerald-950',
+    disabled: 'bg-emerald-300/40 border-emerald-600/40 text-emerald-950/40'
   },
   wind: {
-    base: 'bg-blue-50',
-    border: 'border-blue-700',
-    text: 'text-blue-800',
-    disabled: 'bg-blue-100/40 border-blue-700/40 text-blue-800/40'
+    base: 'bg-blue-300',
+    border: 'border-blue-600',
+    text: 'text-blue-950',
+    disabled: 'bg-blue-300/40 border-blue-600/40 text-blue-950/40'
   },
   dragon: {
-    base: 'bg-purple-50',
-    border: 'border-purple-700',
-    text: 'text-purple-800',
-    disabled: 'bg-purple-100/40 border-purple-700/40 text-purple-800/40'
+    base: 'bg-purple-300',
+    border: 'border-purple-600',
+    text: 'text-purple-950',
+    disabled: 'bg-purple-300/40 border-purple-600/40 text-purple-950/40'
   },
   flower: {
-    base: 'bg-lime-50',
-    border: 'border-lime-700',
-    text: 'text-lime-800',
-    disabled: 'bg-lime-100/40 border-lime-700/40 text-lime-800/40'
+    base: 'bg-lime-300',
+    border: 'border-lime-600',
+    text: 'text-lime-950',
+    disabled: 'bg-lime-300/40 border-lime-600/40 text-lime-950/40'
   }
 };
 
