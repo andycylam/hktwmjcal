@@ -5,6 +5,7 @@ import { HandRack } from './components/HandRack';
 import { ResultCard } from './components/ResultCard';
 import { calculateHandFan } from './engine/validator';
 import { HuArea } from './components/HuArea';
+import { MeldArea } from './components/MeldArea';
 
 const MAX_TILES_PER_TYPE = 4;
 
@@ -19,6 +20,8 @@ export default function App() {
   const [huTileId, setHuTileId] = useState<string | null>(null);
   const huTile = hand.find(t => t.id === huTileId) || null;
   const [declaredKongs, setDeclaredKongs] = useState<string[]>([]);
+  const [declaredPungs, setDeclaredPungs] = useState<string[]>([]);
+  const [declaredShangs, setDeclaredShangs] = useState<string[]>([]);
 
   const handleSelectTile = (tile: Tile) => {
     setErrorMessage(null);
@@ -100,11 +103,22 @@ export default function App() {
                 onToggleKong={(key: string) => {
                   setDeclaredKongs(prev => (prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]));
                 }}
+                declaredPungs={declaredPungs}
+                onTogglePung={(key: string) => {
+                  setDeclaredPungs(prev => (prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]));
+                }}
+                declaredShangs={declaredShangs}
+                onToggleShang={(key: string) => {
+                  setDeclaredShangs(prev => (prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]));
+                }}
               />
             </div>
 
             <div className="w-36">
               <HuArea huTile={huTile} onClearHu={() => setHuTileId(null)} />
+              <div className="mt-3">
+                <MeldArea declaredKongs={declaredKongs} declaredPungs={declaredPungs} declaredShangs={declaredShangs} hand={hand} />
+              </div>
             </div>
           </div>
         </div>

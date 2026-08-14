@@ -9,6 +9,10 @@ interface Props {
   onClear: () => void;
   declaredKongs?: string[];
   onToggleKong?: (key: string) => void;
+  declaredPungs?: string[];
+  onTogglePung?: (key: string) => void;
+  declaredShangs?: string[];
+  onToggleShang?: (key: string) => void;
 }
 
 // Reuse same suit color scheme as TilePicker
@@ -23,7 +27,7 @@ const SUIT_COLORS: Record<Suit, { base: string; border: string }> = {
 
 // Render tiles individually in the hand (no grouping)
 
-export const HandRack: React.FC<Props> = ({ hand, onRemoveTile, onSetHu, huTileId, onClear, declaredKongs, onToggleKong }) => {
+export const HandRack: React.FC<Props> = ({ hand, onRemoveTile, onSetHu, huTileId, onClear, declaredKongs, onToggleKong, declaredPungs, onTogglePung, declaredShangs, onToggleShang }) => {
   return (
     <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 space-y-3">
       <div className="flex justify-between items-center">
@@ -77,10 +81,32 @@ export const HandRack: React.FC<Props> = ({ hand, onRemoveTile, onSetHu, huTileI
                   >
                     槓
                   </button>
+
+                  <button
+                    onClick={() => onTogglePung && onTogglePung(key)}
+                    className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center ${((declaredPungs||[]).includes(key)) ? 'bg-emerald-600 text-white' : 'bg-slate-600 text-slate-200'} shadow transition hover:scale-105 active:scale-95`}
+                    title={((declaredPungs||[]).includes(key)) ? '取消 碰' : '標記 為 碰'}
+                  >
+                    碰
+                  </button>
+
+                  <button
+                    onClick={() => onToggleShang && onToggleShang(key)}
+                    className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center ${((declaredShangs||[]).includes(key)) ? 'bg-blue-600 text-white' : 'bg-slate-600 text-slate-200'} shadow transition hover:scale-105 active:scale-95`}
+                    title={((declaredShangs||[]).includes(key)) ? '取消 上' : '標記 為 上'}
+                  >
+                    上
+                  </button>
                 </div>
 
                 {isDeclaredKong && (
                   <span className="absolute -top-2 -right-2 w-5 h-5 rounded-full text-xs font-black bg-red-600 text-white flex items-center justify-center">K</span>
+                )}
+                {((declaredPungs||[]).includes(key)) && (
+                  <span className="absolute -top-2 -right-8 w-5 h-5 rounded-full text-xs font-black bg-emerald-600 text-white flex items-center justify-center">P</span>
+                )}
+                {((declaredShangs||[]).includes(key)) && (
+                  <span className="absolute -top-2 -right-14 w-5 h-5 rounded-full text-xs font-black bg-blue-600 text-white flex items-center justify-center">S</span>
                 )}
               </div>
             );
