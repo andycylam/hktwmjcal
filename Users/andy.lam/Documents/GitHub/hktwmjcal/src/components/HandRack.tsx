@@ -37,23 +37,20 @@ export const HandRack: React.FC<Props> = ({ hand, onRemoveType, onClear }) => {
         {hand.length === 0 ? (
           <span className="text-slate-500 text-sm italic">請在下方點擊牌型加入手牌...</span>
         ) : (
-          hand.map((tile) => {
-            const colors = SUIT_COLORS[tile.suit];
-            return (
-              <button
-                key={tile.id}
-                onClick={() => onRemoveType(tile.suit, tile.value)}
-                className={`
-                  w-11 h-15 ${colors.base} ${colors.border} border-2 rounded-md
-                  flex items-center justify-center font-bold ${colors.text} shadow
-                  hover:brightness-95 active:scale-95 transition
-                `}
-                title={`移除 ${tile.label}`}
-              >
-                {tile.label}
-              </button>
-            );
-          })
+          hand.map((tile) => (
+            <button
+              key={tile.id}
+              onClick={() => onRemoveType(tile.suit, tile.value)}
+              className={`
+                w-11 h-15 ${SUIT_COLORS[tile.suit].base} ${SUIT_COLORS[tile.suit].border} border-2 rounded-md
+                flex items-center justify-center font-bold ${SUIT_COLORS[tile.suit].text} shadow
+                hover:brightness-95 active:scale-95 transition
+              `}
+              title={`移除 ${tile.label}`}
+            >
+              {tile.label}
+            </button>
+          ))
         )}
       </div>
     </div>
