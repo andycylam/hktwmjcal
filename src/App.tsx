@@ -301,7 +301,7 @@ export default function App() {
   };
 
   const handleCalculate = () => {
-    const res = calculateHandFan(hand);
+    const res = calculateHandFan(hand, meldMap, huIsZimo);
     setResult(res);
     if (!res.isValid) {
       setErrorMessage(res.reason || '無法計算牌型。');
