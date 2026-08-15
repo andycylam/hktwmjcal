@@ -43,9 +43,10 @@ export default function App() {
         return;
       }
       const key = `${first.suit}_${first.value}`;
+      const storageKey = `${key}@${kind}`;
       const remaining = hand.filter(t => !selection.includes(t.id));
       setHand(remaining);
-      setMeldMap(prev => ({ ...prev, [key]: { kind, tiles } }));
+      setMeldMap(prev => ({ ...prev, [storageKey]: { kind, tiles } }));
       setSelection([]);
       setResult(null);
       return;
@@ -68,13 +69,25 @@ export default function App() {
         return;
       }
       const seqKey = `${suit}_${vals[0]}`;
+      const storageKey = `${seqKey}@shang`;
       const remaining = hand.filter(t => !selection.includes(t.id));
       setHand(remaining);
-      setMeldMap(prev => ({ ...prev, [seqKey]: { kind: 'shang', tiles } }));
+      setMeldMap(prev => ({ ...prev, [storageKey]: { kind: 'shang', tiles } }));
       setSelection([]);
       setResult(null);
       return;
     }
+  };
+
+  const createHuFromSelection = () => {
+    if (selection.length !== 1) {
+      setErrorMessage('請選擇一張牌作為胡。');
+      return;
+    }
+    const id = selection[0];
+    setHuTileId(id);
+    setSelection([]);
+    setResult(null);
   };
 
   const handleSelectTile = (tile: Tile) => {
@@ -107,26 +120,7 @@ export default function App() {
     const updatedHand = [...hand, tile];
     setHand(updatedHand);
 
-    // Auto-upgrade: if there's an existing pung meld and this selection makes total 4, convert pung -> kong
-    const k = `${tile.suit}_${tile.value}`;
-    const existingMeld = meldMap[k];
-    if (existingMeld && existingMeld.kind === 'pung') {
-      // count tiles of this key in meld + updatedHand
-      const meldCount = existingMeld.tiles.length;
-      const handCount = updatedHand.filter(t => `${t.suit}_${t.value}` === k).length;
-      if (meldCount + handCount >= 4) {
-        // move one matching tile from hand into the meld to form a kong
-        const idx = updatedHand.findIndex(t => `${t.suit}_${t.value}` === k);
-        if (idx !== -1) {
-          const tileToMove = updatedHand[idx];
-          const newHand = [...updatedHand.slice(0, idx), ...updatedHand.slice(idx + 1)];
-          setHand(newHand);
-          // upgrade existing pung into kong under same key
-          setMeldMap(prev => ({ ...prev, [k]: { kind: 'kong', tiles: [...existingMeld.tiles, tileToMove] } }));
-          setResult(null);
-        }
-      }
-    }
+    // No automatic pung->kong upgrade any more. Upgrades must be explicit via UI.
   };
 
   const handleRemoveTile = (id: string) => {
@@ -137,11 +131,7 @@ export default function App() {
     if (huTileId === id) setHuTileId(null);
   };
 
-  const handleSetHu = (id: string) => {
-    // toggle
-    setHuTileId(prev => (prev === id ? null : id));
-    setResult(null);
-  };
+  // Hu is set via selection action `createHuFromSelection`
 
   const handleClear = () => {
     setHand([]);
@@ -231,6 +221,30 @@ export default function App() {
     setResult(null);
   }
 
+  const upgradePungToKong = (storageKey: string) => {
+    const entry = meldMap[storageKey];
+    if (!entry || entry.kind !== 'pung') return;
+    // Need one matching tile in hand to complete kong
+    const tileKey = `${entry.tiles[0].suit}_${entry.tiles[0].value}`;
+    const idx = hand.findIndex(t => `${t.suit}_${t.value}` === tileKey);
+    if (idx === -1) {
+      setErrorMessage('手牌中沒有可用的相同牌來升級為槓。');
+      return;
+    }
+    const tileToMove = hand[idx];
+    const remainingHand = [...hand.slice(0, idx), ...hand.slice(idx + 1)];
+    // replace pung storageKey with kong storage key
+    setMeldMap(prev => {
+      const copy = { ...prev };
+      delete copy[storageKey];
+      const baseKey = storageKey.split('@')[0];
+      copy[`${baseKey}@kong`] = { kind: 'kong', tiles: [...entry.tiles, tileToMove] };
+      return copy;
+    });
+    setHand(remainingHand);
+    setResult(null);
+  };
+
   const handleCalculate = () => {
     const res = calculateHandFan(hand);
     setResult(res);
@@ -253,7 +267,7 @@ export default function App() {
       <div className="space-y-4">
         {/* Row 1: Melds */}
         <div>
-          <MeldArea meldMap={meldMap} onToggleMeld={(k: string) => createOrToggleMeld(k, meldMap[k].kind)} />
+          <MeldArea meldMap={meldMap} onToggleMeld={(k: string) => createOrToggleMeld(k, meldMap[k].kind)} onUpgradePung={(k: string) => upgradePungToKong(k)} />
         </div>
 
         {/* Row 2: Current hand (left) and Hu tile (right) */}
@@ -262,7 +276,6 @@ export default function App() {
               <HandRack
                 hand={hand}
                 onRemoveTile={handleRemoveTile}
-                onSetHu={handleSetHu}
                 huTileId={huTileId}
                 onClear={handleClear}
                 onToggleKong={(key: string) => createOrToggleMeld(key, 'kong')}
@@ -282,6 +295,10 @@ export default function App() {
                 <button onClick={() => createMeldFromSelection('pung')} className="flex-1 px-2 py-1 bg-emerald-600 text-white rounded">Form 碰</button>
                 <button onClick={() => createMeldFromSelection('kong')} className="flex-1 px-2 py-1 bg-red-600 text-white rounded">Form 槓</button>
                 <button onClick={() => createMeldFromSelection('shang')} className="flex-1 px-2 py-1 bg-blue-600 text-white rounded">Form 上</button>
+              </div>
+              <div className="flex gap-2 mb-2">
+                <button onClick={() => createHuFromSelection()} className="flex-1 px-2 py-1 bg-amber-400 text-slate-900 rounded">Set 胡</button>
+                <button onClick={() => { setSelection([]); setErrorMessage(null); }} className="flex-1 px-2 py-1 bg-slate-700 text-white rounded">Clear Selection</button>
               </div>
               <div className="text-slate-400 text-sm">已選：{selection.length} 張</div>
             </div>

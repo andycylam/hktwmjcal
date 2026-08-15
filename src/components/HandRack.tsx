@@ -4,7 +4,6 @@ import { Tile, Suit } from '../types/mahjong';
 interface Props {
   hand: Tile[];
   onRemoveTile: (id: string) => void;
-  onSetHu: (id: string) => void;
   huTileId?: string | null;
   onClear: () => void;
   onToggleKong?: (key: string) => void;
@@ -29,7 +28,7 @@ const SUIT_COLORS: Record<Suit, { base: string; border: string }> = {
 
 // Render tiles individually in the hand (no grouping)
 
-export const HandRack: React.FC<Props> = ({ hand, onRemoveTile, onSetHu, huTileId, onClear, onToggleKong, onTogglePung, onToggleShang, meldMap, totalTiles, totalLimit, onToggleSelect, selection }) => {
+export const HandRack: React.FC<Props> = ({ hand, onRemoveTile, huTileId, onClear, onToggleKong, onTogglePung, onToggleShang, meldMap, totalTiles, totalLimit, onToggleSelect, selection }) => {
   return (
     <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 space-y-3">
       <div className="flex justify-between items-center">
@@ -69,14 +68,6 @@ export const HandRack: React.FC<Props> = ({ hand, onRemoveTile, onSetHu, huTileI
                   </button>
 
                   <div className="absolute -top-3 -left-1 flex gap-1">
-                    <button
-                      onClick={() => onSetHu(t.id)}
-                      className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center bg-amber-500 text-slate-900 shadow transition hover:scale-105 active:scale-95`}
-                      title={isHu ? '取消 胡牌' : '設為 胡牌'}
-                    >
-                      胡
-                    </button>
-
                     <button
                       onClick={() => onToggleSelect && onToggleSelect(t.id)}
                       className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center ${isSelected ? 'bg-amber-400 text-slate-900' : 'bg-slate-600 text-slate-200'} shadow transition hover:scale-105 active:scale-95`}

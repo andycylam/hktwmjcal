@@ -9,9 +9,10 @@ interface MeldEntry {
 interface Props {
   meldMap: Record<string, MeldEntry>;
   onToggleMeld: (key: string) => void;
+  onUpgradePung?: (key: string) => void;
 }
 
-export const MeldArea: React.FC<Props> = ({ meldMap, onToggleMeld }) => {
+export const MeldArea: React.FC<Props> = ({ meldMap, onToggleMeld, onUpgradePung }) => {
   const keys = Object.keys(meldMap);
   if (keys.length === 0) {
     return (
@@ -38,6 +39,14 @@ export const MeldArea: React.FC<Props> = ({ meldMap, onToggleMeld }) => {
                 ))}
               </div>
               <div className="text-sm text-slate-300">{m.kind}</div>
+              {m.kind === 'pung' && (
+                <button
+                  onClick={() => onUpgradePung && onUpgradePung(k)}
+                  className="ml-auto px-3 py-1 bg-yellow-500 text-slate-900 rounded hover:bg-yellow-400 mr-2"
+                >
+                  升級為 槓
+                </button>
+              )}
               <button
                 onClick={() => onToggleMeld(k)}
                 className="ml-auto px-3 py-1 bg-red-600 text-white rounded hover:bg-red-500"
