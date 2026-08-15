@@ -51,11 +51,14 @@ export const MeldArea: React.FC<Props> = ({ meldMap, onToggleMeld, onUpgradePung
                 <div className="ml-2 text-sm text-slate-300 flex items-center gap-3">
                   <span className="text-xs">暗槓</span>
                   <button
+                    role="switch"
+                    aria-checked={!!m.concealed}
+                    tabIndex={0}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggleConcealed && onToggleConcealed(k); } }}
                     onClick={() => onToggleConcealed && onToggleConcealed(k)}
-                    aria-pressed={!!m.concealed}
-                    className={`w-10 h-6 rounded-full p-1 transition ${m.concealed ? 'bg-emerald-400' : 'bg-slate-600'}`}
+                    className={`relative inline-flex items-center h-6 w-10 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-300 ${m.concealed ? 'bg-emerald-400' : 'bg-slate-600'}`}
                   >
-                    <span className={`block w-4 h-4 rounded-full bg-white shadow transform transition ${m.concealed ? 'translate-x-4' : 'translate-x-0'}`} />
+                    <span className={`absolute left-1 top-0.5 w-4 h-4 bg-white rounded-full shadow transform transition-transform duration-200 ${m.concealed ? 'translate-x-4' : 'translate-x-0'}`} />
                   </button>
                 </div>
               )}

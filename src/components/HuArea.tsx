@@ -32,12 +32,15 @@ export const HuArea: React.FC<Props> = ({ huTile, onClearHu, huIsZimo, onToggleZ
                   <span className="text-sm text-slate-200">自摸</span>
                 </div>
                 <button
+                  role="switch"
+                  aria-checked={!!huIsZimo}
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggleZimo && onToggleZimo(!huIsZimo); } }}
                   onClick={() => onToggleZimo && onToggleZimo(!huIsZimo)}
-                  aria-pressed={!!huIsZimo}
-                  className={`w-12 h-7 rounded-full p-1 transition ${huIsZimo ? 'bg-emerald-400' : 'bg-slate-600'}`}
+                  className={`relative inline-flex items-center h-7 w-12 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-300 ${huIsZimo ? 'bg-emerald-400' : 'bg-slate-600'}`}
                 >
                   <span
-                    className={`block w-5 h-5 rounded-full bg-white shadow transform transition ${huIsZimo ? 'translate-x-5' : 'translate-x-0'}`}
+                    className={`absolute left-1 top-1 w-5 h-5 bg-white rounded-full shadow transform transition-transform duration-200 ${huIsZimo ? 'translate-x-5' : 'translate-x-0'}`}
                   />
                 </button>
               </div>
