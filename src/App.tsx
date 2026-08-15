@@ -367,7 +367,6 @@ export default function App() {
 
           <div className="w-40">
             <HuArea huTile={huTile} onClearHu={() => { setHuTileId(null); setHuIsZimo(false); }} huIsZimo={huIsZimo} onToggleZimo={(next: boolean) => setHuIsZimo(next)} />
-            <div className="text-xs text-slate-400 mt-2">自摸：{huIsZimo ? '是' : '否'}</div>
           </div>
         </div>
 
