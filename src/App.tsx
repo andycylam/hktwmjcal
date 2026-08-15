@@ -20,10 +20,62 @@ export default function App() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [huTileId, setHuTileId] = useState<string | null>(null);
   const huTile = hand.find(t => t.id === huTileId) || null;
-  const [declaredKongs, setDeclaredKongs] = useState<string[]>([]);
-  const [declaredPungs, setDeclaredPungs] = useState<string[]>([]);
-  const [declaredShangs, setDeclaredShangs] = useState<string[]>([]);
+  // declared melds tracked in meldMap
   const [meldMap, setMeldMap] = useState<Record<string, { kind: 'kong' | 'pung' | 'shang'; tiles: Tile[] }>>({});
+  const [selection, setSelection] = useState<string[]>([]);
+
+  const toggleSelect = (id: string) => {
+    setSelection(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const createMeldFromSelection = (kind: 'kong' | 'pung' | 'shang') => {
+    setErrorMessage(null);
+    const tiles = hand.filter(t => selection.includes(t.id));
+    if (kind === 'pung' || kind === 'kong') {
+      const need = kind === 'pung' ? 3 : 4;
+      if (tiles.length !== need) {
+        setErrorMessage(`請選擇 ${need} 張相同的牌來標記為 ${kind}。`);
+        return;
+      }
+      const first = tiles[0];
+      if (!tiles.every(t => t.suit === first.suit && t.value === first.value)) {
+        setErrorMessage('選取的牌必須完全相同。');
+        return;
+      }
+      const key = `${first.suit}_${first.value}`;
+      const remaining = hand.filter(t => !selection.includes(t.id));
+      setHand(remaining);
+      setMeldMap(prev => ({ ...prev, [key]: { kind, tiles } }));
+      setSelection([]);
+      setResult(null);
+      return;
+    }
+
+    if (kind === 'shang') {
+      if (tiles.length !== 3) {
+        setErrorMessage('請選擇 3 張牌來標記為 上（順子）。');
+        return;
+      }
+      // must be same suit and consecutive values
+      const suit = tiles[0].suit;
+      const vals = tiles.map(t => t.value).sort((a, b) => a - b);
+      if (!tiles.every(t => t.suit === suit)) {
+        setErrorMessage('順子需為同花色。');
+        return;
+      }
+      if (!(vals[1] === vals[0] + 1 && vals[2] === vals[1] + 1)) {
+        setErrorMessage('所選不是連續的三張。');
+        return;
+      }
+      const seqKey = `${suit}_${vals[0]}`;
+      const remaining = hand.filter(t => !selection.includes(t.id));
+      setHand(remaining);
+      setMeldMap(prev => ({ ...prev, [seqKey]: { kind: 'shang', tiles } }));
+      setSelection([]);
+      setResult(null);
+      return;
+    }
+  };
 
   const handleSelectTile = (tile: Tile) => {
     setErrorMessage(null);
@@ -69,9 +121,8 @@ export default function App() {
           const tileToMove = updatedHand[idx];
           const newHand = [...updatedHand.slice(0, idx), ...updatedHand.slice(idx + 1)];
           setHand(newHand);
+          // upgrade existing pung into kong under same key
           setMeldMap(prev => ({ ...prev, [k]: { kind: 'kong', tiles: [...existingMeld.tiles, tileToMove] } }));
-          setDeclaredPungs(prev => prev.filter(x => x !== k));
-          setDeclaredKongs(prev => (prev.includes(k) ? prev : [...prev, k]));
           setResult(null);
         }
       }
@@ -97,9 +148,6 @@ export default function App() {
     setResult(null);
     setErrorMessage(null);
     setMeldMap({});
-    setDeclaredKongs([]);
-    setDeclaredPungs([]);
-    setDeclaredShangs([]);
   };
 
   function createOrToggleMeld(key: string, kind: 'kong' | 'pung' | 'shang') {
@@ -118,7 +166,6 @@ export default function App() {
           delete copy[existingKey];
           return copy;
         });
-        setDeclaredShangs(prev => prev.filter(k => k !== existingKey));
         setResult(null);
         return;
       }
@@ -143,7 +190,6 @@ export default function App() {
           const seqKey = `${suit}_${start}`;
           setHand(remaining);
           setMeldMap(prev => ({ ...prev, [seqKey]: { kind: 'shang', tiles: taken } }));
-          setDeclaredShangs(prev => [...prev, seqKey]);
           setResult(null);
           return;
         }
@@ -162,8 +208,6 @@ export default function App() {
         delete copy[key];
         return copy;
       });
-      if (kind === 'kong') setDeclaredKongs(prev => prev.filter(k => k !== key));
-      if (kind === 'pung') setDeclaredPungs(prev => prev.filter(k => k !== key));
       setResult(null);
       return;
     }
@@ -184,8 +228,6 @@ export default function App() {
 
     setHand(remaining);
     setMeldMap(prev => ({ ...prev, [key]: { kind, tiles: taken } }));
-    if (kind === 'kong') setDeclaredKongs(prev => [...prev, key]);
-    if (kind === 'pung') setDeclaredPungs(prev => [...prev, key]);
     setResult(null);
   }
 
@@ -223,22 +265,26 @@ export default function App() {
                 onSetHu={handleSetHu}
                 huTileId={huTileId}
                 onClear={handleClear}
-                declaredKongs={declaredKongs}
-                onToggleKong={(key: string) => {
-                  createOrToggleMeld(key, 'kong');
-                }}
-                declaredPungs={declaredPungs}
-                onTogglePung={(key: string) => {
-                  createOrToggleMeld(key, 'pung');
-                }}
-                declaredShangs={declaredShangs}
-                onToggleShang={(key: string) => {
-                  createOrToggleMeld(key, 'shang');
-                }}
+                onToggleKong={(key: string) => createOrToggleMeld(key, 'kong')}
+                onTogglePung={(key: string) => createOrToggleMeld(key, 'pung')}
+                onToggleShang={(key: string) => createOrToggleMeld(key, 'shang')}
                 meldMap={meldMap}
+                onToggleSelect={toggleSelect}
+                selection={selection}
                 totalTiles={hand.length + Object.values(meldMap).reduce((s, m) => s + m.tiles.length, 0)}
                 totalLimit={17 + Object.values(meldMap).filter(m => m.kind === 'kong').length}
               />
+          </div>
+
+          <div className="w-64">
+            <div className="bg-slate-900 border border-slate-700 rounded-lg p-3">
+              <div className="flex gap-2 mb-2">
+                <button onClick={() => createMeldFromSelection('pung')} className="flex-1 px-2 py-1 bg-emerald-600 text-white rounded">Form 碰</button>
+                <button onClick={() => createMeldFromSelection('kong')} className="flex-1 px-2 py-1 bg-red-600 text-white rounded">Form 槓</button>
+                <button onClick={() => createMeldFromSelection('shang')} className="flex-1 px-2 py-1 bg-blue-600 text-white rounded">Form 上</button>
+              </div>
+              <div className="text-slate-400 text-sm">已選：{selection.length} 張</div>
+            </div>
           </div>
 
           <div className="w-40">

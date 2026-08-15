@@ -7,12 +7,11 @@ interface Props {
   onSetHu: (id: string) => void;
   huTileId?: string | null;
   onClear: () => void;
-  declaredKongs?: string[];
   onToggleKong?: (key: string) => void;
-  declaredPungs?: string[];
   onTogglePung?: (key: string) => void;
-  declaredShangs?: string[];
   onToggleShang?: (key: string) => void;
+  onToggleSelect?: (id: string) => void;
+  selection?: string[];
   meldMap?: Record<string, { kind: 'kong' | 'pung' | 'shang'; tiles: Tile[] }>;
   totalTiles?: number;
   totalLimit?: number;
@@ -30,7 +29,7 @@ const SUIT_COLORS: Record<Suit, { base: string; border: string }> = {
 
 // Render tiles individually in the hand (no grouping)
 
-export const HandRack: React.FC<Props> = ({ hand, onRemoveTile, onSetHu, huTileId, onClear, declaredKongs, onToggleKong, declaredPungs, onTogglePung, declaredShangs, onToggleShang, totalTiles, totalLimit }) => {
+export const HandRack: React.FC<Props> = ({ hand, onRemoveTile, onSetHu, huTileId, onClear, onToggleKong, onTogglePung, onToggleShang, meldMap, totalTiles, totalLimit, onToggleSelect, selection }) => {
   return (
     <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 space-y-3">
       <div className="flex justify-between items-center">
@@ -52,7 +51,8 @@ export const HandRack: React.FC<Props> = ({ hand, onRemoveTile, onSetHu, huTileI
             const colors = SUIT_COLORS[t.suit as Suit];
             const isHu = huTileId === t.id;
             const key = `${t.suit}_${t.value}`;
-            const isDeclaredKong = (declaredKongs || []).includes(key);
+            const isDeclaredKong = (meldMap && Object.values(meldMap).some(m => m.kind === 'kong' && m.tiles.some(x => `${x.suit}_${x.value}` === key))) || false;
+            const isSelected = selection ? selection.includes(t.id) : false;
             return (
               <div className="relative p-1">
                   <button
@@ -78,6 +78,14 @@ export const HandRack: React.FC<Props> = ({ hand, onRemoveTile, onSetHu, huTileI
                     </button>
 
                     <button
+                      onClick={() => onToggleSelect && onToggleSelect(t.id)}
+                      className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center ${isSelected ? 'bg-amber-400 text-slate-900' : 'bg-slate-600 text-slate-200'} shadow transition hover:scale-105 active:scale-95`}
+                      title={isSelected ? '取消 選取' : '選取 此牌'}
+                    >
+                      ✓
+                    </button>
+
+                    <button
                       onClick={() => onToggleKong && onToggleKong(key)}
                       className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center ${isDeclaredKong ? 'bg-red-500 text-white' : 'bg-slate-600 text-slate-200'} shadow transition hover:scale-105 active:scale-95`}
                       title={isDeclaredKong ? '取消 槓' : '標記 為 槓'}
@@ -87,16 +95,16 @@ export const HandRack: React.FC<Props> = ({ hand, onRemoveTile, onSetHu, huTileI
 
                     <button
                       onClick={() => onTogglePung && onTogglePung(key)}
-                      className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center ${((declaredPungs||[]).includes(key)) ? 'bg-emerald-600 text-white' : 'bg-slate-600 text-slate-200'} shadow transition hover:scale-105 active:scale-95`}
-                      title={((declaredPungs||[]).includes(key)) ? '取消 碰' : '標記 為 碰'}
+                      className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center ${(meldMap && Object.values(meldMap).some(m => m.kind === 'pung' && m.tiles.some(x => `${x.suit}_${x.value}` === key))) ? 'bg-emerald-600 text-white' : 'bg-slate-600 text-slate-200'} shadow transition hover:scale-105 active:scale-95`}
+                      title={(meldMap && Object.values(meldMap).some(m => m.kind === 'pung' && m.tiles.some(x => `${x.suit}_${x.value}` === key))) ? '取消 碰' : '標記 為 碰'}
                     >
                       碰
                     </button>
 
                     <button
                       onClick={() => onToggleShang && onToggleShang(key)}
-                      className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center ${((declaredShangs||[]).includes(key)) ? 'bg-blue-600 text-white' : 'bg-slate-600 text-slate-200'} shadow transition hover:scale-105 active:scale-95`}
-                      title={((declaredShangs||[]).includes(key)) ? '取消 上' : '標記 為 上'}
+                      className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center ${(meldMap && Object.values(meldMap).some(m => m.kind === 'shang' && m.tiles.some(x => `${x.suit}_${x.value}` === key))) ? 'bg-blue-600 text-white' : 'bg-slate-600 text-slate-200'} shadow transition hover:scale-105 active:scale-95`}
+                      title={(meldMap && Object.values(meldMap).some(m => m.kind === 'shang' && m.tiles.some(x => `${x.suit}_${x.value}` === key))) ? '取消 上' : '標記 為 上'}
                     >
                       上
                     </button>
