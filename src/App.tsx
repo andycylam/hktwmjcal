@@ -144,13 +144,17 @@ export default function App() {
   };
 
   function createOrToggleMeld(key: string, kind: 'kong' | 'pung' | 'shang') {
+    // Normalize key to always use a storage key with @kind suffix
+    const baseKey = key.includes('@') ? key.split('@')[0] : key;
+    const storageKey = `${baseKey}@${kind}`;
+
     // Special handling for 'shang' (sequence)
     if (kind === 'shang') {
-      const [suit, valStr] = key.split('_');
+      const [suit, valStr] = baseKey.split('_');
       const value = parseInt(valStr, 10);
 
       // If any existing shang meld contains this tile, remove that meld
-      const existingKey = Object.keys(meldMap).find(k => meldMap[k].kind === 'shang' && meldMap[k].tiles.some(t => `${t.suit}_${t.value}` === key));
+      const existingKey = Object.keys(meldMap).find(k => meldMap[k].kind === 'shang' && meldMap[k].tiles.some(t => `${t.suit}_${t.value}` === baseKey));
       if (existingKey) {
         const tiles = meldMap[existingKey].tiles;
         setHand(prev => [...prev, ...tiles]);
@@ -170,7 +174,6 @@ export default function App() {
         const remaining: Tile[] = [];
         for (const t of hand) {
           if (t.suit === suit && needVals.includes(t.value) && !taken.some(x => x.id === t.id)) {
-            // take first matching tile for that value if not already taken
             const alreadyForValue = taken.find(x => x.value === t.value && x.suit === t.suit);
             if (!alreadyForValue) taken.push(t);
             else remaining.push(t);
@@ -181,8 +184,9 @@ export default function App() {
 
         if (taken.length === 3) {
           const seqKey = `${suit}_${start}`;
+          const seqStorage = `${seqKey}@shang`;
           setHand(remaining);
-          setMeldMap(prev => ({ ...prev, [seqKey]: { kind: 'shang', tiles: taken } }));
+          setMeldMap(prev => ({ ...prev, [seqStorage]: { kind: 'shang', tiles: taken } }));
           setResult(null);
           return;
         }
@@ -192,13 +196,13 @@ export default function App() {
       return;
     }
 
-    // For kong/pung: if exists under the exact key, remove it
-    if (meldMap[key]) {
-      const tiles = meldMap[key].tiles;
+    // For kong/pung: if exists under the storage key, remove it
+    if (meldMap[storageKey]) {
+      const tiles = meldMap[storageKey].tiles;
       setHand(prev => [...prev, ...tiles]);
       setMeldMap(prev => {
         const copy = { ...prev };
-        delete copy[key];
+        delete copy[storageKey];
         return copy;
       });
       setResult(null);
@@ -211,16 +215,16 @@ export default function App() {
     const remaining: Tile[] = [];
     for (const t of hand) {
       const k = `${t.suit}_${t.value}`;
-      if (k === key && taken.length < need) taken.push(t);
+      if (k === baseKey && taken.length < need) taken.push(t);
       else remaining.push(t);
     }
     if (taken.length < need) {
-      setErrorMessage(`無法標記 ${key} 為 ${kind}：手牌中沒有足夠的牌 (需要 ${need} 張)。`);
+      setErrorMessage(`無法標記 ${baseKey} 為 ${kind}：手牌中沒有足夠的牌 (需要 ${need} 張)。`);
       return;
     }
 
     setHand(remaining);
-    setMeldMap(prev => ({ ...prev, [key]: { kind, tiles: taken } }));
+    setMeldMap(prev => ({ ...prev, [storageKey]: { kind, tiles: taken } }));
     setResult(null);
   }
 
