@@ -268,9 +268,13 @@ export default function App() {
         copy[`${baseKey}@pung`] = { kind: 'pung', tiles: remainingTiles };
         return copy;
       });
-      // add clicked tile back to hand
+      // add clicked tile back to hand (avoid duplicates)
       const tile = entry.tiles.find(t => t.id === tileId);
-      if (tile) setHand(prev => [...prev, tile]);
+      if (tile) setHand(prev => {
+        const ids = new Set(prev.map(t => t.id));
+        if (ids.has(tile.id)) return prev;
+        return [...prev, tile];
+      });
       setResult(null);
       return;
     }
@@ -284,7 +288,12 @@ export default function App() {
         delete copy[meldKey];
         return copy;
       });
-      if (remainingTiles.length > 0) setHand(prev => [...prev, ...remainingTiles]);
+      if (remainingTiles.length > 0) setHand(prev => {
+        const ids = new Set(prev.map(t => t.id));
+        const toAdd = remainingTiles.filter(t => !ids.has(t.id));
+        if (toAdd.length === 0) return prev;
+        return [...prev, ...toAdd];
+      });
       setResult(null);
       return;
     }
