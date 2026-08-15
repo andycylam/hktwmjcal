@@ -89,40 +89,42 @@ export default function App() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="md:col-span-1">
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <HandRack
-                hand={hand}
-                onRemoveTile={handleRemoveTile}
-                onSetHu={handleSetHu}
-                huTileId={huTileId}
-                onClear={handleClear}
-                declaredKongs={declaredKongs}
-                onToggleKong={(key: string) => {
-                  setDeclaredKongs(prev => (prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]));
-                }}
-                declaredPungs={declaredPungs}
-                onTogglePung={(key: string) => {
-                  setDeclaredPungs(prev => (prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]));
-                }}
-                declaredShangs={declaredShangs}
-                onToggleShang={(key: string) => {
-                  setDeclaredShangs(prev => (prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]));
-                }}
-              />
-            </div>
+      <div className="space-y-4">
+        {/* Row 1: Melds */}
+        <div>
+          <MeldArea declaredKongs={declaredKongs} declaredPungs={declaredPungs} declaredShangs={declaredShangs} hand={hand} />
+        </div>
 
-            <div className="w-36">
-              <HuArea huTile={huTile} onClearHu={() => setHuTileId(null)} />
-              <div className="mt-3">
-                <MeldArea declaredKongs={declaredKongs} declaredPungs={declaredPungs} declaredShangs={declaredShangs} hand={hand} />
-              </div>
-            </div>
+        {/* Row 2: Current hand (left) and Hu tile (right) */}
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1">
+            <HandRack
+              hand={hand}
+              onRemoveTile={handleRemoveTile}
+              onSetHu={handleSetHu}
+              huTileId={huTileId}
+              onClear={handleClear}
+              declaredKongs={declaredKongs}
+              onToggleKong={(key: string) => {
+                setDeclaredKongs(prev => (prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]));
+              }}
+              declaredPungs={declaredPungs}
+              onTogglePung={(key: string) => {
+                setDeclaredPungs(prev => (prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]));
+              }}
+              declaredShangs={declaredShangs}
+              onToggleShang={(key: string) => {
+                setDeclaredShangs(prev => (prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]));
+              }}
+            />
+          </div>
+
+          <div className="w-40">
+            <HuArea huTile={huTile} onClearHu={() => setHuTileId(null)} />
           </div>
         </div>
 
+        {/* Row 3: Tile selector (single column) */}
         <div>
           <TilePicker onSelectTile={handleSelectTile} hand={hand} />
         </div>
