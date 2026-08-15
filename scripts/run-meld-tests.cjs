@@ -138,3 +138,42 @@ function simulate() {
   if (s.getHand().length !== 3) throw new Error(`expected 3 tiles in hand, got ${s.getHand().length}`);
   console.log('All meld tests passed');
 })();
+
+// Additional tests: pung, shang, upgrade, concealed toggle
+(function more() {
+  const s = simulate();
+
+  // pung test
+  s.setHand([makeTile('wan', 2, 1), makeTile('wan', 2, 2), makeTile('wan', 2, 3)]);
+  s.createOrToggleMeld('wan_2', 'pung');
+  const m1 = s.getMeldMap();
+  if (!m1['wan_2@pung']) throw new Error('pung creation failed');
+  if (s.getHand().length !== 0) throw new Error('hand should be empty after pung');
+
+  // shang test (1-2-3 sou)
+  s.setHand([makeTile('sou', 1, 1), makeTile('sou', 2, 2), makeTile('sou', 3, 3)]);
+  s.createOrToggleMeld('sou_2', 'shang');
+  const m2 = s.getMeldMap();
+  if (!Object.keys(m2).some(k => k.endsWith('@shang'))) throw new Error('shang creation failed');
+
+  // upgrade pung -> kong
+  s.setHand([makeTile('wan', 3, 1), makeTile('wan', 3, 2), makeTile('wan', 3, 3), makeTile('wan', 3, 4)]);
+  s.createOrToggleMeld('wan_3', 'pung');
+  // put one more wan_3 into hand to upgrade
+  s.setHand(prev => [...prev, makeTile('wan', 3, 5)]);
+  s.upgradePungToKong('wan_3@pung');
+  const m3 = s.getMeldMap();
+  if (!m3['wan_3@kong']) throw new Error('upgrade to kong failed');
+
+  // toggle concealed flag on kong entry
+  s.setMeldMap(prev => {
+    const copy = { ...prev };
+    if (copy['wan_3@kong']) copy['wan_3@kong'].concealed = true;
+    return copy;
+  });
+  const m4 = s.getMeldMap();
+  if (!m4['wan_3@kong'] || !m4['wan_3@kong'].concealed) throw new Error('concealed toggle failed');
+
+  // cleanup
+  console.log('Additional meld tests passed');
+})();

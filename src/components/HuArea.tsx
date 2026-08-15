@@ -4,9 +4,11 @@ import { Tile } from '../types/mahjong';
 interface Props {
   huTile?: Tile | null;
   onClearHu: () => void;
+  huIsZimo?: boolean;
+  onToggleZimo?: (next: boolean) => void;
 }
 
-export const HuArea: React.FC<Props> = ({ huTile, onClearHu }) => {
+export const HuArea: React.FC<Props> = ({ huTile, onClearHu, huIsZimo, onToggleZimo }) => {
   return (
     <div className="bg-slate-800 border border-slate-700 rounded-xl p-4 space-y-2">
       <h3 className="text-sm font-semibold text-amber-300">胡牌 (Winning Tile)</h3>
@@ -24,7 +26,7 @@ export const HuArea: React.FC<Props> = ({ huTile, onClearHu }) => {
                 清除
               </button>
               <label className="flex items-center gap-2 px-2 py-1 bg-slate-700 rounded">
-                <input type="checkbox" />
+                <input type="checkbox" checked={!!huIsZimo} onChange={() => onToggleZimo && onToggleZimo(!huIsZimo)} />
                 <span className="text-sm text-slate-200">自摸</span>
               </label>
             </div>
