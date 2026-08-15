@@ -28,55 +28,58 @@ export default function App() {
     setSelection(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
 
-  const createMeldFromSelection = (kind: 'kong' | 'pung' | 'shang') => {
+  const createMeldFromSelection = () => {
+    // auto-detect kind from selection: kong > pung > shang
     setErrorMessage(null);
     const tiles = hand.filter(t => selection.includes(t.id));
-    if (kind === 'pung' || kind === 'kong') {
-      const need = kind === 'pung' ? 3 : 4;
-      if (tiles.length !== need) {
-        setErrorMessage(`請選擇 ${need} 張相同的牌來標記為 ${kind}。`);
-        return;
-      }
-      const first = tiles[0];
-      if (!tiles.every(t => t.suit === first.suit && t.value === first.value)) {
-        setErrorMessage('選取的牌必須完全相同。');
-        return;
-      }
+    if (tiles.length === 0) {
+      setErrorMessage('請先選擇牌再按「成組」。');
+      return;
+    }
+
+    // detect kong
+    const first = tiles[0];
+    const allSame = tiles.every(t => t.suit === first.suit && t.value === first.value);
+    if (tiles.length === 4 && allSame) {
       const key = `${first.suit}_${first.value}`;
-      const storageKey = `${key}@${kind}`;
+      const storageKey = `${key}@kong`;
       const remaining = hand.filter(t => !selection.includes(t.id));
       setHand(remaining);
-      setMeldMap(prev => ({ ...prev, [storageKey]: { kind, tiles } }));
+      setMeldMap(prev => ({ ...prev, [storageKey]: { kind: 'kong', tiles } }));
       setSelection([]);
       setResult(null);
       return;
     }
 
-    if (kind === 'shang') {
-      if (tiles.length !== 3) {
-        setErrorMessage('請選擇 3 張牌來標記為 上（順子）。');
-        return;
-      }
-      // must be same suit and consecutive values
-      const suit = tiles[0].suit;
-      const vals = tiles.map(t => t.value).sort((a, b) => a - b);
-      if (!tiles.every(t => t.suit === suit)) {
-        setErrorMessage('順子需為同花色。');
-        return;
-      }
-      if (!(vals[1] === vals[0] + 1 && vals[2] === vals[1] + 1)) {
-        setErrorMessage('所選不是連續的三張。');
-        return;
-      }
-      const seqKey = `${suit}_${vals[0]}`;
-      const storageKey = `${seqKey}@shang`;
+    // detect pung
+    if (tiles.length === 3 && allSame) {
+      const key = `${first.suit}_${first.value}`;
+      const storageKey = `${key}@pung`;
       const remaining = hand.filter(t => !selection.includes(t.id));
       setHand(remaining);
-      setMeldMap(prev => ({ ...prev, [storageKey]: { kind: 'shang', tiles } }));
+      setMeldMap(prev => ({ ...prev, [storageKey]: { kind: 'pung', tiles } }));
       setSelection([]);
       setResult(null);
       return;
     }
+
+    // detect shang (sequence)
+    if (tiles.length === 3) {
+      const suit = tiles[0].suit;
+      const vals = tiles.map(t => t.value).sort((a, b) => a - b);
+      if (tiles.every(t => t.suit === suit) && vals[1] === vals[0] + 1 && vals[2] === vals[1] + 1) {
+        const seqKey = `${suit}_${vals[0]}`;
+        const storageKey = `${seqKey}@shang`;
+        const remaining = hand.filter(t => !selection.includes(t.id));
+        setHand(remaining);
+        setMeldMap(prev => ({ ...prev, [storageKey]: { kind: 'shang', tiles } }));
+        setSelection([]);
+        setResult(null);
+        return;
+      }
+    }
+
+    setErrorMessage('無法自動辨識成組類型；請確認選擇是否為 3/4 張相同或 3 張順子。');
   };
 
   const createHuFromSelection = () => {
@@ -278,9 +281,6 @@ export default function App() {
                 onRemoveTile={handleRemoveTile}
                 huTileId={huTileId}
                 onClear={handleClear}
-                onToggleKong={(key: string) => createOrToggleMeld(key, 'kong')}
-                onTogglePung={(key: string) => createOrToggleMeld(key, 'pung')}
-                onToggleShang={(key: string) => createOrToggleMeld(key, 'shang')}
                 meldMap={meldMap}
                 onToggleSelect={toggleSelect}
                 selection={selection}
@@ -292,9 +292,7 @@ export default function App() {
           <div className="w-64">
             <div className="bg-slate-900 border border-slate-700 rounded-lg p-3">
               <div className="flex gap-2 mb-2">
-                <button onClick={() => createMeldFromSelection('pung')} className="flex-1 px-2 py-1 bg-emerald-600 text-white rounded">Form 碰</button>
-                <button onClick={() => createMeldFromSelection('kong')} className="flex-1 px-2 py-1 bg-red-600 text-white rounded">Form 槓</button>
-                <button onClick={() => createMeldFromSelection('shang')} className="flex-1 px-2 py-1 bg-blue-600 text-white rounded">Form 上</button>
+                <button onClick={() => createMeldFromSelection()} className="flex-1 px-2 py-1 bg-emerald-600 text-white rounded">成組</button>
               </div>
               <div className="flex gap-2 mb-2">
                 <button onClick={() => createHuFromSelection()} className="flex-1 px-2 py-1 bg-amber-400 text-slate-900 rounded">Set 胡</button>

@@ -38,7 +38,7 @@ export const MeldArea: React.FC<Props> = ({ meldMap, onToggleMeld, onUpgradePung
                   </div>
                 ))}
               </div>
-              <div className="text-sm text-slate-300">{m.kind}</div>
+              <div className="text-sm text-slate-300">{m.kind === 'kong' ? '槓' : m.kind === 'pung' ? '碰' : '上'}</div>
               {m.kind === 'pung' && (
                 <button
                   onClick={() => onUpgradePung && onUpgradePung(k)}
