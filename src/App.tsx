@@ -32,8 +32,12 @@ export default function App() {
     const isFlower = tile.suit === 'flower';
     const perTypeLimit = isFlower ? 1 : MAX_TILES_PER_TYPE;
     const currentCount = getTileCount(hand, tile);
+    // include tiles already moved into melds for per-type limit
+    const key = `${tile.suit}_${tile.value}`;
+    const meldCountForKey = Object.values(meldMap).reduce((s, m) => s + m.tiles.filter(t => `${t.suit}_${t.value}` === key).length, 0);
+    const totalCountForType = currentCount + meldCountForKey;
 
-    if (currentCount >= perTypeLimit) {
+    if (totalCountForType >= perTypeLimit) {
       setErrorMessage(`「${tile.label}」已達上限 (最多 ${perTypeLimit} 張)，無法再加入。`);
       return;
     }
@@ -160,6 +164,9 @@ export default function App() {
                 onToggleShang={(key: string) => {
                   createOrToggleMeld(key, 'shang');
                 }}
+                meldMap={meldMap}
+                totalTiles={hand.length + Object.values(meldMap).reduce((s, m) => s + m.tiles.length, 0)}
+                totalLimit={17 + Object.values(meldMap).filter(m => m.kind === 'kong').length}
               />
           </div>
 

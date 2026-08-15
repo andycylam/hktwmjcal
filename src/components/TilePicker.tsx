@@ -8,21 +8,23 @@ interface Props {
 
 const MAX_PER_TYPE = 4;
 
+const CHINESE_NUM = ['零','一','二','三','四','五','六','七','八','九'];
+
 const TILE_GROUPS: { name: string; suit: Suit; items: { val: number; label: string }[] }[] = [
   {
     name: '萬子 (Characters)',
     suit: 'wan',
-    items: [1, 2, 3, 4, 5, 6, 7, 8, 9].map(v => ({ val: v, label: `${v}萬` }))
+    items: [1, 2, 3, 4, 5, 6, 7, 8, 9].map(v => ({ val: v, label: `${CHINESE_NUM[v]}萬` }))
   },
   {
     name: '筒子 (Dots)',
     suit: 'tong',
-    items: [1, 2, 3, 4, 5, 6, 7, 8, 9].map(v => ({ val: v, label: `${v}筒` }))
+    items: [1, 2, 3, 4, 5, 6, 7, 8, 9].map(v => ({ val: v, label: `${CHINESE_NUM[v]}筒` }))
   },
   {
     name: '索子 (Bamboo)',
     suit: 'sou',
-    items: [1, 2, 3, 4, 5, 6, 7, 8, 9].map(v => ({ val: v, label: `${v}索` }))
+    items: [1, 2, 3, 4, 5, 6, 7, 8, 9].map(v => ({ val: v, label: `${CHINESE_NUM[v]}索` }))
   },
   {
     name: '字牌 (Winds & Dragons)',
