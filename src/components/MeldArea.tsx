@@ -10,9 +10,10 @@ interface Props {
   meldMap: Record<string, MeldEntry>;
   onToggleMeld: (key: string) => void;
   onUpgradePung?: (key: string) => void;
+  onMeldTileClick?: (meldKey: string, tileId: string) => void;
 }
 
-export const MeldArea: React.FC<Props> = ({ meldMap, onToggleMeld, onUpgradePung }) => {
+export const MeldArea: React.FC<Props> = ({ meldMap, onToggleMeld, onUpgradePung, onMeldTileClick }) => {
   const keys = Object.keys(meldMap);
   if (keys.length === 0) {
     return (
@@ -33,9 +34,14 @@ export const MeldArea: React.FC<Props> = ({ meldMap, onToggleMeld, onUpgradePung
             <div key={k} className="flex items-center gap-3">
               <div className="flex gap-2">
                 {m.tiles.map(t => (
-                  <div key={t.id} className="w-10 h-14 rounded-lg bg-slate-700 border border-slate-600 flex items-center justify-center text-sm font-bold">
+                  <button
+                    key={t.id}
+                    onClick={() => onMeldTileClick && onMeldTileClick(k, t.id)}
+                    className="w-10 h-14 rounded-lg bg-slate-700 border border-slate-600 flex items-center justify-center text-sm font-bold hover:brightness-90"
+                    title="點擊移回手牌 / 槓則降為碰"
+                  >
                     {t.label}
-                  </div>
+                  </button>
                 ))}
               </div>
               <div className="text-sm text-slate-300">{m.kind === 'kong' ? '槓' : m.kind === 'pung' ? '碰' : '上'}</div>

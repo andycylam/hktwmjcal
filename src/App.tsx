@@ -248,6 +248,44 @@ export default function App() {
     setResult(null);
   };
 
+  const handleMeldTileClick = (meldKey: string, tileId: string) => {
+    const entry = meldMap[meldKey];
+    if (!entry) return;
+
+    // If kong: downgrade to pung by removing one tile from meld back to hand
+    if (entry.kind === 'kong') {
+      // remove the clicked tile from meld and convert to pung (3 tiles)
+      const remainingTiles = entry.tiles.filter(t => t.id !== tileId);
+      const baseKey = meldKey.split('@')[0];
+      setMeldMap(prev => {
+        const copy = { ...prev };
+        delete copy[meldKey];
+        // create pung entry
+        copy[`${baseKey}@pung`] = { kind: 'pung', tiles: remainingTiles };
+        return copy;
+      });
+      // add clicked tile back to hand
+      const tile = entry.tiles.find(t => t.id === tileId);
+      if (tile) setHand(prev => [...prev, tile]);
+      setResult(null);
+      return;
+    }
+
+    // For pung or shang: remove the clicked tile from the meld (discard it),
+    // and move the remaining tiles of the meld back to the hand.
+    if (entry.kind === 'pung' || entry.kind === 'shang') {
+      const remainingTiles = entry.tiles.filter(t => t.id !== tileId);
+      setMeldMap(prev => {
+        const copy = { ...prev };
+        delete copy[meldKey];
+        return copy;
+      });
+      if (remainingTiles.length > 0) setHand(prev => [...prev, ...remainingTiles]);
+      setResult(null);
+      return;
+    }
+  };
+
   const handleCalculate = () => {
     const res = calculateHandFan(hand);
     setResult(res);
@@ -270,7 +308,7 @@ export default function App() {
       <div className="space-y-4">
         {/* Row 1: Melds */}
         <div>
-          <MeldArea meldMap={meldMap} onToggleMeld={(k: string) => createOrToggleMeld(k, meldMap[k].kind)} onUpgradePung={(k: string) => upgradePungToKong(k)} />
+          <MeldArea meldMap={meldMap} onToggleMeld={(k: string) => createOrToggleMeld(k, meldMap[k].kind)} onUpgradePung={(k: string) => upgradePungToKong(k)} onMeldTileClick={(mk, tid) => handleMeldTileClick(mk, tid)} />
         </div>
 
         {/* Row 2: Current hand (left) and Hu tile (right) */}
