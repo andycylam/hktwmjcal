@@ -52,7 +52,30 @@ export default function App() {
       return;
     }
 
-    setHand([...hand, tile]);
+    const updatedHand = [...hand, tile];
+    setHand(updatedHand);
+
+    // Auto-upgrade: if there's an existing pung meld and this selection makes total 4, convert pung -> kong
+    const k = `${tile.suit}_${tile.value}`;
+    const existingMeld = meldMap[k];
+    if (existingMeld && existingMeld.kind === 'pung') {
+      // count tiles of this key in meld + updatedHand
+      const meldCount = existingMeld.tiles.length;
+      const handCount = updatedHand.filter(t => `${t.suit}_${t.value}` === k).length;
+      if (meldCount + handCount >= 4) {
+        // move one matching tile from hand into the meld to form a kong
+        const idx = updatedHand.findIndex(t => `${t.suit}_${t.value}` === k);
+        if (idx !== -1) {
+          const tileToMove = updatedHand[idx];
+          const newHand = [...updatedHand.slice(0, idx), ...updatedHand.slice(idx + 1)];
+          setHand(newHand);
+          setMeldMap(prev => ({ ...prev, [k]: { kind: 'kong', tiles: [...existingMeld.tiles, tileToMove] } }));
+          setDeclaredPungs(prev => prev.filter(x => x !== k));
+          setDeclaredKongs(prev => (prev.includes(k) ? prev : [...prev, k]));
+          setResult(null);
+        }
+      }
+    }
   };
 
   const handleRemoveTile = (id: string) => {
@@ -80,7 +103,57 @@ export default function App() {
   };
 
   function createOrToggleMeld(key: string, kind: 'kong' | 'pung' | 'shang') {
-    // if meld exists, remove it back to hand
+    // Special handling for 'shang' (sequence)
+    if (kind === 'shang') {
+      const [suit, valStr] = key.split('_');
+      const value = parseInt(valStr, 10);
+
+      // If any existing shang meld contains this tile, remove that meld
+      const existingKey = Object.keys(meldMap).find(k => meldMap[k].kind === 'shang' && meldMap[k].tiles.some(t => `${t.suit}_${t.value}` === key));
+      if (existingKey) {
+        const tiles = meldMap[existingKey].tiles;
+        setHand(prev => [...prev, ...tiles]);
+        setMeldMap(prev => {
+          const copy = { ...prev };
+          delete copy[existingKey];
+          return copy;
+        });
+        setDeclaredShangs(prev => prev.filter(k => k !== existingKey));
+        setResult(null);
+        return;
+      }
+
+      // Try to find a sequence of three that includes `value`
+      for (let start = Math.max(1, value - 2); start <= Math.min(value, 7); start++) {
+        const needVals = [start, start + 1, start + 2];
+        const taken: Tile[] = [];
+        const remaining: Tile[] = [];
+        for (const t of hand) {
+          if (t.suit === suit && needVals.includes(t.value) && !taken.some(x => x.id === t.id)) {
+            // take first matching tile for that value if not already taken
+            const alreadyForValue = taken.find(x => x.value === t.value && x.suit === t.suit);
+            if (!alreadyForValue) taken.push(t);
+            else remaining.push(t);
+          } else {
+            remaining.push(t);
+          }
+        }
+
+        if (taken.length === 3) {
+          const seqKey = `${suit}_${start}`;
+          setHand(remaining);
+          setMeldMap(prev => ({ ...prev, [seqKey]: { kind: 'shang', tiles: taken } }));
+          setDeclaredShangs(prev => [...prev, seqKey]);
+          setResult(null);
+          return;
+        }
+      }
+
+      setErrorMessage(`無法標記為上：未找到包含此牌的順子 (例如 一二三)。`);
+      return;
+    }
+
+    // For kong/pung: if exists under the exact key, remove it
     if (meldMap[key]) {
       const tiles = meldMap[key].tiles;
       setHand(prev => [...prev, ...tiles]);
@@ -89,14 +162,13 @@ export default function App() {
         delete copy[key];
         return copy;
       });
-      // remove from declared lists
       if (kind === 'kong') setDeclaredKongs(prev => prev.filter(k => k !== key));
       if (kind === 'pung') setDeclaredPungs(prev => prev.filter(k => k !== key));
-      if (kind === 'shang') setDeclaredShangs(prev => prev.filter(k => k !== key));
+      setResult(null);
       return;
     }
 
-    // create meld: pull tiles from hand
+    // create meld: pull tiles from hand (kong/pung require identical tiles)
     const need = kind === 'kong' ? 4 : 3;
     const taken: Tile[] = [];
     const remaining: Tile[] = [];
@@ -114,7 +186,6 @@ export default function App() {
     setMeldMap(prev => ({ ...prev, [key]: { kind, tiles: taken } }));
     if (kind === 'kong') setDeclaredKongs(prev => [...prev, key]);
     if (kind === 'pung') setDeclaredPungs(prev => [...prev, key]);
-    if (kind === 'shang') setDeclaredShangs(prev => [...prev, key]);
     setResult(null);
   }
 
