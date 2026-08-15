@@ -19,9 +19,10 @@ export default function App() {
   const [result, setResult] = useState<CalculationResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [huTileId, setHuTileId] = useState<string | null>(null);
+  const [huIsZimo, setHuIsZimo] = useState<boolean>(false);
   const huTile = hand.find(t => t.id === huTileId) || null;
   // declared melds tracked in meldMap
-  const [meldMap, setMeldMap] = useState<Record<string, { kind: 'kong' | 'pung' | 'shang'; tiles: Tile[] }>>({});
+  const [meldMap, setMeldMap] = useState<Record<string, { kind: 'kong' | 'pung' | 'shang'; tiles: Tile[]; concealed?: boolean }>>({});
   const [selection, setSelection] = useState<string[]>([]);
 
   const toggleSelect = (id: string) => {
@@ -45,7 +46,7 @@ export default function App() {
       const storageKey = `${key}@kong`;
       const remaining = hand.filter(t => !selection.includes(t.id));
       setHand(remaining);
-      setMeldMap(prev => ({ ...prev, [storageKey]: { kind: 'kong', tiles } }));
+      setMeldMap(prev => ({ ...prev, [storageKey]: { kind: 'kong', tiles, concealed: false } }));
       setSelection([]);
       setResult(null);
       return;
@@ -321,7 +322,18 @@ export default function App() {
       <div className="space-y-4">
         {/* Row 1: Melds */}
         <div>
-          <MeldArea meldMap={meldMap} onToggleMeld={(k: string) => createOrToggleMeld(k, meldMap[k].kind)} onUpgradePung={(k: string) => upgradePungToKong(k)} onMeldTileClick={(mk, tid) => handleMeldTileClick(mk, tid)} />
+            <MeldArea
+              meldMap={meldMap}
+              onToggleMeld={(k: string) => createOrToggleMeld(k, meldMap[k].kind)}
+              onUpgradePung={(k: string) => upgradePungToKong(k)}
+              onMeldTileClick={(mk, tid) => handleMeldTileClick(mk, tid)}
+              onToggleConcealed={(mk: string) => setMeldMap(prev => {
+                const copy = { ...prev };
+                if (!copy[mk] || copy[mk].kind !== 'kong') return prev;
+                copy[mk] = { ...copy[mk], concealed: !copy[mk].concealed };
+                return copy;
+              })}
+            />
         </div>
 
         {/* Row 2: Current hand (left) and Hu tile (right) */}
@@ -354,7 +366,8 @@ export default function App() {
           </div>
 
           <div className="w-40">
-            <HuArea huTile={huTile} onClearHu={() => setHuTileId(null)} />
+            <HuArea huTile={huTile} onClearHu={() => { setHuTileId(null); setHuIsZimo(false); }} />
+            <div className="text-xs text-slate-400 mt-2">自摸：{huIsZimo ? '是' : '否'}</div>
           </div>
         </div>
 

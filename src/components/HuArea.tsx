@@ -23,6 +23,10 @@ export const HuArea: React.FC<Props> = ({ huTile, onClearHu }) => {
               >
                 清除
               </button>
+              <label className="flex items-center gap-2 px-2 py-1 bg-slate-700 rounded">
+                <input type="checkbox" />
+                <span className="text-sm text-slate-200">自摸</span>
+              </label>
             </div>
           </>
         ) : (

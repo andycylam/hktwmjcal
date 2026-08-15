@@ -4,6 +4,7 @@ import { Tile } from '../types/mahjong';
 interface MeldEntry {
   kind: 'kong' | 'pung' | 'shang';
   tiles: Tile[];
+  concealed?: boolean;
 }
 
 interface Props {
@@ -11,9 +12,10 @@ interface Props {
   onToggleMeld: (key: string) => void;
   onUpgradePung?: (key: string) => void;
   onMeldTileClick?: (meldKey: string, tileId: string) => void;
+  onToggleConcealed?: (meldKey: string) => void;
 }
 
-export const MeldArea: React.FC<Props> = ({ meldMap, onToggleMeld, onUpgradePung, onMeldTileClick }) => {
+export const MeldArea: React.FC<Props> = ({ meldMap, onToggleMeld, onUpgradePung, onMeldTileClick, onToggleConcealed }) => {
   const keys = Object.keys(meldMap);
   if (keys.length === 0) {
     return (
@@ -45,6 +47,12 @@ export const MeldArea: React.FC<Props> = ({ meldMap, onToggleMeld, onUpgradePung
                 ))}
               </div>
               <div className="text-sm text-slate-300">{m.kind === 'kong' ? '槓' : m.kind === 'pung' ? '碰' : '上'}</div>
+              {m.kind === 'kong' && (
+                <label className="ml-2 text-sm text-slate-300 flex items-center gap-2">
+                  <input type="checkbox" checked={!!m.concealed} onChange={() => onToggleConcealed && onToggleConcealed(k)} />
+                  <span className="text-xs">暗槓</span>
+                </label>
+              )}
               {m.kind === 'pung' && (
                 <button
                   onClick={() => onUpgradePung && onUpgradePung(k)}
