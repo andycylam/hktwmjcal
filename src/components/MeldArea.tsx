@@ -48,10 +48,16 @@ export const MeldArea: React.FC<Props> = ({ meldMap, onToggleMeld, onUpgradePung
               </div>
               <div className="text-sm text-slate-300">{m.kind === 'kong' ? '槓' : m.kind === 'pung' ? '碰' : '上'}</div>
               {m.kind === 'kong' && (
-                <label className="ml-2 text-sm text-slate-300 flex items-center gap-2">
-                  <input type="checkbox" checked={!!m.concealed} onChange={() => onToggleConcealed && onToggleConcealed(k)} />
+                <div className="ml-2 text-sm text-slate-300 flex items-center gap-3">
                   <span className="text-xs">暗槓</span>
-                </label>
+                  <button
+                    onClick={() => onToggleConcealed && onToggleConcealed(k)}
+                    aria-pressed={!!m.concealed}
+                    className={`w-10 h-6 rounded-full p-1 transition ${m.concealed ? 'bg-emerald-400' : 'bg-slate-600'}`}
+                  >
+                    <span className={`block w-4 h-4 rounded-full bg-white shadow transform transition ${m.concealed ? 'translate-x-4' : 'translate-x-0'}`} />
+                  </button>
+                </div>
               )}
               {m.kind === 'pung' && (
                 <button
