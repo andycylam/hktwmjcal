@@ -58,7 +58,7 @@ export const MeldArea: React.FC<Props> = ({ meldMap, onToggleMeld, onUpgradePung
                     onClick={() => onToggleConcealed && onToggleConcealed(k)}
                     className={`relative inline-flex items-center h-6 w-10 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-300 ${m.concealed ? 'bg-emerald-400' : 'bg-slate-600'}`}
                   >
-                    <span className={`absolute left-1 top-0.5 w-4 h-4 bg-white rounded-full shadow transform transition-transform duration-200 ${m.concealed ? 'translate-x-4' : 'translate-x-0'}`} />
+                    <span className={`absolute left-1 top-0.5 w-4 h-4 bg-white rounded-full shadow transform transition-transform duration-200 ${m.concealed ? 'translate-x-4' : 'translate-x-0'}`} style={{ top: '50%', transform: `${m.concealed ? 'translateY(-50%) translateX(100%)' : 'translateY(-50%) translateX(0)'}` }} />
                   </button>
                 </div>
               )}
