@@ -51,64 +51,64 @@ export const HandRack: React.FC<Props> = ({ hand, onRemoveTile, onSetHu, huTileI
             const key = `${t.suit}_${t.value}`;
             const isDeclaredKong = (declaredKongs || []).includes(key);
             return (
-              <div key={t.id} className="relative">
-                <button
-                  onClick={() => onRemoveTile(t.id)}
-                  className={`
-                    relative w-11 h-15 ${colors.base} ${colors.border} border-2 rounded-md
-                    flex items-center justify-center font-bold text-slate-900 shadow
-                    hover:brightness-95 active:scale-95 transition
-                    ${isHu ? 'ring-2 ring-amber-400' : ''}
-                  `}
-                  title={`移除 ${t.label}`}
-                >
-                  {t.label}
-                </button>
-
-                <div className="absolute -top-2 -left-2 flex gap-1">
+              <div className="relative p-1">
                   <button
-                    onClick={() => onSetHu(t.id)}
-                    className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center bg-amber-500 text-slate-900 shadow transition hover:scale-105 active:scale-95`}
-                    title={isHu ? '取消 胡牌' : '設為 胡牌'}
+                    onClick={() => onRemoveTile(t.id)}
+                    className={`
+                      relative w-14 h-18 ${colors.base} ${colors.border} border-2 rounded-md
+                      flex items-center justify-center font-bold text-slate-900 shadow
+                      hover:brightness-95 active:scale-95 transition
+                      ${isHu ? 'ring-2 ring-amber-400' : ''}
+                    `}
+                    title={`移除 ${t.label}`}
                   >
-                    胡
+                    {t.label}
                   </button>
 
-                  <button
+                  <div className="absolute -top-3 -left-1 flex gap-1">
+                    <button
+                      onClick={() => onSetHu(t.id)}
+                      className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center bg-amber-500 text-slate-900 shadow transition hover:scale-105 active:scale-95`}
+                      title={isHu ? '取消 胡牌' : '設為 胡牌'}
+                    >
+                      胡
+                    </button>
+
+                    <button
                       onClick={() => onToggleKong && onToggleKong(key)}
-                    className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center ${isDeclaredKong ? 'bg-red-500 text-white' : 'bg-slate-600 text-slate-200'} shadow transition hover:scale-105 active:scale-95`}
-                    title={isDeclaredKong ? '取消 槓' : '標記 為 槓'}
-                  >
-                    槓
-                  </button>
+                      className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center ${isDeclaredKong ? 'bg-red-500 text-white' : 'bg-slate-600 text-slate-200'} shadow transition hover:scale-105 active:scale-95`}
+                      title={isDeclaredKong ? '取消 槓' : '標記 為 槓'}
+                    >
+                      槓
+                    </button>
 
-                  <button
-                    onClick={() => onTogglePung && onTogglePung(key)}
-                    className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center ${((declaredPungs||[]).includes(key)) ? 'bg-emerald-600 text-white' : 'bg-slate-600 text-slate-200'} shadow transition hover:scale-105 active:scale-95`}
-                    title={((declaredPungs||[]).includes(key)) ? '取消 碰' : '標記 為 碰'}
-                  >
-                    碰
-                  </button>
+                    <button
+                      onClick={() => onTogglePung && onTogglePung(key)}
+                      className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center ${((declaredPungs||[]).includes(key)) ? 'bg-emerald-600 text-white' : 'bg-slate-600 text-slate-200'} shadow transition hover:scale-105 active:scale-95`}
+                      title={((declaredPungs||[]).includes(key)) ? '取消 碰' : '標記 為 碰'}
+                    >
+                      碰
+                    </button>
 
-                  <button
-                    onClick={() => onToggleShang && onToggleShang(key)}
-                    className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center ${((declaredShangs||[]).includes(key)) ? 'bg-blue-600 text-white' : 'bg-slate-600 text-slate-200'} shadow transition hover:scale-105 active:scale-95`}
-                    title={((declaredShangs||[]).includes(key)) ? '取消 上' : '標記 為 上'}
-                  >
-                    上
-                  </button>
+                    <button
+                      onClick={() => onToggleShang && onToggleShang(key)}
+                      className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center ${((declaredShangs||[]).includes(key)) ? 'bg-blue-600 text-white' : 'bg-slate-600 text-slate-200'} shadow transition hover:scale-105 active:scale-95`}
+                      title={((declaredShangs||[]).includes(key)) ? '取消 上' : '標記 為 上'}
+                    >
+                      上
+                    </button>
+                  </div>
+
+                  {isDeclaredKong && (
+                    <span className="absolute -top-2 -right-2 w-5 h-5 rounded-full text-xs font-black bg-red-600 text-white flex items-center justify-center">K</span>
+                  )}
+                  {((declaredPungs||[]).includes(key)) && (
+                    <span className="absolute -top-2 -right-8 w-5 h-5 rounded-full text-xs font-black bg-emerald-600 text-white flex items-center justify-center">P</span>
+                  )}
+                  {((declaredShangs||[]).includes(key)) && (
+                    <span className="absolute -top-2 -right-14 w-5 h-5 rounded-full text-xs font-black bg-blue-600 text-white flex items-center justify-center">S</span>
+                  )}
                 </div>
-
-                {isDeclaredKong && (
-                  <span className="absolute -top-2 -right-2 w-5 h-5 rounded-full text-xs font-black bg-red-600 text-white flex items-center justify-center">K</span>
-                )}
-                {((declaredPungs||[]).includes(key)) && (
-                  <span className="absolute -top-2 -right-8 w-5 h-5 rounded-full text-xs font-black bg-emerald-600 text-white flex items-center justify-center">P</span>
-                )}
-                {((declaredShangs||[]).includes(key)) && (
-                  <span className="absolute -top-2 -right-14 w-5 h-5 rounded-full text-xs font-black bg-blue-600 text-white flex items-center justify-center">S</span>
-                )}
-              </div>
             );
           })
         )}

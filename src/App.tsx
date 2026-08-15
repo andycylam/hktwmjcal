@@ -5,7 +5,8 @@ import { HandRack } from './components/HandRack';
 import { ResultCard } from './components/ResultCard';
 import { calculateHandFan } from './engine/validator';
 import { HuArea } from './components/HuArea';
-import { MeldArea } from './components/MeldArea';
+import MeldArea from './components/MeldArea';
+import ErrorDialog from './components/ErrorDialog';
 
 const MAX_TILES_PER_TYPE = 4;
 
@@ -130,17 +131,12 @@ export default function App() {
         <p className="text-slate-400 text-sm">Open Source HK Taiwanese Mahjong Fan Calculator</p>
       </header>
 
-      {/* Error / feedback banner */}
-      {errorMessage && (
-        <div className="bg-red-900/30 border border-red-500/50 text-red-300 px-4 py-2 rounded-lg text-sm text-center animate-fadeIn">
-          {errorMessage}
-        </div>
-      )}
+      <ErrorDialog message={errorMessage} onClose={() => setErrorMessage(null)} />
 
       <div className="space-y-4">
         {/* Row 1: Melds */}
         <div>
-          <MeldArea declaredKongs={declaredKongs} declaredPungs={declaredPungs} declaredShangs={declaredShangs} hand={hand} />
+          <MeldArea meldMap={meldMap} onToggleMeld={(k: string) => createOrToggleMeld(k, meldMap[k].kind)} />
         </div>
 
         {/* Row 2: Current hand (left) and Hu tile (right) */}
