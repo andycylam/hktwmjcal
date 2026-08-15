@@ -75,7 +75,7 @@ export const HandRack: React.FC<Props> = ({ hand, onRemoveTile, onSetHu, huTileI
                   </button>
 
                   <button
-                    onClick={() => onToggleKong && onToggleKong(key)}
+                      onClick={() => onToggleKong && onToggleKong(key)}
                     className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center ${isDeclaredKong ? 'bg-red-500 text-white' : 'bg-slate-600 text-slate-200'} shadow transition hover:scale-105 active:scale-95`}
                     title={isDeclaredKong ? '取消 槓' : '標記 為 槓'}
                   >

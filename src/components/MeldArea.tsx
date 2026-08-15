@@ -15,7 +15,7 @@ export const MeldArea: React.FC<Props> = ({ declaredKongs, declaredPungs, declar
       <div className="flex flex-col gap-2">
         {keys.map(k => {
           const [suit, val] = k.split('_');
-          const tile = hand.find(t => `${t.suit}_${t.value}` === k);
+          const tile = hand.find(t => `${t.suit}_${t.value}` === k) || { label: `${val}${suit}` } as Tile;
           return (
             <div key={k} className="flex items-center gap-2">
               <div className="w-10 h-14 rounded-lg bg-slate-700 border border-slate-600 flex items-center justify-center text-sm font-bold">{tile?.label ?? `${val}${suit}`}</div>

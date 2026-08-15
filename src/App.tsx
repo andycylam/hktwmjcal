@@ -22,23 +22,28 @@ export default function App() {
   const [declaredKongs, setDeclaredKongs] = useState<string[]>([]);
   const [declaredPungs, setDeclaredPungs] = useState<string[]>([]);
   const [declaredShangs, setDeclaredShangs] = useState<string[]>([]);
+  const [meldMap, setMeldMap] = useState<Record<string, { kind: 'kong' | 'pung' | 'shang'; tiles: Tile[] }>>({});
 
   const handleSelectTile = (tile: Tile) => {
     setErrorMessage(null);
 
     // Check duplicate limit (flowers limited to 1)
     const isFlower = tile.suit === 'flower';
-    const limit = isFlower ? 1 : MAX_TILES_PER_TYPE;
+    const perTypeLimit = isFlower ? 1 : MAX_TILES_PER_TYPE;
     const currentCount = getTileCount(hand, tile);
 
-    if (currentCount >= limit) {
-      setErrorMessage(`「${tile.label}」已達上限 (最多 ${limit} 張)，無法再加入。`);
+    if (currentCount >= perTypeLimit) {
+      setErrorMessage(`「${tile.label}」已達上限 (最多 ${perTypeLimit} 張)，無法再加入。`);
       return;
     }
 
-    // Check total hand size
-    if (hand.length >= 17) {
-      setErrorMessage(`手牌已滿 17 張 (16張手牌 + 1張胡牌)，請先移除牌。`);
+    // Check total tile limit (hand + melds). Base 17, each declared kong increases limit by 1.
+    const meldCount = Object.values(meldMap).reduce((s, m) => s + m.tiles.length, 0);
+    const totalTiles = hand.length + meldCount;
+    const kongCount = Object.values(meldMap).filter(m => m.kind === 'kong').length;
+    const totalLimit = 17 + kongCount;
+    if (totalTiles >= totalLimit) {
+      setErrorMessage(`已達總牌數上限 ${totalLimit} 張（包含已成組），請先移除或取消成組。`);
       return;
     }
 
@@ -63,7 +68,50 @@ export default function App() {
     setHand([]);
     setResult(null);
     setErrorMessage(null);
+    setMeldMap({});
+    setDeclaredKongs([]);
+    setDeclaredPungs([]);
+    setDeclaredShangs([]);
   };
+
+  function createOrToggleMeld(key: string, kind: 'kong' | 'pung' | 'shang') {
+    // if meld exists, remove it back to hand
+    if (meldMap[key]) {
+      const tiles = meldMap[key].tiles;
+      setHand(prev => [...prev, ...tiles]);
+      setMeldMap(prev => {
+        const copy = { ...prev };
+        delete copy[key];
+        return copy;
+      });
+      // remove from declared lists
+      if (kind === 'kong') setDeclaredKongs(prev => prev.filter(k => k !== key));
+      if (kind === 'pung') setDeclaredPungs(prev => prev.filter(k => k !== key));
+      if (kind === 'shang') setDeclaredShangs(prev => prev.filter(k => k !== key));
+      return;
+    }
+
+    // create meld: pull tiles from hand
+    const need = kind === 'kong' ? 4 : 3;
+    const taken: Tile[] = [];
+    const remaining: Tile[] = [];
+    for (const t of hand) {
+      const k = `${t.suit}_${t.value}`;
+      if (k === key && taken.length < need) taken.push(t);
+      else remaining.push(t);
+    }
+    if (taken.length < need) {
+      setErrorMessage(`無法標記 ${key} 為 ${kind}：手牌中沒有足夠的牌 (需要 ${need} 張)。`);
+      return;
+    }
+
+    setHand(remaining);
+    setMeldMap(prev => ({ ...prev, [key]: { kind, tiles: taken } }));
+    if (kind === 'kong') setDeclaredKongs(prev => [...prev, key]);
+    if (kind === 'pung') setDeclaredPungs(prev => [...prev, key]);
+    if (kind === 'shang') setDeclaredShangs(prev => [...prev, key]);
+    setResult(null);
+  }
 
   const handleCalculate = () => {
     const res = calculateHandFan(hand);
@@ -98,25 +146,25 @@ export default function App() {
         {/* Row 2: Current hand (left) and Hu tile (right) */}
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
-            <HandRack
-              hand={hand}
-              onRemoveTile={handleRemoveTile}
-              onSetHu={handleSetHu}
-              huTileId={huTileId}
-              onClear={handleClear}
-              declaredKongs={declaredKongs}
-              onToggleKong={(key: string) => {
-                setDeclaredKongs(prev => (prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]));
-              }}
-              declaredPungs={declaredPungs}
-              onTogglePung={(key: string) => {
-                setDeclaredPungs(prev => (prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]));
-              }}
-              declaredShangs={declaredShangs}
-              onToggleShang={(key: string) => {
-                setDeclaredShangs(prev => (prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]));
-              }}
-            />
+              <HandRack
+                hand={hand}
+                onRemoveTile={handleRemoveTile}
+                onSetHu={handleSetHu}
+                huTileId={huTileId}
+                onClear={handleClear}
+                declaredKongs={declaredKongs}
+                onToggleKong={(key: string) => {
+                  createOrToggleMeld(key, 'kong');
+                }}
+                declaredPungs={declaredPungs}
+                onTogglePung={(key: string) => {
+                  createOrToggleMeld(key, 'pung');
+                }}
+                declaredShangs={declaredShangs}
+                onToggleShang={(key: string) => {
+                  createOrToggleMeld(key, 'shang');
+                }}
+              />
           </div>
 
           <div className="w-40">
