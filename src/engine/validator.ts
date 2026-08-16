@@ -14,25 +14,19 @@ export function calculateHandFan(handTiles: Tile[], meldMap?: Record<string, Mel
   }
   const countedTiles = [...handTiles, ...meldTilesCounted];
 
-  // Account for kongs: some rules allow an extra tile per kong (kong consumes an extra tile),
-  // accept either 17 or 17 + number_of_kongs as valid total counted tiles.
+  // Account for kongs: some rules allow an extra tile per kong (kong consumes an extra tile).
   const kongCount = meldMap ? Object.values(meldMap).filter(m => m.kind === 'kong').length : 0;
-  if (countedTiles.length !== 17 && countedTiles.length !== 17 + kongCount) {
-    return {
-      isValid: false,
-      totalFan: 0,
-      reason: `目前手牌共有 ${countedTiles.length} 張，需滿 17 張 (16張手牌 + 1張胡牌)${kongCount > 0 ? `，或 ${17 + kongCount} 張（含 ${kongCount} 個槓）` : ''} 才可計算。`,
-      breakdown: []
-    };
-  }
 
+  // Count all tiles including flowers for per-type limits
   const counts = new Map<string, number>();
-  // count all tiles including flowers for per-type limits
   const allTiles = [...handTiles, ...meldTilesAll];
   allTiles.forEach(t => {
     const key = `${t.suit}_${t.value}`;
     counts.set(key, (counts.get(key) || 0) + 1);
   });
+
+  // If the UI calls calculate only when counted total matches expected, perform winning-structure validation then.
+  const shouldValidateWinning = countedTiles.length === 17 + kongCount;
 
   for (const [key, count] of counts.entries()) {
     if (!key.startsWith('flower') && count > 4) {
@@ -42,6 +36,108 @@ export function calculateHandFan(handTiles: Tile[], meldMap?: Record<string, Mel
         reason: `無效手牌：牌型 [${key}] 超過 4 張限制。`,
         breakdown: []
       };
+    }
+  }
+
+  // For winning structure validation we expect total non-flower counted tiles to equal
+  // 17 + number_of_kongs (5 melds + a pair = 17 tiles; each kong consumes an extra tile).
+  const totalTilesNeeded = 17 + kongCount;
+
+  if (countedTiles.length < totalTilesNeeded) {
+    return {
+      isValid: false,
+      totalFan: 0,
+      reason: `目前手牌共有 ${countedTiles.length} 張，需滿 ${totalTilesNeeded} 張 (完成 5 組與一對，含 ${kongCount} 個槓) 才可計算。`,
+      breakdown: []
+    };
+  }
+  if (countedTiles.length > totalTilesNeeded) {
+    return {
+      isValid: false,
+      totalFan: 0,
+      reason: `目前手牌共有 ${countedTiles.length} 張，超出允許的上限 ${totalTilesNeeded} 張（含 ${kongCount} 個槓）。`,
+      breakdown: []
+    };
+  }
+
+  // If the caller (UI) indicated strict validation (countedTiles matches UI expectations), validate winning hand structure.
+  if (shouldValidateWinning) {
+    // Validate winning hand structure: with existing melds, remaining tiles must be partitionable into
+    // the remaining number of melds and exactly one pair. Standard rule: total melds == 5 (kongs count as one meld).
+    const nonFlowerMelds = meldMap ? Object.values(meldMap).filter(m => m.kind !== 'flower') : [];
+    const existingMeldCount = nonFlowerMelds.length;
+    const neededMelds = 5 - existingMeldCount;
+
+    if (neededMelds < 0) {
+      return { isValid: false, totalFan: 0, reason: '成組數量超過允許的 5 組，無法計算。', breakdown: [] };
+    }
+
+    const remainingTiles = handTiles.slice(); // only handTiles were passed in (melds are in meldMap)
+    const expectedRemaining = neededMelds * 3 + 2;
+    if (remainingTiles.length !== expectedRemaining) {
+      return { isValid: false, totalFan: 0, reason: `此手牌無法胡牌：剩餘 ${remainingTiles.length} 張，預期 ${expectedRemaining} 張以構成 ${neededMelds} 組與一對。`, breakdown: [] };
+    }
+
+    // build counts map for remaining tiles
+    const remainingCounts = new Map<string, number>();
+    remainingTiles.forEach(t => {
+      const key = `${t.suit}_${t.value}`;
+      remainingCounts.set(key, (remainingCounts.get(key) || 0) + 1);
+    });
+
+    // helper: recursively check whether counts can be reduced entirely into melds (triplets or sequences)
+    const cloneCounts = (src: Map<string, number>) => new Map(src);
+
+    function canFormMelds(countMap: Map<string, number>): boolean {
+      // if all zero
+      let someLeft = false;
+      for (const v of countMap.values()) { if (v > 0) { someLeft = true; break; } }
+      if (!someLeft) return true;
+
+      // find first tile with count > 0
+      let firstKey: string | null = null;
+      for (const [k, v] of countMap.entries()) { if (v > 0) { firstKey = k; break; } }
+      if (!firstKey) return true;
+
+      const [suit, valStr] = firstKey.split('_');
+      const v = parseInt(valStr, 10);
+
+      // Try triplet
+      if ((countMap.get(firstKey) || 0) >= 3) {
+        const next = cloneCounts(countMap);
+        next.set(firstKey, (next.get(firstKey) || 0) - 3);
+        if (canFormMelds(next)) return true;
+      }
+
+      // Try sequence (only for numeric suits)
+      if (suit === 'wan' || suit === 'tong' || suit === 'sou') {
+        const k1 = `${suit}_${v}`;
+        const k2 = `${suit}_${v + 1}`;
+        const k3 = `${suit}_${v + 2}`;
+        if ((countMap.get(k2) || 0) > 0 && (countMap.get(k3) || 0) > 0) {
+          const next = cloneCounts(countMap);
+          next.set(k1, (next.get(k1) || 0) - 1);
+          next.set(k2, (next.get(k2) || 0) - 1);
+          next.set(k3, (next.get(k3) || 0) - 1);
+          if (canFormMelds(next)) return true;
+        }
+      }
+
+      return false;
+    }
+
+    // Try every possible pair in remainingCounts
+    let winning = false;
+    for (const [k, c] of remainingCounts.entries()) {
+      if (c >= 2) {
+        const copy = cloneCounts(remainingCounts);
+        copy.set(k, c - 2);
+        if (canFormMelds(copy)) { winning = true; break; }
+      }
+    }
+
+    if (!winning) {
+      return { isValid: false, totalFan: 0, reason: '此手牌無法胡牌：無法將剩餘牌拆解為完整的組合與一對。', breakdown: [] };
     }
   }
 
