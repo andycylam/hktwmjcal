@@ -440,6 +440,11 @@ export default function App() {
     }
   };
 
+  // compute counted total and kong count for button enabling and validator parity
+  const countedTotalForCalculate = hand.length + Object.values(meldMap).reduce((s, m) => s + (m.kind === 'flower' ? 0 : m.tiles.length), 0);
+  const kongCountForCalculate = Object.values(meldMap).filter(m => m.kind === 'kong').length;
+  const canCalculate = (countedTotalForCalculate === 17 || countedTotalForCalculate === 17 + kongCountForCalculate);
+
   return (
     <div className="max-w-4xl mx-auto p-4 md:p-8 space-y-6">
       <header className="text-center space-y-2">
@@ -531,13 +536,10 @@ export default function App() {
       <div className="flex justify-center pt-2">
         <button
           onClick={handleCalculate}
-          disabled={(hand.length + Object.values(meldMap).reduce((s, m) => s + (m.kind === 'flower' ? 0 : m.tiles.length), 0)) !== 17}
-          className={`
-            w-full md:w-auto px-10 py-3 font-bold text-lg rounded-xl shadow-lg transition
-            ${(hand.length + Object.values(meldMap).reduce((s, m) => s + (m.kind === 'flower' ? 0 : m.tiles.length), 0)) !== 17
-              ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
-              : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 active:scale-95'}
-          `}
+          disabled={!canCalculate}
+          className={
+            `w-full md:w-auto px-10 py-3 font-bold text-lg rounded-xl shadow-lg transition ${!canCalculate ? 'bg-slate-600 text-slate-400 cursor-not-allowed' : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 active:scale-95'}`
+          }
         >
           算番 (Calculate Fan)
         </button>

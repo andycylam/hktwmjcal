@@ -14,11 +14,14 @@ export function calculateHandFan(handTiles: Tile[], meldMap?: Record<string, Mel
   }
   const countedTiles = [...handTiles, ...meldTilesCounted];
 
-  if (countedTiles.length !== 17) {
+  // Account for kongs: some rules allow an extra tile per kong (kong consumes an extra tile),
+  // accept either 17 or 17 + number_of_kongs as valid total counted tiles.
+  const kongCount = meldMap ? Object.values(meldMap).filter(m => m.kind === 'kong').length : 0;
+  if (countedTiles.length !== 17 && countedTiles.length !== 17 + kongCount) {
     return {
       isValid: false,
       totalFan: 0,
-      reason: `目前手牌共有 ${countedTiles.length} 張，需滿 17 張 (16張手牌 + 1張胡牌) 才可計算。`,
+      reason: `目前手牌共有 ${countedTiles.length} 張，需滿 17 張 (16張手牌 + 1張胡牌)${kongCount > 0 ? `，或 ${17 + kongCount} 張（含 ${kongCount} 個槓）` : ''} 才可計算。`,
       breakdown: []
     };
   }
