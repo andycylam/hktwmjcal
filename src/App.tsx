@@ -531,10 +531,10 @@ export default function App() {
       <div className="flex justify-center pt-2">
         <button
           onClick={handleCalculate}
-          disabled={hand.length !== 17}
+          disabled={(hand.length + Object.values(meldMap).reduce((s, m) => s + (m.kind === 'flower' ? 0 : m.tiles.length), 0)) !== 17}
           className={`
             w-full md:w-auto px-10 py-3 font-bold text-lg rounded-xl shadow-lg transition
-            ${hand.length !== 17
+            ${(hand.length + Object.values(meldMap).reduce((s, m) => s + (m.kind === 'flower' ? 0 : m.tiles.length), 0)) !== 17
               ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
               : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 active:scale-95'}
           `}
