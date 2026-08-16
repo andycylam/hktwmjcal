@@ -37,61 +37,126 @@ export default function App() {
     // If nothing selected, attempt to find any valid group in the hand automatically
     if (tiles.length === 0) {
       // New rule: prefer forming groups from the first matching window in hand order.
-      // 1) Scan for kong (4-in-a-row in hand order)
-      for (let i = 0; i <= hand.length - 4; i++) {
-        const slice = hand.slice(i, i + 4);
-        if (slice.length === 4 && slice.every(t => t.suit === slice[0].suit && t.value === slice[0].value)) {
-          const baseKey = `${slice[0].suit}_${slice[0].value}`;
+      // Iterate hand positions in order and at each position prefer kong > pung > shang for that window.
+      for (let i = 0; i < hand.length; i++) {
+        // try kong at this position
+        if (i <= hand.length - 4) {
+          const slice4 = hand.slice(i, i + 4);
+          if (slice4.length === 4 && slice4.every(t => t.suit === slice4[0].suit && t.value === slice4[0].value)) {
+            const baseKey = `${slice4[0].suit}_${slice4[0].value}`;
+            const storageKey = `${baseKey}@kong`;
+            setHand(prev => {
+              const copy = [...prev];
+              copy.splice(i, 4);
+              return copy;
+            });
+            setMeldMap(prev => ({ ...prev, [storageKey]: { kind: 'kong', tiles: slice4, concealed: false } }));
+            setResult(null);
+            return;
+          }
+        }
+
+        // try pung at this position
+        if (i <= hand.length - 3) {
+          const slice3 = hand.slice(i, i + 3);
+          if (slice3.length === 3 && slice3.every(t => t.suit === slice3[0].suit && t.value === slice3[0].value)) {
+            const baseKey = `${slice3[0].suit}_${slice3[0].value}`;
+            const storageKey = `${baseKey}@pung`;
+            setHand(prev => {
+              const copy = [...prev];
+              copy.splice(i, 3);
+              return copy;
+            });
+            setMeldMap(prev => ({ ...prev, [storageKey]: { kind: 'pung', tiles: slice3 } }));
+            setResult(null);
+            return;
+          }
+        }
+
+        // try shang (sequence) at this position
+        if (i <= hand.length - 3) {
+          const slice = hand.slice(i, i + 3);
+          if (slice.length >= 3) {
+            const suit = slice[0].suit;
+            if (slice.every(t => t.suit === suit)) {
+              const vals = slice.map(t => t.value).slice().sort((a, b) => a - b);
+              if (vals[1] === vals[0] + 1 && vals[2] === vals[1] + 1) {
+                const seqKey = `${suit}_${vals[0]}`;
+                const seqStorage = `${seqKey}@shang`;
+                setHand(prev => {
+                  const copy = [...prev];
+                  copy.splice(i, 3);
+                  return copy;
+                });
+                setMeldMap(prev => ({ ...prev, [seqStorage]: { kind: 'shang', tiles: slice } }));
+                setResult(null);
+                return;
+              }
+            }
+          }
+        }
+      }
+
+      // Fallback: previous broader search (by counts and suit scanning)
+      const countMap: Record<string, Tile[]> = {};
+      for (const t of hand) {
+        const k = `${t.suit}_${t.value}`;
+        if (!countMap[k]) countMap[k] = [];
+        countMap[k].push(t);
+      }
+
+      for (const [k, arr] of Object.entries(countMap)) {
+        if (arr.length >= 4) {
+          const baseKey = k;
           const storageKey = `${baseKey}@kong`;
-          setHand(prev => {
-            const copy = [...prev];
-            copy.splice(i, 4);
-            return copy;
-          });
-          setMeldMap(prev => ({ ...prev, [storageKey]: { kind: 'kong', tiles: slice, concealed: false } }));
+          setHand(prev => prev.filter(t => !arr.slice(0, 4).some(x => x.id === t.id)));
+          setMeldMap(prev => ({ ...prev, [storageKey]: { kind: 'kong', tiles: arr.slice(0, 4), concealed: false } }));
           setResult(null);
           return;
         }
       }
 
-      // 2) Scan for pung (3-of-a-kind) in hand order
-      for (let i = 0; i <= hand.length - 3; i++) {
-        const slice = hand.slice(i, i + 3);
-        if (slice.length === 3 && slice.every(t => t.suit === slice[0].suit && t.value === slice[0].value)) {
-          const baseKey = `${slice[0].suit}_${slice[0].value}`;
+      for (const [k, arr] of Object.entries(countMap)) {
+        if (arr.length >= 3) {
+          const baseKey = k;
           const storageKey = `${baseKey}@pung`;
-          setHand(prev => {
-            const copy = [...prev];
-            copy.splice(i, 3);
-            return copy;
-          });
-          setMeldMap(prev => ({ ...prev, [storageKey]: { kind: 'pung', tiles: slice } }));
+          setHand(prev => prev.filter(t => !arr.slice(0, 3).some(x => x.id === t.id)));
+          setMeldMap(prev => ({ ...prev, [storageKey]: { kind: 'pung', tiles: arr.slice(0, 3) } }));
           setResult(null);
           return;
         }
       }
 
-      // 3) Scan for shang (sequence) in hand order using sliding window of 3
-      for (let i = 0; i <= hand.length - 3; i++) {
-        const slice = hand.slice(i, i + 3);
-        if (slice.length < 3) continue;
-        const suit = slice[0].suit;
-        if (!slice.every(t => t.suit === suit)) continue;
-        const vals = slice.map(t => t.value).slice().sort((a, b) => a - b);
-        if (vals[1] === vals[0] + 1 && vals[2] === vals[1] + 1) {
-          const seqKey = `${suit}_${vals[0]}`;
-          const seqStorage = `${seqKey}@shang`;
-          setHand(prev => {
-            const copy = [...prev];
-            copy.splice(i, 3);
-            return copy;
-          });
-          setMeldMap(prev => ({ ...prev, [seqStorage]: { kind: 'shang', tiles: slice } }));
-          setResult(null);
-          return;
+      const suits = Array.from(new Set(hand.map(t => t.suit)));
+      for (const suit of suits) {
+        // only numeric suits can form sequences
+        const vals = hand.filter(t => t.suit === suit).map(t => ({ id: t.id, value: t.value }));
+        if (vals.length < 3) continue;
+        for (let start = 1; start <= 7; start++) {
+          const need = [start, start + 1, start + 2];
+          const taken: Tile[] = [];
+          const remaining: Tile[] = [];
+          for (const t of hand) {
+            if (t.suit === suit && need.includes(t.value) && !taken.some(x => x.value === t.value && x.suit === t.suit)) {
+              taken.push(t);
+            } else {
+              remaining.push(t);
+            }
+          }
+          if (taken.length === 3) {
+            const seqKey = `${suit}_${start}`;
+            const seqStorage = `${seqKey}@shang`;
+            setHand(remaining);
+            setMeldMap(prev => ({ ...prev, [seqStorage]: { kind: 'shang', tiles: taken } }));
+            setResult(null);
+            return;
+          }
         }
       }
 
+      setErrorMessage('請先選擇牌或手牌中沒有可成的組（3/4 張相同或 3 張順子）。');
+      return;
+    }
       // Fallback: previous broader search (by counts and suit scanning)
       const countMap: Record<string, Tile[]> = {};
       for (const t of hand) {
@@ -374,7 +439,23 @@ export default function App() {
     const totalOccurrences = hand.filter(t => `${t.suit}_${t.value}` === key).length + Object.values(meldMap).flatMap(m => m.tiles).filter(t => `${t.suit}_${t.value}` === key).length + (huTileId ? (huTile && `${huTile.suit}_${huTile.value}` === key ? 1 : 0) : 0);
     if (totalOccurrences < 4) {
       // create a synthetic tile to represent the unseen 4th tile
-      const virtualTile: Tile = { id: `${entry.tiles[0].suit}_${entry.tiles[0].value}@virt${Date.now()}`, suit: entry.tiles[0].suit, value: entry.tiles[0].value, label: `${entry.tiles[0].value}${entry.tiles[0].suit}` };
+      // helper to create Chinese label for synthetic tile
+    const CHINESE_NUM = ['零','一','二','三','四','五','六','七','八','九'];
+    const suitLabel = (s: string, v: number) => {
+      if (s === 'wan') return `${CHINESE_NUM[v]}萬`;
+      if (s === 'tong') return `${CHINESE_NUM[v]}筒`;
+      if (s === 'sou') return `${CHINESE_NUM[v]}索`;
+      if (s === 'wind') {
+        const map: Record<number,string> = { 1: '東', 2: '南', 3: '西', 4: '北' };
+        return map[v] || `${v}`;
+      }
+      if (s === 'dragon') {
+        const map: Record<number,string> = { 5: '中', 6: '發', 7: '白' };
+        return map[v] || `${v}`;
+      }
+      return `${v}${s}`;
+    };
+    const virtualTile: Tile = { id: `${entry.tiles[0].suit}_${entry.tiles[0].value}@virt${Date.now()}`, suit: entry.tiles[0].suit, value: entry.tiles[0].value, label: suitLabel(entry.tiles[0].suit, entry.tiles[0].value) };
       setMeldMap(prev => {
         const copy = { ...prev };
         delete copy[storageKey];
