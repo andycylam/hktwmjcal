@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { Tile } from '../src/types/mahjong';
 
 function makeTile(suit: string, value: number, idSuffix: number): Tile {
