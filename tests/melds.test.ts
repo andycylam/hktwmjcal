@@ -8,7 +8,7 @@ function makeTile(suit: string, value: number, idSuffix: number): Tile {
 
 describe('meld behaviors', () => {
   let hand: Tile[] = [];
-  let meldMap: Record<string, { kind: 'kong'|'pung'|'shang'; tiles: Tile[]; concealed?: boolean }> = {};
+  let meldMap: Record<string, { kind: 'kong'|'pung'|'shang'|'flower'; tiles: Tile[]; concealed?: boolean }> = {};
 
   beforeEach(() => {
     hand = [];
