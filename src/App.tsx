@@ -50,7 +50,7 @@ export default function App() {
               copy.splice(i, 4);
               return copy;
             });
-            setMeldMap(prev => ({ ...prev, [storageKey]: { kind: 'kong', tiles: slice4, concealed: false } }));
+            setMeldMap(prev => { let key = storageKey; let i = 1; while (prev[key]) { key = `${storageKey}.${i++}`; } return { ...prev, [key]: { kind: 'kong', tiles: slice4, concealed: false } }; });
             setResult(null);
             return;
           }
@@ -67,7 +67,7 @@ export default function App() {
               copy.splice(i, 3);
               return copy;
             });
-            setMeldMap(prev => ({ ...prev, [storageKey]: { kind: 'pung', tiles: slice3 } }));
+            setMeldMap(prev => { let key = storageKey; let i = 1; while (prev[key]) { key = `${storageKey}.${i++}`; } return { ...prev, [key]: { kind: 'pung', tiles: slice3 } }; });
             setResult(null);
             return;
           }
@@ -88,7 +88,7 @@ export default function App() {
                   copy.splice(i, 3);
                   return copy;
                 });
-                setMeldMap(prev => ({ ...prev, [seqStorage]: { kind: 'shang', tiles: slice } }));
+                setMeldMap(prev => { let key = seqStorage; let i = 1; while (prev[key]) { key = `${seqStorage}.${i++}`; } return { ...prev, [key]: { kind: 'shang', tiles: slice } }; });
                 setResult(null);
                 return;
               }
@@ -110,7 +110,7 @@ export default function App() {
           const baseKey = k;
           const storageKey = `${baseKey}@kong`;
           setHand(prev => prev.filter(t => !arr.slice(0, 4).some(x => x.id === t.id)));
-          setMeldMap(prev => ({ ...prev, [storageKey]: { kind: 'kong', tiles: arr.slice(0, 4), concealed: false } }));
+          setMeldMap(prev => { let key = storageKey; let i = 1; while (prev[key]) { key = `${storageKey}.${i++}`; } return { ...prev, [key]: { kind: 'kong', tiles: arr.slice(0, 4), concealed: false } }; });
           setResult(null);
           return;
         }
@@ -121,7 +121,7 @@ export default function App() {
           const baseKey = k;
           const storageKey = `${baseKey}@pung`;
           setHand(prev => prev.filter(t => !arr.slice(0, 3).some(x => x.id === t.id)));
-          setMeldMap(prev => ({ ...prev, [storageKey]: { kind: 'pung', tiles: arr.slice(0, 3) } }));
+          setMeldMap(prev => { let key = storageKey; let i = 1; while (prev[key]) { key = `${storageKey}.${i++}`; } return { ...prev, [key]: { kind: 'pung', tiles: arr.slice(0, 3) } }; });
           setResult(null);
           return;
         }
@@ -147,7 +147,7 @@ export default function App() {
             const seqKey = `${suit}_${start}`;
             const seqStorage = `${seqKey}@shang`;
             setHand(remaining);
-            setMeldMap(prev => ({ ...prev, [seqStorage]: { kind: 'shang', tiles: taken } }));
+            setMeldMap(prev => { let key = seqStorage; let i = 1; while (prev[key]) { key = `${seqStorage}.${i++}`; } return { ...prev, [key]: { kind: 'shang', tiles: taken } }; });
             setResult(null);
             return;
           }
@@ -310,7 +310,7 @@ export default function App() {
           const seqKey = `${suit}_${start}`;
           const seqStorage = `${seqKey}@shang`;
           setHand(remaining);
-          setMeldMap(prev => ({ ...prev, [seqStorage]: { kind: 'shang', tiles: taken } }));
+          setMeldMap(prev => { let key = seqStorage; let i = 1; while (prev[key]) { key = `${seqStorage}.${i++}`; } return { ...prev, [key]: { kind: 'shang', tiles: taken } }; });
           setResult(null);
           return;
         }

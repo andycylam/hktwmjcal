@@ -104,4 +104,19 @@ describe('auto-create 成組 from hand', () => {
     const result = autoCreateMeldFromHand(hand);
     expect(result).toBeNull();
   });
+
+  it('creates two identical sequences when two windows exist', () => {
+    // hand contains two 1-2-3 sequences
+    const hand = [
+      makeTile('wan',1,1), makeTile('wan',2,2), makeTile('wan',3,3),
+      makeTile('wan',1,4), makeTile('wan',2,5), makeTile('wan',3,6)
+    ];
+    const first = autoCreateMeldFromHand(hand);
+    expect(first).not.toBeNull();
+    expect(first!.kind).toBe('shang');
+    const second = autoCreateMeldFromHand(first!.remaining);
+    expect(second).not.toBeNull();
+    expect(second!.kind).toBe('shang');
+    expect(second!.remaining.length).toBe(0);
+  });
 });
