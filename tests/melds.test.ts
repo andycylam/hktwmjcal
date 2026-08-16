@@ -49,13 +49,19 @@ describe('meld behaviors', () => {
   });
 
   it('zimo and concealed scoring reflected in validator', () => {
-    // build hand such that hand + meld tiles = 17
-    // one kong concealed (4 tiles) so hand should be 13 tiles
+    // Create a concealed kong and remaining tiles that form 3 melds + pair
     meldMap['wan_1@kong'] = { kind: 'kong', tiles: [makeTile('wan',1,100), makeTile('wan',1,101), makeTile('wan',1,102), makeTile('wan',1,103)], concealed: true };
-    const meldTiles = Object.values(meldMap).flatMap(m => m.tiles);
-    const handCount = 17 - meldTiles.length;
-    // avoid creating same value as meld (1) to prevent exceeding 4-of-a-kind
-    hand = new Array(handCount).fill(0).map((_,i) => makeTile('wan', (i % 8) + 2, i));
+    // remaining hand should be 11 tiles (3 melds + pair)
+    hand = [
+      // meld 1
+      makeTile('tong',1,1), makeTile('tong',2,2), makeTile('tong',3,3),
+      // meld 2
+      makeTile('sou',2,4), makeTile('sou',3,5), makeTile('sou',4,6),
+      // meld 3
+      makeTile('wan',2,7), makeTile('wan',3,8), makeTile('wan',4,9),
+      // pair
+      makeTile('wind',1,10), makeTile('wind',1,11)
+    ];
 
     const res = calculateHandFan(hand as Tile[], meldMap, true);
     expect(res.isValid).toBe(true);
