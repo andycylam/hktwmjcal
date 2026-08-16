@@ -429,7 +429,6 @@ export default function App() {
 
   const [prevalentWind, setPrevalentWind] = useState<'east'|'south'|'west'|'north'>('east');
   const [seatWind, setSeatWind] = useState<'east'|'south'|'west'|'north'>('east');
-  const WINDS: Array<'east'|'south'|'west'|'north'> = ['east','south','west','north'];
 
   const handleCalculate = () => {
     const res = calculateHandFan(hand, meldMap, huIsZimo);
