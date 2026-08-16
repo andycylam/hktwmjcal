@@ -15,10 +15,8 @@ jobs:
           node-version: '22'
       - name: Install
         run: npm ci
-      - name: Run tests with coverage
-        env:
-          VITEST_COVERAGE_PROVIDER: c8
-        run: npx vitest run --coverage
+      - name: Run tests with coverage (use c8 wrapper)
+        run: npx c8 --reporter=text --reporter=lcov -- npx vitest run
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
