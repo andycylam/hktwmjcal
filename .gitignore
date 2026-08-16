@@ -45,3 +45,12 @@ test-results/
 
 # Workspace gh config token (private)
 .github/gh-config/gh_token
+
+# Editor / temp extras
+.env.local
+*.orig
+*.bak
+Icon?
+
+# Playwright local browsers
+playwright/.local-browsers/
