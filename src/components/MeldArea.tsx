@@ -25,11 +25,38 @@ export const MeldArea: React.FC<Props> = ({ meldMap, onToggleMeld, onUpgradePung
     );
   }
 
+  const flowerKeys = keys.filter(k => meldMap[k].kind === 'flower');
+  const regularKeys = keys.filter(k => meldMap[k].kind !== 'flower');
+
   return (
     <div className="bg-slate-800 border border-slate-700 rounded-xl p-4 space-y-3">
       <h3 className="text-sm font-semibold text-amber-300">已成組 (Melds)</h3>
       <div className="flex flex-col gap-3">
-        {keys.map(k => {
+        {flowerKeys.length > 0 && (
+          <div>
+            <div className="text-xs text-amber-200 mb-2">花牌</div>
+            <div className="grid grid-cols-2 gap-2">
+              {flowerKeys.map(k => {
+                const m = meldMap[k];
+                const t = m.tiles[0];
+                return (
+                  <div key={k} className="relative w-14 h-14 rounded-lg bg-slate-700 border border-slate-600 flex items-center justify-center text-sm font-bold">
+                    <button
+                      onClick={() => onToggleMeld(k)}
+                      className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-500"
+                      title="取消"
+                    >
+                      ×
+                    </button>
+                    <div>{t?.label}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {regularKeys.map(k => {
           const m = meldMap[k];
           return (
             <div key={k} className="flex items-center gap-3">
@@ -53,8 +80,7 @@ export const MeldArea: React.FC<Props> = ({ meldMap, onToggleMeld, onUpgradePung
                     tabIndex={0}
                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggleConcealed && onToggleConcealed(k); } }}
                     onClick={() => onToggleConcealed && onToggleConcealed(k)}
-                    className={`relative inline-flex items-center h-6 w-10 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-300 ${m.concealed ? 'bg-emerald-400' : 'bg-slate-600'}`}
-                  >
+                    className={`relative inline-flex items-center h-6 w-10 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-300 ${m.concealed ? 'bg-emerald-400' : 'bg-slate-600'}`}>
                     <span className={`absolute left-1 top-0.5 w-4 h-4 bg-white rounded-full shadow transform transition-transform duration-200 ${m.concealed ? 'translate-x-4' : 'translate-x-0'}`} style={{ top: '50%', transform: `${m.concealed ? 'translateY(-50%) translateX(100%)' : 'translateY(-50%) translateX(0)'}` }} />
                   </button>
                 </div>
