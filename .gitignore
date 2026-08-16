@@ -42,3 +42,6 @@ coverage/
 # Local npm cache and test outputs
 .npm-cache/
 test-results/
+
+# Workspace gh config token (private)
+.github/gh-config/gh_token

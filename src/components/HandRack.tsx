@@ -48,7 +48,7 @@ export const HandRack: React.FC<Props> = ({ hand, onRemoveTile, huTileId, onClea
             const isHu = huTileId === t.id;
             const isSelected = selection ? selection.includes(t.id) : false;
             return (
-              <div className="relative p-1">
+              <div key={t.id} className="relative p-1">
                   <button
                     onClick={() => onRemoveTile(t.id)}
                     className={`

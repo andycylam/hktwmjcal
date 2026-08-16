@@ -36,7 +36,63 @@ export default function App() {
 
     // If nothing selected, attempt to find any valid group in the hand automatically
     if (tiles.length === 0) {
-      // try kong (4 of a kind)
+      // New rule: prefer forming groups from the first matching window in hand order.
+      // 1) Scan for kong (4-in-a-row in hand order)
+      for (let i = 0; i <= hand.length - 4; i++) {
+        const slice = hand.slice(i, i + 4);
+        if (slice.length === 4 && slice.every(t => t.suit === slice[0].suit && t.value === slice[0].value)) {
+          const baseKey = `${slice[0].suit}_${slice[0].value}`;
+          const storageKey = `${baseKey}@kong`;
+          setHand(prev => {
+            const copy = [...prev];
+            copy.splice(i, 4);
+            return copy;
+          });
+          setMeldMap(prev => ({ ...prev, [storageKey]: { kind: 'kong', tiles: slice, concealed: false } }));
+          setResult(null);
+          return;
+        }
+      }
+
+      // 2) Scan for pung (3-of-a-kind) in hand order
+      for (let i = 0; i <= hand.length - 3; i++) {
+        const slice = hand.slice(i, i + 3);
+        if (slice.length === 3 && slice.every(t => t.suit === slice[0].suit && t.value === slice[0].value)) {
+          const baseKey = `${slice[0].suit}_${slice[0].value}`;
+          const storageKey = `${baseKey}@pung`;
+          setHand(prev => {
+            const copy = [...prev];
+            copy.splice(i, 3);
+            return copy;
+          });
+          setMeldMap(prev => ({ ...prev, [storageKey]: { kind: 'pung', tiles: slice } }));
+          setResult(null);
+          return;
+        }
+      }
+
+      // 3) Scan for shang (sequence) in hand order using sliding window of 3
+      for (let i = 0; i <= hand.length - 3; i++) {
+        const slice = hand.slice(i, i + 3);
+        if (slice.length < 3) continue;
+        const suit = slice[0].suit;
+        if (!slice.every(t => t.suit === suit)) continue;
+        const vals = slice.map(t => t.value).slice().sort((a, b) => a - b);
+        if (vals[1] === vals[0] + 1 && vals[2] === vals[1] + 1) {
+          const seqKey = `${suit}_${vals[0]}`;
+          const seqStorage = `${seqKey}@shang`;
+          setHand(prev => {
+            const copy = [...prev];
+            copy.splice(i, 3);
+            return copy;
+          });
+          setMeldMap(prev => ({ ...prev, [seqStorage]: { kind: 'shang', tiles: slice } }));
+          setResult(null);
+          return;
+        }
+      }
+
+      // Fallback: previous broader search (by counts and suit scanning)
       const countMap: Record<string, Tile[]> = {};
       for (const t of hand) {
         const k = `${t.suit}_${t.value}`;
@@ -55,7 +111,6 @@ export default function App() {
         }
       }
 
-      // try pung (3 of a kind)
       for (const [k, arr] of Object.entries(countMap)) {
         if (arr.length >= 3) {
           const baseKey = k;
@@ -67,7 +122,6 @@ export default function App() {
         }
       }
 
-      // try shang (sequence)
       const suits = Array.from(new Set(hand.map(t => t.suit)));
       for (const suit of suits) {
         // only numeric suits can form sequences
