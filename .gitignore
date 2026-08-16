@@ -38,3 +38,7 @@ coverage/
 
 # Vite
 .vite/
+
+# Local npm cache and test outputs
+.npm-cache/
+test-results/
