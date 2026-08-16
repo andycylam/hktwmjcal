@@ -15,10 +15,16 @@ jobs:
           node-version: '24'
       - name: Install
         run: npm ci
-      - name: Run tests with coverage (use c8 wrapper)
-        run: npx c8 --reporter=text --reporter=lcov -- npx vitest run
-      - name: Upload coverage report
+      - name: Run tests with coverage (vitest)
+        run: npx vitest run --coverage
+      - name: Upload coverage report artifact
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: coverage
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage/lcov.info
+          flags: unittests
+          fail_ci_if_error: false
