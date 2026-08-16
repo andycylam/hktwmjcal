@@ -15,7 +15,9 @@ function simulate() {
     hand = typeof fnOrVal === 'function' ? fnOrVal(hand) : fnOrVal;
   };
   const setMeldMap = (fnOrVal) => {
+    console.log('setMeldMap called');
     meldMap = typeof fnOrVal === 'function' ? fnOrVal(meldMap) : fnOrVal;
+    console.log('meldMap now', Object.keys(meldMap));
   };
   const setSelection = (arr) => { selection = arr; };
   const toggleSelect = (id) => { selection = selection.includes(id) ? selection.filter(x => x !== id) : [...selection, id]; };
@@ -23,19 +25,23 @@ function simulate() {
   const setHuIsZimo = (v) => { huIsZimo = v; };
 
   function createOrToggleMeld(key, kind) {
+    console.log('createOrToggleMeld called with', key, kind, 'hand=', hand.map(t=>t.id));
     const baseKey = key.includes('@') ? key.split('@')[0] : key;
-    const storageKey = `${baseKey}@${kind}`;
+    // If caller passed a full storage key (contains @), use it for removal; otherwise construct base storage key
+    const storageKey = key.includes('@') ? key : `${baseKey}@${kind}`;
 
     if (kind === 'shang') {
       const [suit, valStr] = baseKey.split('_');
       const value = parseInt(valStr, 10);
-      const existingKey = Object.keys(meldMap).find(k => meldMap[k].kind === 'shang' && meldMap[k].tiles.some(t => `${t.suit}_${t.value}` === baseKey));
-      if (existingKey) {
-        const tiles = meldMap[existingKey].tiles;
+
+      // If an exact meld key was passed and exists, remove that exact meld
+      if (key.includes('@') && meldMap[key] && meldMap[key].kind === 'shang') {
+        const tiles = meldMap[key].tiles;
         setHand(prev => [...prev, ...tiles]);
-        setMeldMap(prev => { const copy = { ...prev }; delete copy[existingKey]; return copy; });
+        setMeldMap(prev => { const copy = { ...prev }; delete copy[key]; return copy; });
         return;
       }
+
 
       for (let start = Math.max(1, value - 2); start <= Math.min(value, 7); start++) {
         const needVals = [start, start + 1, start + 2];
@@ -53,8 +59,17 @@ function simulate() {
         if (taken.length === 3) {
           const seqKey = `${suit}_${start}`;
           const seqStorage = `${seqKey}@shang`;
+          // debug
+          // console.log('creating shang', seqStorage, taken.map(t=>t.id));
           setHand(remaining);
-          setMeldMap(prev => ({ ...prev, [seqStorage]: { kind: 'shang', tiles: taken } }));
+          setMeldMap(prev => {
+            let keyToUse = seqStorage;
+            let i = 1;
+            while (prev[keyToUse]) keyToUse = `${seqStorage}.${i++}`;
+            const out = { ...prev, [keyToUse]: { kind: 'shang', tiles: taken } };
+            // console.log('meldMap after set', Object.keys(out));
+            return out;
+          });
           return;
         }
       }
@@ -78,7 +93,12 @@ function simulate() {
     }
     if (taken.length < need) throw new Error('not enough tiles');
     setHand(remaining);
-    setMeldMap(prev => ({ ...prev, [storageKey]: { kind, tiles: taken } }));
+    setMeldMap(prev => {
+      let keyToUse = storageKey;
+      let i = 1;
+      while (prev[keyToUse]) keyToUse = `${storageKey}.${i++}`;
+      return { ...prev, [keyToUse]: { kind, tiles: taken } };
+    });
   }
 
   // create meld from current selection (auto-detect kong > pung > shang)
@@ -260,6 +280,38 @@ function calculateHandFanLike(handTiles, meldMap, huIsZimo) {
 
   // cleanup
   console.log('Additional meld tests passed');
+})();
+
+// 5) cancellation tests: ensure removing the correct group when multiple identical groups exist
+(function cancelTests() {
+  const s = simulate();
+
+  // create two 1-2-3 sequences in hand and create them into melds
+  s.setHand([
+    makeTile('wan',1,1), makeTile('wan',2,2), makeTile('wan',3,3),
+    makeTile('wan',1,4), makeTile('wan',2,5), makeTile('wan',3,6)
+  ]);
+  // create first sequence (uses window scan)
+  s.createOrToggleMeld('wan_1', 'shang');
+  // create second sequence
+  s.createOrToggleMeld('wan_1', 'shang');
+
+  const mm = s.getMeldMap();
+  console.log('meldMap after creates', mm);
+  const shangKeys = Object.keys(mm).filter(k => mm[k].kind === 'shang');
+  if (shangKeys.length !== 2) throw new Error(`expected 2 shang melds, got ${shangKeys.length}`);
+
+  // Cancel the first shang explicitly by its exact key
+  const keyToRemove = shangKeys[0];
+  console.log('removing key', keyToRemove);
+  s.createOrToggleMeld(keyToRemove, 'shang');
+  const mm2 = s.getMeldMap();
+  console.log('meldMap after remove', mm2);
+  const remainingShangs = Object.keys(mm2).filter(k => mm2[k].kind === 'shang');
+  if (remainingShangs.length !== 1) throw new Error(`expected 1 shang remaining after cancel, got ${remainingShangs.length}`);
+  if (remainingShangs[0] === keyToRemove) throw new Error('removed wrong shang');
+
+  console.log('Cancellation tests passed');
 })();
 
 // Comprehensive tests

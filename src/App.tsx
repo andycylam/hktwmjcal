@@ -268,14 +268,27 @@ export default function App() {
   };
 
   function createOrToggleMeld(key: string, kind: 'kong' | 'pung' | 'shang') {
-    // Normalize key to always use a storage key with @kind suffix
+    // Normalize key and decide whether caller passed a full storage key (with @kind)
     const baseKey = key.includes('@') ? key.split('@')[0] : key;
-    const storageKey = `${baseKey}@${kind}`;
+    const storageKey = key.includes('@') ? key : `${baseKey}@${kind}`;
 
     // Special handling for 'shang' (sequence)
     if (kind === 'shang') {
       const [suit, valStr] = baseKey.split('_');
       const value = parseInt(valStr, 10);
+
+      // If caller passed an exact meld key, remove that exact meld
+      if (key.includes('@') && meldMap[key] && meldMap[key].kind === 'shang') {
+        const tiles = meldMap[key].tiles;
+        setHand(prev => [...prev, ...tiles]);
+        setMeldMap(prev => {
+          const copy = { ...prev };
+          delete copy[key];
+          return copy;
+        });
+        setResult(null);
+        return;
+      }
 
       // If any existing shang meld contains this tile, remove that meld
       const existingKey = Object.keys(meldMap).find(k => meldMap[k].kind === 'shang' && meldMap[k].tiles.some(t => `${t.suit}_${t.value}` === baseKey));
