@@ -33,10 +33,73 @@ export default function App() {
     // auto-detect kind from selection: kong > pung > shang
     setErrorMessage(null);
     const tiles = hand.filter(t => selection.includes(t.id));
+
+    // If nothing selected, attempt to find any valid group in the hand automatically
     if (tiles.length === 0) {
-      setErrorMessage('請先選擇牌再按「成組」。');
+      // try kong (4 of a kind)
+      const countMap: Record<string, Tile[]> = {};
+      for (const t of hand) {
+        const k = `${t.suit}_${t.value}`;
+        if (!countMap[k]) countMap[k] = [];
+        countMap[k].push(t);
+      }
+
+      for (const [k, arr] of Object.entries(countMap)) {
+        if (arr.length >= 4) {
+          const baseKey = k;
+          const storageKey = `${baseKey}@kong`;
+          setHand(prev => prev.filter(t => !arr.slice(0, 4).some(x => x.id === t.id)));
+          setMeldMap(prev => ({ ...prev, [storageKey]: { kind: 'kong', tiles: arr.slice(0, 4), concealed: false } }));
+          setResult(null);
+          return;
+        }
+      }
+
+      // try pung (3 of a kind)
+      for (const [k, arr] of Object.entries(countMap)) {
+        if (arr.length >= 3) {
+          const baseKey = k;
+          const storageKey = `${baseKey}@pung`;
+          setHand(prev => prev.filter(t => !arr.slice(0, 3).some(x => x.id === t.id)));
+          setMeldMap(prev => ({ ...prev, [storageKey]: { kind: 'pung', tiles: arr.slice(0, 3) } }));
+          setResult(null);
+          return;
+        }
+      }
+
+      // try shang (sequence)
+      const suits = Array.from(new Set(hand.map(t => t.suit)));
+      for (const suit of suits) {
+        // only numeric suits can form sequences
+        const vals = hand.filter(t => t.suit === suit).map(t => ({ id: t.id, value: t.value }));
+        if (vals.length < 3) continue;
+        for (let start = 1; start <= 7; start++) {
+          const need = [start, start + 1, start + 2];
+          const taken: Tile[] = [];
+          const remaining: Tile[] = [];
+          for (const t of hand) {
+            if (t.suit === suit && need.includes(t.value) && !taken.some(x => x.value === t.value && x.suit === t.suit)) {
+              taken.push(t);
+            } else {
+              remaining.push(t);
+            }
+          }
+          if (taken.length === 3) {
+            const seqKey = `${suit}_${start}`;
+            const seqStorage = `${seqKey}@shang`;
+            setHand(remaining);
+            setMeldMap(prev => ({ ...prev, [seqStorage]: { kind: 'shang', tiles: taken } }));
+            setResult(null);
+            return;
+          }
+        }
+      }
+
+      setErrorMessage('請先選擇牌或手牌中沒有可成的組（3/4 張相同或 3 張順子）。');
       return;
     }
+
+    // If selection exists, fall back to previous behaviour (detect kong/pung/shang from selection)
 
     // detect kong
     const first = tiles[0];
