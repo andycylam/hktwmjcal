@@ -272,10 +272,7 @@ export default function App() {
     setErrorMessage('手牌中沒有可用的相同牌來升級為槓。');
   };
 
-  // Meld tiles are no longer clickable; all meld modifications are via the meld controls.
-  const handleMeldTileClick = (_meldKey: string, _tileId: string) => {
-    // intentionally no-op
-  };
+  // Meld tiles are no longer clickable; keep no-op handler removed.
 
   const handleCalculate = () => {
     const res = calculateHandFan(hand, meldMap, huIsZimo);
@@ -301,9 +298,13 @@ export default function App() {
         <div>
             <MeldArea
               meldMap={meldMap}
-              onToggleMeld={(k: string) => createOrToggleMeld(k, meldMap[k].kind)}
+              onToggleMeld={(k: string) => {
+                // guard against flower kinds: toggle only for kong/pung/shang
+                const kind = meldMap[k]?.kind;
+                if (!kind || kind === 'flower') return;
+                createOrToggleMeld(k, kind as 'kong' | 'pung' | 'shang');
+              }}
               onUpgradePung={(k: string) => upgradePungToKong(k)}
-              onMeldTileClick={(mk, tid) => handleMeldTileClick(mk, tid)}
               onToggleConcealed={(mk: string) => setMeldMap(prev => {
                 const copy = { ...prev };
                 if (!copy[mk] || copy[mk].kind !== 'kong') return prev;

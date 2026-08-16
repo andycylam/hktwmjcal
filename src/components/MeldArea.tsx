@@ -2,7 +2,7 @@ import React from 'react';
 import { Tile } from '../types/mahjong';
 
 interface MeldEntry {
-  kind: 'kong' | 'pung' | 'shang';
+  kind: 'kong' | 'pung' | 'shang' | 'flower';
   tiles: Tile[];
   concealed?: boolean;
 }
@@ -11,11 +11,10 @@ interface Props {
   meldMap: Record<string, MeldEntry>;
   onToggleMeld: (key: string) => void;
   onUpgradePung?: (key: string) => void;
-  onMeldTileClick?: (meldKey: string, tileId: string) => void;
   onToggleConcealed?: (meldKey: string) => void;
 }
 
-export const MeldArea: React.FC<Props> = ({ meldMap, onToggleMeld, onUpgradePung, onMeldTileClick, onToggleConcealed }) => {
+export const MeldArea: React.FC<Props> = ({ meldMap, onToggleMeld, onUpgradePung, onToggleConcealed }) => {
   const keys = Object.keys(meldMap);
   if (keys.length === 0) {
     return (

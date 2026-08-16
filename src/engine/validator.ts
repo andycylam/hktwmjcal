@@ -1,23 +1,31 @@
 import { Tile, CalculationResult } from '../types/mahjong';
 
-type MeldEntry = { kind: 'kong' | 'pung' | 'shang'; tiles: Tile[]; concealed?: boolean };
+type MeldEntry = { kind: 'kong' | 'pung' | 'shang' | 'flower'; tiles: Tile[]; concealed?: boolean };
 
 export function calculateHandFan(handTiles: Tile[], meldMap?: Record<string, MeldEntry>, huIsZimo?: boolean): CalculationResult {
-  // include meld tiles when validating total tile count
-  const meldTiles: Tile[] = [];
-  if (meldMap) Object.values(meldMap).forEach(m => meldTiles.push(...m.tiles));
-  const allTiles = [...handTiles, ...meldTiles];
+  // include meld tiles when validating total tile count; flower melds do NOT count toward the 17-tile requirement
+  const meldTilesAll: Tile[] = [];
+  const meldTilesCounted: Tile[] = [];
+  if (meldMap) {
+    Object.values(meldMap).forEach(m => {
+      meldTilesAll.push(...m.tiles);
+      if (m.kind !== 'flower') meldTilesCounted.push(...m.tiles);
+    });
+  }
+  const countedTiles = [...handTiles, ...meldTilesCounted];
 
-  if (allTiles.length !== 17) {
+  if (countedTiles.length !== 17) {
     return {
       isValid: false,
       totalFan: 0,
-      reason: `目前手牌共有 ${allTiles.length} 張，需滿 17 張 (16張手牌 + 1張胡牌) 才可計算。`,
+      reason: `目前手牌共有 ${countedTiles.length} 張，需滿 17 張 (16張手牌 + 1張胡牌) 才可計算。`,
       breakdown: []
     };
   }
 
   const counts = new Map<string, number>();
+  // count all tiles including flowers for per-type limits
+  const allTiles = [...handTiles, ...meldTilesAll];
   allTiles.forEach(t => {
     const key = `${t.suit}_${t.value}`;
     counts.set(key, (counts.get(key) || 0) + 1);
