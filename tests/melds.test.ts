@@ -51,7 +51,7 @@ describe('meld behaviors', () => {
   it('zimo and concealed scoring reflected in validator', () => {
     // Create a concealed kong and remaining tiles that form 3 melds + pair
     meldMap['wan_1@kong'] = { kind: 'kong', tiles: [makeTile('wan',1,100), makeTile('wan',1,101), makeTile('wan',1,102), makeTile('wan',1,103)], concealed: true };
-    // remaining hand should be 11 tiles (3 melds + pair)
+    // remaining hand should be 14 tiles (4 melds + pair) to satisfy total 17 when a kong exists
     hand = [
       // meld 1
       makeTile('tong',1,1), makeTile('tong',2,2), makeTile('tong',3,3),
@@ -59,6 +59,8 @@ describe('meld behaviors', () => {
       makeTile('sou',2,4), makeTile('sou',3,5), makeTile('sou',4,6),
       // meld 3
       makeTile('wan',2,7), makeTile('wan',3,8), makeTile('wan',4,9),
+      // meld 4
+      makeTile('tong',4,12), makeTile('tong',5,13), makeTile('tong',6,14),
       // pair
       makeTile('wind',1,10), makeTile('wind',1,11)
     ];

@@ -30,6 +30,10 @@ describe('validator kong-adjusted total', () => {
     handTiles.push(makeTile('wan', 2, 1));
     handTiles.push(makeTile('wan', 3, 1));
     handTiles.push(makeTile('wan', 4, 1));
+    // meld 4: 筒 4-5-6 (add one more meld to satisfy 5 melds total when a kong exists)
+    handTiles.push(makeTile('tong', 4, 2));
+    handTiles.push(makeTile('tong', 5, 2));
+    handTiles.push(makeTile('tong', 6, 2));
     // pair: 風 東 x2
     handTiles.push(makeTile('wind', 1, 1));
     handTiles.push(makeTile('wind', 1, 2));
@@ -92,6 +96,10 @@ describe('validator kong-adjusted total', () => {
     handTiles.push(makeTile('sou', 2, 1));
     handTiles.push(makeTile('sou', 3, 1));
     handTiles.push(makeTile('sou', 4, 1));
+    // meld 4: 筒 4-5-6
+    handTiles.push(makeTile('tong', 4, 3));
+    handTiles.push(makeTile('tong', 5, 3));
+    handTiles.push(makeTile('tong', 6, 3));
     // pair: 東 x2
     handTiles.push(makeTile('wind', 1, 1));
     handTiles.push(makeTile('wind', 1, 2));

@@ -26,7 +26,7 @@ export function calculateHandFan(handTiles: Tile[], meldMap?: Record<string, Mel
   });
 
   // If the UI calls calculate only when counted total matches expected, perform winning-structure validation then.
-  const shouldValidateWinning = countedTiles.length === 17 || countedTiles.length === 17 + kongCount;
+  const shouldValidateWinning = countedTiles.length === 17 + kongCount;
 
   for (const [key, count] of counts.entries()) {
     if (!key.startsWith('flower') && count > 4) {
@@ -40,14 +40,14 @@ export function calculateHandFan(handTiles: Tile[], meldMap?: Record<string, Mel
   }
 
   // For winning structure validation we expect total non-flower counted tiles to equal
-  // 14 + number_of_kongs (4 melds + a pair = 14 tiles; each kong consumes an extra tile).
-  const totalTilesNeeded = 14 + kongCount;
+  // 17 + number_of_kongs (5 melds + a pair = 17 tiles; each kong consumes an extra tile).
+  const totalTilesNeeded = 17 + kongCount;
 
   if (countedTiles.length < totalTilesNeeded) {
     return {
       isValid: false,
       totalFan: 0,
-      reason: `目前手牌共有 ${countedTiles.length} 張，需滿 ${totalTilesNeeded} 張 (完成 4 組與一對，含 ${kongCount} 個槓) 才可計算。`,
+      reason: `目前手牌共有 ${countedTiles.length} 張，需滿 ${totalTilesNeeded} 張 (完成 5 組與一對，含 ${kongCount} 個槓) 才可計算。`,
       breakdown: []
     };
   }
@@ -63,13 +63,13 @@ export function calculateHandFan(handTiles: Tile[], meldMap?: Record<string, Mel
   // If the caller (UI) indicated strict validation (countedTiles matches UI expectations), validate winning hand structure.
   if (shouldValidateWinning) {
     // Validate winning hand structure: with existing melds, remaining tiles must be partitionable into
-    // the remaining number of melds and exactly one pair. Standard rule: total melds == 4 (kongs count as one meld).
+    // the remaining number of melds and exactly one pair. Standard rule: total melds == 5 (kongs count as one meld).
     const nonFlowerMelds = meldMap ? Object.values(meldMap).filter(m => m.kind !== 'flower') : [];
     const existingMeldCount = nonFlowerMelds.length;
-    const neededMelds = 4 - existingMeldCount;
+    const neededMelds = 5 - existingMeldCount;
 
     if (neededMelds < 0) {
-      return { isValid: false, totalFan: 0, reason: '成組數量超過允許的 4 組，無法計算。', breakdown: [] };
+      return { isValid: false, totalFan: 0, reason: '成組數量超過允許的 5 組，無法計算。', breakdown: [] };
     }
 
     const remainingTiles = handTiles.slice(); // only handTiles were passed in (melds are in meldMap)
