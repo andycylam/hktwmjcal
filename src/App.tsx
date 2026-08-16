@@ -7,6 +7,7 @@ import { calculateHandFan } from './engine/validator';
 import { HuArea } from './components/HuArea';
 import MeldArea from './components/MeldArea';
 import ErrorDialog from './components/ErrorDialog';
+import WindSelector from './components/WindSelector';
 
 const MAX_TILES_PER_TYPE = 4;
 
@@ -426,6 +427,10 @@ export default function App() {
 
   // Meld tiles are no longer clickable; keep no-op handler removed.
 
+  const [prevalentWind, setPrevalentWind] = useState<'east'|'south'|'west'|'north'>('east');
+  const [seatWind, setSeatWind] = useState<'east'|'south'|'west'|'north'>('east');
+  const WINDS: Array<'east'|'south'|'west'|'north'> = ['east','south','west','north'];
+
   const handleCalculate = () => {
     const res = calculateHandFan(hand, meldMap, huIsZimo);
     setResult(res);
@@ -505,6 +510,9 @@ export default function App() {
           </div>
 
           <div className="w-40">
+            <div className="space-y-2">
+              <WindSelector prevalent={prevalentWind} seat={seatWind} onSetPrevalent={setPrevalentWind} onSetSeat={setSeatWind} />
+            </div>
             <HuArea huTile={huTile} onClearHu={() => { setHuTileId(null); setHuIsZimo(false); }} huIsZimo={huIsZimo} onToggleZimo={(next: boolean) => setHuIsZimo(next)} />
           </div>
         </div>
