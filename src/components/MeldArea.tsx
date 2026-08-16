@@ -35,12 +35,12 @@ export const MeldArea: React.FC<Props> = ({ meldMap, onToggleMeld, onUpgradePung
         {flowerKeys.length > 0 && (
           <div>
             <div className="text-xs text-amber-200 mb-2">花牌</div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="flex flex-wrap gap-2">
               {flowerKeys.map(k => {
                 const m = meldMap[k];
                 const t = m.tiles[0];
                 return (
-                  <div key={k} className="relative w-14 h-14 rounded-lg bg-slate-700 border border-slate-600 flex items-center justify-center text-sm font-bold">
+                  <div key={k} className="relative w-12 h-12 rounded-lg bg-slate-700 border border-slate-600 flex items-center justify-center text-sm font-bold">
                     <button
                       onClick={() => onToggleMeld(k)}
                       className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-500"
