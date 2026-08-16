@@ -3,7 +3,9 @@ import { Tile, Suit } from '../types/mahjong';
 
 interface Props {
   onSelectTile: (tile: Tile) => void;
+  onAddFlower?: (tile: Tile) => void;
   hand: Tile[];
+  meldMap?: Record<string, { kind: string; tiles: Tile[] }>;
 }
 
 const MAX_PER_TYPE = 4;
@@ -90,8 +92,17 @@ function getTileCounts(hand: Tile[]): Map<string, number> {
   return counts;
 }
 
-export const TilePicker: React.FC<Props> = ({ onSelectTile, hand }) => {
+export const TilePicker: React.FC<Props> = ({ onSelectTile, onAddFlower, hand, meldMap }) => {
+  // Count tiles from hand + meldMap so flower buttons reflect already-added flowers
   const counts = getTileCounts(hand);
+  if (meldMap) {
+    Object.values(meldMap).forEach(m => {
+      m.tiles.forEach(t => {
+        const key = `${t.suit}_${t.value}`;
+        counts.set(key, (counts.get(key) || 0) + 1);
+      });
+    });
+  }
 
   return (
     <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 space-y-4">
@@ -110,14 +121,19 @@ export const TilePicker: React.FC<Props> = ({ onSelectTile, hand }) => {
               return (
                 <button
                   key={key}
-                  onClick={() =>
-                    onSelectTile({
+                  onClick={() => {
+                    const tile = {
                       id: `${key}_${Date.now()}_${idx}`,
                       suit: group.suit,
                       value: item.val,
                       label: item.label
-                    })
-                  }
+                    } as Tile;
+                    if (group.suit === 'flower') {
+                      if (onAddFlower) onAddFlower(tile);
+                      return;
+                    }
+                    onSelectTile(tile);
+                  }}
                   disabled={effectiveMaxed}
                   className={`
                     relative w-12 h-16 rounded-lg shadow font-bold flex items-center justify-center text-lg

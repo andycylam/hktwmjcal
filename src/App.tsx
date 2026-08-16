@@ -22,7 +22,7 @@ export default function App() {
   const [huIsZimo, setHuIsZimo] = useState<boolean>(false);
   const huTile = hand.find(t => t.id === huTileId) || null;
   // declared melds tracked in meldMap
-  const [meldMap, setMeldMap] = useState<Record<string, { kind: 'kong' | 'pung' | 'shang'; tiles: Tile[]; concealed?: boolean }>>({});
+  const [meldMap, setMeldMap] = useState<Record<string, { kind: 'kong' | 'pung' | 'shang' | 'flower'; tiles: Tile[]; concealed?: boolean }>>({});
   const [selection, setSelection] = useState<string[]>([]);
 
   const toggleSelect = (id: string) => {
@@ -111,8 +111,8 @@ export default function App() {
       return;
     }
 
-    // Check total tile limit (hand + melds). Base 17, each declared kong increases limit by 1.
-    const meldCount = Object.values(meldMap).reduce((s, m) => s + m.tiles.length, 0);
+    // Check total tile limit (hand + melds). Flowers do NOT count toward total.
+    const meldCount = Object.values(meldMap).reduce((s, m) => s + (m.kind === 'flower' ? 0 : m.tiles.length), 0);
     const totalTiles = hand.length + meldCount;
     const kongCount = Object.values(meldMap).filter(m => m.kind === 'kong').length;
     const totalLimit = 17 + kongCount;
@@ -234,70 +234,47 @@ export default function App() {
     if (!entry || entry.kind !== 'pung') return;
     // Need one matching tile in hand to complete kong
     const tileKey = `${entry.tiles[0].suit}_${entry.tiles[0].value}`;
-    const idx = hand.findIndex(t => `${t.suit}_${t.value}` === tileKey);
-    if (idx === -1) {
-      setErrorMessage('手牌中沒有可用的相同牌來升級為槓。');
+    // Prefer consuming a tile from hand that's not currently set as hu
+    const idx = hand.findIndex(t => `${t.suit}_${t.value}` === tileKey && t.id !== huTileId);
+    if (idx !== -1) {
+      const tileToMove = hand[idx];
+      const remainingHand = [...hand.slice(0, idx), ...hand.slice(idx + 1)];
+      // replace pung storageKey with kong storage key
+      setMeldMap(prev => {
+        const copy = { ...prev };
+        delete copy[storageKey];
+        const baseKey = storageKey.split('@')[0];
+        copy[`${baseKey}@kong`] = { kind: 'kong', tiles: [...entry.tiles, tileToMove] };
+        return copy;
+      });
+      setHand(remainingHand);
+      setResult(null);
       return;
     }
-    const tileToMove = hand[idx];
-    const remainingHand = [...hand.slice(0, idx), ...hand.slice(idx + 1)];
-    // replace pung storageKey with kong storage key
-    setMeldMap(prev => {
-      const copy = { ...prev };
-      delete copy[storageKey];
-      const baseKey = storageKey.split('@')[0];
-      copy[`${baseKey}@kong`] = { kind: 'kong', tiles: [...entry.tiles, tileToMove] };
-      return copy;
-    });
-    setHand(remainingHand);
-    setResult(null);
+
+    // If no tile in hand, allow upgrade if there exists an unused tile (total occurrences < 4)
+    const key = `${entry.tiles[0].suit}_${entry.tiles[0].value}`;
+    const totalOccurrences = hand.filter(t => `${t.suit}_${t.value}` === key).length + Object.values(meldMap).flatMap(m => m.tiles).filter(t => `${t.suit}_${t.value}` === key).length + (huTileId ? (huTile && `${huTile.suit}_${huTile.value}` === key ? 1 : 0) : 0);
+    if (totalOccurrences < 4) {
+      // create a synthetic tile to represent the unseen 4th tile
+      const virtualTile: Tile = { id: `${entry.tiles[0].suit}_${entry.tiles[0].value}@virt${Date.now()}`, suit: entry.tiles[0].suit, value: entry.tiles[0].value, label: `${entry.tiles[0].value}${entry.tiles[0].suit}` };
+      setMeldMap(prev => {
+        const copy = { ...prev };
+        delete copy[storageKey];
+        const baseKey = storageKey.split('@')[0];
+        copy[`${baseKey}@kong`] = { kind: 'kong', tiles: [...entry.tiles, virtualTile] };
+        return copy;
+      });
+      setResult(null);
+      return;
+    }
+
+    setErrorMessage('手牌中沒有可用的相同牌來升級為槓。');
   };
 
-  const handleMeldTileClick = (meldKey: string, tileId: string) => {
-    const entry = meldMap[meldKey];
-    if (!entry) return;
-
-    // If kong: downgrade to pung by removing one tile from meld back to hand
-    if (entry.kind === 'kong') {
-      // remove the clicked tile from meld and convert to pung (3 tiles)
-      const remainingTiles = entry.tiles.filter(t => t.id !== tileId);
-      const baseKey = meldKey.split('@')[0];
-      setMeldMap(prev => {
-        const copy = { ...prev };
-        delete copy[meldKey];
-        // create pung entry
-        copy[`${baseKey}@pung`] = { kind: 'pung', tiles: remainingTiles };
-        return copy;
-      });
-      // add clicked tile back to hand (avoid duplicates)
-      const tile = entry.tiles.find(t => t.id === tileId);
-      if (tile) setHand(prev => {
-        const ids = new Set(prev.map(t => t.id));
-        if (ids.has(tile.id)) return prev;
-        return [...prev, tile];
-      });
-      setResult(null);
-      return;
-    }
-
-    // For pung or shang: remove the clicked tile from the meld (discard it),
-    // and move the remaining tiles of the meld back to the hand.
-    if (entry.kind === 'pung' || entry.kind === 'shang') {
-      const remainingTiles = entry.tiles.filter(t => t.id !== tileId);
-      setMeldMap(prev => {
-        const copy = { ...prev };
-        delete copy[meldKey];
-        return copy;
-      });
-      if (remainingTiles.length > 0) setHand(prev => {
-        const ids = new Set(prev.map(t => t.id));
-        const toAdd = remainingTiles.filter(t => !ids.has(t.id));
-        if (toAdd.length === 0) return prev;
-        return [...prev, ...toAdd];
-      });
-      setResult(null);
-      return;
-    }
+  // Meld tiles are no longer clickable; all meld modifications are via the meld controls.
+  const handleMeldTileClick = (_meldKey: string, _tileId: string) => {
+    // intentionally no-op
   };
 
   const handleCalculate = () => {
@@ -372,7 +349,13 @@ export default function App() {
 
         {/* Row 3: Tile selector (single column) */}
         <div>
-          <TilePicker onSelectTile={handleSelectTile} hand={hand} />
+          <TilePicker onSelectTile={handleSelectTile} onAddFlower={(t) => {
+            // Add flower directly to melds as a 'flower' meld entry
+            const key = `${t.suit}_${t.value}`;
+            const storageKey = `${key}@flower`;
+            setMeldMap(prev => ({ ...prev, [storageKey]: { kind: 'flower', tiles: (prev[storageKey]?.tiles || []).concat([t]) } }));
+          }} hand={hand} meldMap={meldMap} />
+          
         </div>
       </div>
 
