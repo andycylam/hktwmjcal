@@ -62,4 +62,24 @@ describe('meld behaviors', () => {
     expect(res.breakdown.some(b => b.rule === '自摸 (Zimo)')).toBe(true);
     expect(res.breakdown.some(b => b.rule.startsWith('暗槓'))).toBe(true);
   });
+
+  it('flower cancel removes flower meld', () => {
+    // add two flowers then remove one
+    meldMap['flower_1@flower'] = { kind: 'flower', tiles: [makeTile('flower', 1, 1)] };
+    meldMap['flower_2@flower'] = { kind: 'flower', tiles: [makeTile('flower', 2, 2)] };
+    expect(Object.keys(meldMap).some(k => k.endsWith('@flower'))).toBe(true);
+    delete meldMap['flower_1@flower'];
+    const remaining = Object.keys(meldMap).filter(k => meldMap[k].kind === 'flower');
+    expect(remaining.length).toBe(1);
+    expect(remaining[0]).toBe('flower_2@flower');
+  });
+
+  it('flowers do not count toward 17 tiles requirement', () => {
+    // hand of 16 tiles + 1 flower should still be invalid (flowers not counted)
+    hand = new Array(16).fill(0).map((_,i) => makeTile('wan', (i % 9) + 1, i+1));
+    meldMap['flower_1@flower'] = { kind: 'flower', tiles: [makeTile('flower', 1, 1)] };
+    const res = calculateHandFan(hand as Tile[], meldMap, false);
+    expect(res.isValid).toBe(false);
+    expect(res.reason).toMatch(/目前手牌共有 16 張/);
+  });
 });

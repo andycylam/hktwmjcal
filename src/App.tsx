@@ -451,9 +451,18 @@ export default function App() {
             <MeldArea
               meldMap={meldMap}
               onToggleMeld={(k: string) => {
-                // guard against flower kinds: toggle only for kong/pung/shang
                 const kind = meldMap[k]?.kind;
-                if (!kind || kind === 'flower') return;
+                if (!kind) return;
+                // Allow removing flower melds directly (UI cancel on flowers should work)
+                if (kind === 'flower') {
+                  setMeldMap(prev => {
+                    const copy = { ...prev };
+                    delete copy[k];
+                    return copy;
+                  });
+                  setResult(null);
+                  return;
+                }
                 createOrToggleMeld(k, kind as 'kong' | 'pung' | 'shang');
               }}
               onUpgradePung={(k: string) => upgradePungToKong(k)}
@@ -477,7 +486,7 @@ export default function App() {
                 meldMap={meldMap}
                 onToggleSelect={toggleSelect}
                 selection={selection}
-                totalTiles={hand.length + Object.values(meldMap).reduce((s, m) => s + m.tiles.length, 0)}
+                totalTiles={hand.length + Object.values(meldMap).reduce((s, m) => s + (m.kind === 'flower' ? 0 : m.tiles.length), 0)}
                 totalLimit={17 + Object.values(meldMap).filter(m => m.kind === 'kong').length}
               />
           </div>
