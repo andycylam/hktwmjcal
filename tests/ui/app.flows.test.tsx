@@ -84,9 +84,9 @@ describe('App flows (melds, flowers, hu)', () => {
     const p = within(picker);
     await user.click(p.getByText('一萬'));
 
-    // select the tile in hand
-    const selectButtons = screen.getAllByTitle(/選取/);
-    await user.click(selectButtons[0]);
+    // select the tile in hand (target by title to avoid ambiguous buttons)
+    const selectButton = screen.getByTitle('選取 一萬');
+    await user.click(selectButton);
 
     // click Set 胡 (there may be multiple buttons; pick the first)
     const setHuBtn = screen.getAllByText('Set 胡')[0];
@@ -112,9 +112,9 @@ describe('App flows (melds, flowers, hu)', () => {
     const p = within(picker);
     await user.click(p.getByText('一萬'));
 
-    // select and set as hu
-    const selectButtons = screen.getAllByTitle(/選取/);
-    await user.click(selectButtons[0]);
+    // select and set as hu (target selection button by tile label)
+    const selectButton = screen.getByTitle('選取 一萬');
+    await user.click(selectButton);
     const setHuBtn = screen.getAllByText('Set 胡')[0];
     await user.click(setHuBtn);
 
