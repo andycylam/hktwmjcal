@@ -54,9 +54,11 @@ describe('App flows (melds, flowers, hu)', () => {
     expect(screen.getAllByText('🀦1').length).toBeGreaterThan(0);
     expect(screen.getAllByText('🀦2').length).toBeGreaterThan(0);
 
-    // find the flower tile element rendered in the meld area (look for an ancestor with the meld tile bg class)
-    const allF1 = screen.getAllByText('🀦1');
-    let flower1El = allF1.find(el => el.closest('div')?.className.includes('bg-slate-700')) || allF1[0];
+    // find the melds container and look for the flower tile inside it
+    const meldHeader = screen.getByText('已成組 (Melds)');
+    const meldContainer = meldHeader.closest('div')!;
+    const allF1 = within(meldContainer).getAllByText('🀦1');
+    const flower1El = allF1[0];
     // climb ancestors to find the tile container that has the cancel button
     let node: HTMLElement | null = flower1El as HTMLElement;
     while (node && !node.className?.includes('bg-slate-700')) {
@@ -67,7 +69,7 @@ describe('App flows (melds, flowers, hu)', () => {
     await user.click(cancelBtn);
 
     // 🀦1 should be removed from the meld area; there may still be occurrences in the picker
-    const remainingF1 = screen.queryAllByText('🀦1').filter(el => el.closest('div')?.className.includes('bg-slate-700'));
+    const remainingF1 = within(meldContainer).queryAllByText('🀦1');
     expect(remainingF1.length).toBe(0);
 
     // 🀦2 should still exist (either in melds or picker)
