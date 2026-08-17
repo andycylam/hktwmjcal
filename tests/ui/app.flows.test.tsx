@@ -134,15 +134,15 @@ describe('App flows (melds, flowers, hu)', () => {
     const huTiles = within(huContainer).getAllByText('一萬');
     expect(huTiles.length).toBeGreaterThan(0);
 
-    // hand rack should not display the hu tile while it's set
-    expect(within(handContainer).queryByText('一萬')).toBeNull();
+    // hand rack should not display the hu tile while it's set (by title)
+    expect(within(handContainer).queryByTitle('選取 一萬')).toBeNull();
 
     // click the remove button on HuArea to return it to hand
     const removeBtn = within(huContainer).getByTitle('移除胡牌，回到手牌 一萬');
     await user.click(removeBtn);
 
-    // now the hand should display the tile again (one or more occurrences acceptable)
-    const handTiles = within(handContainer).getAllByText('一萬');
+    // now the hand should display the tile again (by title)
+    const handTiles = within(handContainer).getAllByTitle('選取 一萬');
     expect(handTiles.length).toBeGreaterThan(0);
   });
 });
