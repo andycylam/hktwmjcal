@@ -497,43 +497,50 @@ export default function App() {
             />
           </div>
 
-          {/* Current hand */}
-          <div>
-            <HandRack
-              hand={hand}
-              onRemoveTile={handleRemoveTile}
-              huTileId={huTileId}
-              onClear={handleClear}
-              meldMap={meldMap}
-              onToggleSelect={toggleSelect}
-              selection={selection}
-              totalTiles={hand.length + Object.values(meldMap).reduce((s, m) => s + (m.kind === 'flower' ? 0 : m.tiles.length), 0)}
-              totalLimit={17 + Object.values(meldMap).filter(m => m.kind === 'kong').length}
-            />
-          </div>
+          {/* Row: Current hand (flex-1), Hu tile (fixed), Action area (fixed) */}
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <HandRack
+                hand={hand}
+                onRemoveTile={handleRemoveTile}
+                huTileId={huTileId}
+                onClear={handleClear}
+                meldMap={meldMap}
+                onToggleSelect={toggleSelect}
+                selection={selection}
+                totalTiles={hand.length + Object.values(meldMap).reduce((s, m) => s + (m.kind === 'flower' ? 0 : m.tiles.length), 0)}
+                totalLimit={17 + Object.values(meldMap).filter(m => m.kind === 'kong').length}
+              />
+            </div>
 
-          {/* Hu tile */}
-          <div>
-            <HuArea huTile={huTile} onRemoveHu={() => { setHuTileId(null); setHuIsZimo(false); }} huIsZimo={huIsZimo} onToggleZimo={(next: boolean) => setHuIsZimo(next)} />
-          </div>
+            <div className="w-48">
+              <HuArea huTile={huTile} onRemoveHu={() => { setHuTileId(null); setHuIsZimo(false); }} huIsZimo={huIsZimo} onToggleZimo={(next: boolean) => setHuIsZimo(next)} />
+            </div>
 
-          {/* Action area */}
-          <div>
-            <div className="bg-slate-900 border border-slate-700 rounded-lg p-3">
-              <div className="flex gap-2 mb-2">
-                <button onClick={() => createMeldFromSelection()} className="flex-1 px-2 py-1 bg-emerald-600 text-white rounded">成組</button>
+            <div className="w-72">
+              <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 h-full flex flex-col justify-between">
+                <div>
+                  <div className="flex gap-2 mb-2">
+                    <button onClick={() => createMeldFromSelection()} className="flex-1 px-2 py-1 bg-emerald-600 text-white rounded">成組</button>
+                  </div>
+                  <div className="flex gap-2 mb-2">
+                    <button onClick={() => createHuFromSelection()} className="flex-1 px-2 py-1 bg-amber-400 text-slate-900 rounded">Set 胡</button>
+                    <button onClick={() => { setSelection([]); setErrorMessage(null); }} className="flex-1 px-2 py-1 bg-slate-700 text-white rounded">Clear Selection</button>
+                  </div>
+                </div>
+                <div className="text-slate-400 text-sm">已選：{selection.length} 張</div>
               </div>
-              <div className="flex gap-2 mb-2">
-                <button onClick={() => createHuFromSelection()} className="flex-1 px-2 py-1 bg-amber-400 text-slate-900 rounded">Set 胡</button>
-                <button onClick={() => { setSelection([]); setErrorMessage(null); }} className="flex-1 px-2 py-1 bg-slate-700 text-white rounded">Clear Selection</button>
-              </div>
-              <div className="text-slate-400 text-sm">已選：{selection.length} 張</div>
             </div>
           </div>
 
-          {/* Wind / Seat */}
-          <div>
-            <WindSelector prevalent={prevalentWind} seat={seatWind} onSetPrevalent={setPrevalentWind} onSetSeat={setSeatWind} />
+          {/* Row: Wind and Seat side-by-side */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <WindSelector prevalent={prevalentWind} seat={seatWind} onSetPrevalent={setPrevalentWind} onSetSeat={setSeatWind} />
+            </div>
+            <div>
+              {/* Placeholder if additional right-side controls needed; keeping symmetry */}
+            </div>
           </div>
         </div>
       </div>
