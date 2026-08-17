@@ -92,6 +92,33 @@ describe('validator kong-adjusted total', () => {
     expect(res.totalFan).toBeGreaterThanOrEqual(1);
   });
 
+  it('deduplicates equivalent valid decompositions that differ only by sequence ordering', () => {
+    const handTiles: Tile[] = [];
+    handTiles.push(makeTile('wan', 1, 1));
+    handTiles.push(makeTile('wan', 1, 2));
+    handTiles.push(makeTile('wan', 1, 3));
+    handTiles.push(makeTile('wan', 3, 4));
+    handTiles.push(makeTile('wan', 3, 5));
+    handTiles.push(makeTile('wan', 3, 6));
+    handTiles.push(makeTile('wan', 3, 7));
+    handTiles.push(makeTile('wan', 4, 8));
+    handTiles.push(makeTile('wan', 5, 9));
+    handTiles.push(makeTile('wan', 4, 10));
+    handTiles.push(makeTile('wan', 5, 11));
+    handTiles.push(makeTile('wan', 6, 12));
+    handTiles.push(makeTile('wan', 7, 13));
+    handTiles.push(makeTile('wan', 8, 14));
+    handTiles.push(makeTile('wan', 9, 15));
+    handTiles.push(makeTile('wan', 7, 16));
+    handTiles.push(makeTile('wan', 7, 17));
+
+    const res = calculateHandFan(handTiles, undefined, false);
+    expect(res.isValid).toBe(true);
+    expect(res.possibleCombinations).toBeDefined();
+    expect(res.possibleCombinations?.length).toBe(1);
+    expect(res.possibleCombinations?.[0]).toBe('1萬x3, 3萬x3, 3萬-4萬-5萬, 4萬-5萬-6萬, 7萬-8萬-9萬, 7萬x2');
+  });
+
   it('rejects when counted tiles exceed 17 + number_of_kongs', () => {
     // Create a kong (4 tiles)
     const kongTiles: Tile[] = [

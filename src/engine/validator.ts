@@ -139,6 +139,42 @@ export function calculateHandFan(handTiles: Tile[], meldMap?: Record<string, Mel
       return labels.join('-');
     }
 
+    function normalizeMeldPart(part: string): { sortKey: number; pair: boolean; token: string } {
+      const suitMatch = part.match(/[萬筒索風字]/)?.[0] ?? '';
+      const numbers = [...part.matchAll(/\d+/g)].map(Number);
+      const firstNumber = numbers[0] ?? 0;
+
+      if (part.includes('x3')) {
+        return { sortKey: firstNumber, pair: false, token: `${firstNumber}${suitMatch}x3` };
+      }
+
+      if (part.includes('x2')) {
+        return { sortKey: firstNumber, pair: true, token: `${firstNumber}${suitMatch}x2` };
+      }
+
+      const normalizedNumbers = [...numbers].sort((a, b) => a - b);
+      return {
+        sortKey: normalizedNumbers[0] ?? 0,
+        pair: false,
+        token: normalizedNumbers.map(value => `${value}${suitMatch}`).join('-')
+      };
+    }
+
+    function canonicalizeCombination(combo: string): string {
+      const parts = combo.split(', ').map(normalizeMeldPart).sort((a, b) => {
+        if (a.pair && !b.pair) return 1;
+        if (!a.pair && b.pair) return -1;
+        if (a.sortKey !== b.sortKey) return a.sortKey - b.sortKey;
+
+        const aRank = a.token.includes('x3') ? 0 : a.token.includes('x2') ? 2 : 1;
+        const bRank = b.token.includes('x3') ? 0 : b.token.includes('x2') ? 2 : 1;
+        if (aRank !== bRank) return aRank - bRank;
+        return a.token.localeCompare(b.token);
+      });
+
+      return parts.map(part => part.token).join(', ');
+    }
+
     function collectMeldCombinations(countMap: Map<string, number>, visited = new Set<string>(), current: string[] = []): string[][] {
       const stateKey = [...countMap.entries()]
         .filter(([, v]) => v > 0)
@@ -267,7 +303,7 @@ export function calculateHandFan(handTiles: Tile[], meldMap?: Record<string, Mel
       }
     }
 
-    possibleCombinations = [...new Set(validCombinations)].sort((a, b) => {
+    possibleCombinations = [...new Set(validCombinations.map(canonicalizeCombination))].sort((a, b) => {
       const aParts = a.split(', ');
       const bParts = b.split(', ');
       const aKey = aParts.map(part => Number((part.match(/\d+/) || ['0'])[0])).join('|');
