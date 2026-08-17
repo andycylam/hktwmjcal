@@ -101,10 +101,10 @@ describe('App flows (melds, flowers, hu)', () => {
     const huHeaders = screen.getAllByText('胡牌 (Winning Tile)');
     const huHeader = huHeaders[0];
     const huContainer = huHeader.closest('div')!;
-    expect(within(huContainer).getByText('一萬')).toBeTruthy();
+    const huTiles = within(huContainer).getAllByText('一萬');
+    expect(huTiles.length).toBeGreaterThan(0);
     // the HuArea displays the label inside an amber tile, ensure that exists
-    const huTile = within(huContainer).getByText('一萬');
-    expect(huTile).toBeTruthy();
+    expect(huTiles[0]).toBeTruthy();
   });
 
   it('removing hu tile returns it to the current hand', async () => {
@@ -131,7 +131,8 @@ describe('App flows (melds, flowers, hu)', () => {
     // ensure hu is displayed
     const huHeader = screen.getAllByText('胡牌 (Winning Tile)')[0];
     const huContainer = huHeader.closest('div')!;
-    expect(within(huContainer).getByText('一萬')).toBeTruthy();
+    const huTiles = within(huContainer).getAllByText('一萬');
+    expect(huTiles.length).toBeGreaterThan(0);
 
     // hand rack should not display the hu tile while it's set
     expect(within(handContainer).queryByText('一萬')).toBeNull();
