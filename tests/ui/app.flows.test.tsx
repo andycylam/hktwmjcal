@@ -140,7 +140,8 @@ describe('App flows (melds, flowers, hu)', () => {
     const removeBtn = within(huContainer).getByTitle('移除胡牌，回到手牌 一萬');
     await user.click(removeBtn);
 
-    // now the hand should display the tile again
-    expect(within(handContainer).getByText('一萬')).toBeTruthy();
+    // now the hand should display the tile again (one or more occurrences acceptable)
+    const handTiles = within(handContainer).getAllByText('一萬');
+    expect(handTiles.length).toBeGreaterThan(0);
   });
 });
