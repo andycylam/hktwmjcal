@@ -119,6 +119,24 @@ describe('validator kong-adjusted total', () => {
     expect(res.possibleCombinations?.[0]).toBe('1萬x3, 3萬x3, 3萬-4萬-5萬, 4萬-5萬-6萬, 7萬-8萬-9萬, 7萬x2');
   });
 
+  it('shows multiple valid decompositions when the same hand can pair on different tiles', () => {
+    const handTiles: Tile[] = [];
+    for (let i = 0; i < 2; i++) handTiles.push(makeTile('wan', 5, i + 1));
+    for (let i = 0; i < 3; i++) handTiles.push(makeTile('wan', 6, i + 10));
+    for (let i = 0; i < 4; i++) handTiles.push(makeTile('wan', 7, i + 20));
+    for (let i = 0; i < 4; i++) handTiles.push(makeTile('wan', 8, i + 30));
+    for (let i = 0; i < 4; i++) handTiles.push(makeTile('wan', 9, i + 40));
+
+    const res = calculateHandFan(handTiles, undefined, false);
+    expect(res.isValid).toBe(true);
+    expect(res.possibleCombinations).toBeDefined();
+    expect(res.possibleCombinations?.length).toBeGreaterThan(1);
+    expect(res.possibleCombinations).toEqual(expect.arrayContaining([
+      expect.stringContaining('5萬x2'),
+      expect.stringContaining('8萬x2')
+    ]));
+  });
+
   it('rejects when counted tiles exceed 17 + number_of_kongs', () => {
     // Create a kong (4 tiles)
     const kongTiles: Tile[] = [
