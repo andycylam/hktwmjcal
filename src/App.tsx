@@ -454,9 +454,22 @@ export default function App() {
 
       <ErrorDialog message={errorMessage} onClose={() => setErrorMessage(null)} />
 
-      <div className="space-y-4">
-        {/* Row 1: Melds */}
-        <div>
+      {/* Two-column full-height layout: left = TilePicker, right = main vertical stack */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Left column: Tile selector */}
+        <div className="">
+          <TilePicker onSelectTile={handleSelectTile} onAddFlower={(t) => {
+            // Add flower directly to melds as a 'flower' meld entry
+            const key = `${t.suit}_${t.value}`;
+            const storageKey = `${key}@flower`;
+            setMeldMap(prev => ({ ...prev, [storageKey]: { kind: 'flower', tiles: (prev[storageKey]?.tiles || []).concat([t]) } }));
+          }} hand={hand} meldMap={meldMap} />
+        </div>
+
+        {/* Right column: vertical stack of app areas */}
+        <div className="space-y-4">
+          {/* Melds */}
+          <div>
             <MeldArea
               meldMap={meldMap}
               onToggleMeld={(k: string) => {
@@ -482,29 +495,30 @@ export default function App() {
                 return copy;
               })}
             />
-        </div>
-
-        {/* Row 2: Current hand (left) and Hu tile (right) */}
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1">
-              <HandRack
-                hand={hand}
-                onRemoveTile={handleRemoveTile}
-                huTileId={huTileId}
-                onClear={handleClear}
-                meldMap={meldMap}
-                onToggleSelect={toggleSelect}
-                selection={selection}
-                totalTiles={hand.length + Object.values(meldMap).reduce((s, m) => s + (m.kind === 'flower' ? 0 : m.tiles.length), 0)}
-                totalLimit={17 + Object.values(meldMap).filter(m => m.kind === 'kong').length}
-              />
           </div>
 
-          <div className="w-40">
+          {/* Current hand */}
+          <div>
+            <HandRack
+              hand={hand}
+              onRemoveTile={handleRemoveTile}
+              huTileId={huTileId}
+              onClear={handleClear}
+              meldMap={meldMap}
+              onToggleSelect={toggleSelect}
+              selection={selection}
+              totalTiles={hand.length + Object.values(meldMap).reduce((s, m) => s + (m.kind === 'flower' ? 0 : m.tiles.length), 0)}
+              totalLimit={17 + Object.values(meldMap).filter(m => m.kind === 'kong').length}
+            />
+          </div>
+
+          {/* Hu tile */}
+          <div>
             <HuArea huTile={huTile} onRemoveHu={() => { setHuTileId(null); setHuIsZimo(false); }} huIsZimo={huIsZimo} onToggleZimo={(next: boolean) => setHuIsZimo(next)} />
           </div>
 
-          <div className="w-64">
+          {/* Action area */}
+          <div>
             <div className="bg-slate-900 border border-slate-700 rounded-lg p-3">
               <div className="flex gap-2 mb-2">
                 <button onClick={() => createMeldFromSelection()} className="flex-1 px-2 py-1 bg-emerald-600 text-white rounded">成組</button>
@@ -516,39 +530,32 @@ export default function App() {
               <div className="text-slate-400 text-sm">已選：{selection.length} 張</div>
             </div>
           </div>
-        </div>
 
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="w-full md:w-64">
+          {/* Wind / Seat */}
+          <div>
             <WindSelector prevalent={prevalentWind} seat={seatWind} onSetPrevalent={setPrevalentWind} onSetSeat={setSeatWind} />
           </div>
         </div>
+      </div>
 
-        {/* Row 3: Tile selector (single column) */}
-        <div>
-          <TilePicker onSelectTile={handleSelectTile} onAddFlower={(t) => {
-            // Add flower directly to melds as a 'flower' meld entry
-            const key = `${t.suit}_${t.value}`;
-            const storageKey = `${key}@flower`;
-            setMeldMap(prev => ({ ...prev, [storageKey]: { kind: 'flower', tiles: (prev[storageKey]?.tiles || []).concat([t]) } }));
-          }} hand={hand} meldMap={meldMap} />
-          
+      {/* Full-width calculate and result area */}
+      <div className="mt-4">
+        <div className="flex justify-center pt-2">
+          <button
+            onClick={handleCalculate}
+            disabled={!canCalculate}
+            className={
+              `w-full md:w-2/3 px-10 py-3 font-bold text-lg rounded-xl shadow-lg transition ${!canCalculate ? 'bg-slate-600 text-slate-400 cursor-not-allowed' : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 active:scale-95'}`
+            }
+          >
+            算番 (Calculate Fan)
+          </button>
+        </div>
+
+        <div className="mt-4">
+          <ResultCard result={result} />
         </div>
       </div>
-
-      <div className="flex justify-center pt-2">
-        <button
-          onClick={handleCalculate}
-          disabled={!canCalculate}
-          className={
-            `w-full md:w-auto px-10 py-3 font-bold text-lg rounded-xl shadow-lg transition ${!canCalculate ? 'bg-slate-600 text-slate-400 cursor-not-allowed' : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 active:scale-95'}`
-          }
-        >
-          算番 (Calculate Fan)
-        </button>
-      </div>
-
-      <ResultCard result={result} />
     </div>
   );
 }
