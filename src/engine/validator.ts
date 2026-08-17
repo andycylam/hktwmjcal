@@ -246,14 +246,34 @@ export function calculateHandFan(handTiles: Tile[], meldMap?: Record<string, Mel
           winning = true;
           const pairLabel = tileLabel(k) + 'x2';
           const decomposition = collectMeldCombinations(copy)
-            .map(melds => [pairLabel, ...melds])
-            .map(melds => melds.join(', '));
+            .map(melds => {
+              const meldParts = [...melds].sort((a, b) => {
+                const aNum = Number((a.match(/\d+/) || ['0'])[0]);
+                const bNum = Number((b.match(/\d+/) || ['0'])[0]);
+                return aNum - bNum;
+              });
+              return [...meldParts, pairLabel].sort((a, b) => {
+                const aIsPair = a.includes('x2');
+                const bIsPair = b.includes('x2');
+                if (aIsPair && !bIsPair) return 1;
+                if (!aIsPair && bIsPair) return -1;
+                const aNum = Number((a.match(/\d+/) || ['0'])[0]);
+                const bNum = Number((b.match(/\d+/) || ['0'])[0]);
+                return aNum - bNum;
+              }).join(', ');
+            });
           validCombinations.push(...decomposition);
         }
       }
     }
 
-    possibleCombinations = [...new Set(validCombinations)].sort();
+    possibleCombinations = [...new Set(validCombinations)].sort((a, b) => {
+      const aParts = a.split(', ');
+      const bParts = b.split(', ');
+      const aKey = aParts.map(part => Number((part.match(/\d+/) || ['0'])[0])).join('|');
+      const bKey = bParts.map(part => Number((part.match(/\d+/) || ['0'])[0])).join('|');
+      return aKey.localeCompare(bKey);
+    });
 
     if (!winning) {
       return { isValid: false, totalFan: 0, reason: '此手牌無法胡牌：無法將剩餘牌拆解為完整的組合與一對。', breakdown: [] };
