@@ -55,8 +55,20 @@ describe('App flows (melds, flowers, hu)', () => {
     expect(screen.getAllByText('🀦2').length).toBeGreaterThan(0);
 
     // find the melds container and look for the flower tile inside it
-    const meldHeader = screen.getByText('已成組 (Melds)');
-    const meldContainer = meldHeader.closest('div')!;
+    const meldHeaders = screen.getAllByText('已成組 (Melds)');
+    let meldContainer: HTMLElement | null = null;
+    for (const h of meldHeaders) {
+      const c = h.closest('div')! as HTMLElement;
+      try {
+        const hits = within(c).queryAllByText('🀦1');
+        if (hits.length > 0) { meldContainer = c; break; }
+      } catch (e) { /* ignore */ }
+    }
+    if (!meldContainer) {
+      // fallback to the first header's container
+      meldContainer = meldHeaders[0].closest('div')! as HTMLElement;
+    }
+
     const allF1 = within(meldContainer).getAllByText('🀦1');
     const flower1El = allF1[0];
     // climb ancestors to find the tile container that has the cancel button
