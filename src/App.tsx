@@ -455,9 +455,9 @@ export default function App() {
       <ErrorDialog message={errorMessage} onClose={() => setErrorMessage(null)} />
 
       {/* Two-column full-height layout: left = TilePicker, right = main vertical stack */}
-      <div className="grid grid-cols-1 md:[grid-template-columns:20rem_1fr] gap-4">
+      <div className="grid grid-cols-1 md:[grid-template-columns:28rem_1fr] gap-4">
         {/* Left column: Tile selector */}
-        <div className="h-[calc(100vh-200px)] overflow-auto pr-2">
+        <div className="pr-2">
           <TilePicker onSelectTile={handleSelectTile} onAddFlower={(t) => {
             // Add flower directly to melds as a 'flower' meld entry
             const key = `${t.suit}_${t.value}`;
