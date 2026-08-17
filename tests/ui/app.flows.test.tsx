@@ -135,7 +135,7 @@ describe('App flows (melds, flowers, hu)', () => {
     expect(huTiles.length).toBeGreaterThan(0);
 
     // hand rack should not display the hu tile while it's set (by title)
-    expect(within(handContainer).queryByTitle('選取 一萬')).toBeNull();
+    expect(within(handContainer).queryAllByTitle('選取 一萬').length).toBe(0);
 
     // click the remove button on HuArea to return it to hand
     const removeBtn = within(huContainer).getByTitle('移除胡牌，回到手牌 一萬');
