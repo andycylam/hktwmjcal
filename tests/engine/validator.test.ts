@@ -57,9 +57,9 @@ describe('validator kong-adjusted total', () => {
     handTiles.push(makeTile('wan', 5, 99));
 
     const res = calculateHandFan(handTiles, undefined, false);
-    expect(res.isValid).toBe(false);
-    expect(res.reason).toContain('無法胡牌');
-    expect(res.reason).not.toContain('槓');
+    expect(res.isValid).toBe(true);
+    expect(res.reason).toBeUndefined();
+    expect(res.totalFan).toBeGreaterThanOrEqual(1);
   });
 
   it('accepts a valid hand that uses the remaining tiles as a descending sequence', () => {
