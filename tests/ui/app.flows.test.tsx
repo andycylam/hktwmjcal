@@ -13,9 +13,9 @@ describe('App flows (melds, flowers, hu)', () => {
     const pickers = screen.getAllByText('選擇牌型 (Tile Selector)');
     const picker = pickers[0].closest('div')!;
     const p = within(picker);
-    await user.click(p.getByText('一萬'));
-    await user.click(p.getByText('二萬'));
-    await user.click(p.getByText('三萬'));
+    await user.click(screen.getByTitle('一萬'));
+    await user.click(screen.getByTitle('二萬'));
+    await user.click(screen.getByTitle('三萬'));
 
     // select three tiles in hand
     const selectButtons = screen.getAllByTitle(/選取/);
@@ -82,7 +82,7 @@ describe('App flows (melds, flowers, hu)', () => {
     const pickers = screen.getAllByText('選擇牌型 (Tile Selector)');
     const picker = pickers[0].closest('div')!;
     const p = within(picker);
-    await user.click(p.getByText('一萬'));
+    await user.click(screen.getByTitle('一萬'));
 
     // select the tile in hand (target the button inside HandRack to avoid ambiguous buttons)
     const handHeader = screen.getAllByText(/當前手牌/)[0];
@@ -115,7 +115,7 @@ describe('App flows (melds, flowers, hu)', () => {
     const pickers = screen.getAllByText('選擇牌型 (Tile Selector)');
     const picker = pickers[0].closest('div')!;
     const p = within(picker);
-    await user.click(p.getByText('一萬'));
+    await user.click(screen.getByTitle('一萬'));
 
     // select and set as hu (target the button inside HandRack to avoid ambiguous buttons)
     const handHeader = screen.getAllByText(/當前手牌/)[0];
