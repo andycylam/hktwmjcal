@@ -95,45 +95,58 @@ export function calculateHandFan(handTiles: Tile[], meldMap?: Record<string, Mel
     // helper: recursively check whether counts can be reduced entirely into melds (triplets or sequences)
     const cloneCounts = (src: Map<string, number>) => new Map(src);
 
-    function canFormMelds(countMap: Map<string, number>): boolean {
-      // if all zero
-      let someLeft = false;
-      for (const v of countMap.values()) { if (v > 0) { someLeft = true; break; } }
-      if (!someLeft) return true;
-
-      // find first tile with count > 0
-      let firstKey: string | null = null;
-      for (const [k, v] of countMap.entries()) { if (v > 0) { firstKey = k; break; } }
-      if (!firstKey) return true;
-
-      const [suit, valStr] = firstKey.split('_');
-      const v = parseInt(valStr, 10);
-
-      // Try triplet
-      if ((countMap.get(firstKey) || 0) >= 3) {
-        const next = cloneCounts(countMap);
-        next.set(firstKey, (next.get(firstKey) || 0) - 3);
-        if (canFormMelds(next)) return true;
+    function removeTiles(countMap: Map<string, number>, tiles: string[]): Map<string, number> | null {
+      const next = cloneCounts(countMap);
+      for (const tile of tiles) {
+        const nextValue = (next.get(tile) || 0) - 1;
+        if (nextValue < 0) {
+          return null;
+        }
+        if (nextValue === 0) {
+          next.delete(tile);
+        } else {
+          next.set(tile, nextValue);
+        }
       }
+      return next;
+    }
 
-      // Try sequence (only for numeric suits), both ascending and descending forms.
-      if (suit === 'wan' || suit === 'tong' || suit === 'sou') {
-        const seqPatterns = [
-          [v, v + 1, v + 2],
-          [v - 2, v - 1, v]
-        ];
+    function canFormMelds(countMap: Map<string, number>, visited = new Set<string>()): boolean {
+      const stateKey = [...countMap.entries()]
+        .filter(([, v]) => v > 0)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([tile, count]) => `${tile}:${count}`)
+        .join('|');
 
-        for (const [a, b, c] of seqPatterns) {
-          if (a < 1 || b > 9 || c < 1 || c > 9) continue;
-          const k1 = `${suit}_${a}`;
-          const k2 = `${suit}_${b}`;
-          const k3 = `${suit}_${c}`;
-          if ((countMap.get(k1) || 0) > 0 && (countMap.get(k2) || 0) > 0 && (countMap.get(k3) || 0) > 0) {
-            const next = cloneCounts(countMap);
-            next.set(k1, (next.get(k1) || 0) - 1);
-            next.set(k2, (next.get(k2) || 0) - 1);
-            next.set(k3, (next.get(k3) || 0) - 1);
-            if (canFormMelds(next)) return true;
+      if (visited.has(stateKey)) return false;
+      visited.add(stateKey);
+
+      if (![...countMap.values()].some(value => value > 0)) return true;
+
+      for (const [tile, count] of countMap.entries()) {
+        if ((count || 0) <= 0) continue;
+
+        const [suit, valStr] = tile.split('_');
+        const value = Number(valStr);
+
+        if (count >= 3) {
+          const tripletNext = removeTiles(countMap, [tile, tile, tile]);
+          if (tripletNext && canFormMelds(tripletNext, new Set(visited))) return true;
+        }
+
+        if (suit === 'wan' || suit === 'tong' || suit === 'sou') {
+          const seqPatterns = [
+            [value, value + 1, value + 2],
+            [value - 2, value - 1, value]
+          ];
+
+          for (const [a, b, c] of seqPatterns) {
+            if (a < 1 || b > 9 || c < 1 || c > 9) continue;
+            const sequenceTiles = [`${suit}_${a}`, `${suit}_${b}`, `${suit}_${c}`];
+            if (sequenceTiles.every(key => (countMap.get(key) || 0) > 0)) {
+              const sequenceNext = removeTiles(countMap, sequenceTiles);
+              if (sequenceNext && canFormMelds(sequenceNext, new Set(visited))) return true;
+            }
           }
         }
       }

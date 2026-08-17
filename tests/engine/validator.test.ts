@@ -74,6 +74,24 @@ describe('validator kong-adjusted total', () => {
     expect(res.isValid).toBe(true);
   });
 
+  it('accepts a valid hand built from 999, 888, 666, 567, 789, and a 77 pair', () => {
+    const handTiles: Tile[] = [];
+    for (let i = 0; i < 3; i++) handTiles.push(makeTile('wan', 9, i + 1));
+    for (let i = 0; i < 3; i++) handTiles.push(makeTile('wan', 8, i + 10));
+    for (let i = 0; i < 3; i++) handTiles.push(makeTile('wan', 6, i + 20));
+    for (let i = 0; i < 2; i++) handTiles.push(makeTile('wan', 7, i + 30));
+    handTiles.push(makeTile('wan', 5, 99));
+    handTiles.push(makeTile('wan', 6, 101));
+    handTiles.push(makeTile('wan', 7, 102));
+    handTiles.push(makeTile('wan', 7, 103));
+    handTiles.push(makeTile('wan', 8, 104));
+    handTiles.push(makeTile('wan', 9, 105));
+
+    const res = calculateHandFan(handTiles, undefined, false);
+    expect(res.isValid).toBe(true);
+    expect(res.totalFan).toBeGreaterThanOrEqual(1);
+  });
+
   it('rejects when counted tiles exceed 17 + number_of_kongs', () => {
     // Create a kong (4 tiles)
     const kongTiles: Tile[] = [
