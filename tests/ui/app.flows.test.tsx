@@ -129,6 +129,8 @@ describe('App flows (melds, flowers, hu)', () => {
     const selectButtons = within(handContainer).getAllByTitle('選取 一萬');
     const selectButton = selectButtons[selectButtons.length - 1];
     await user.click(selectButton);
+    // confirm selection count updated in UI
+    expect(screen.getByText('已選：1 張')).toBeTruthy();
     const setHuBtn = screen.getAllByText('Set 胡')[0];
     await user.click(setHuBtn);
 
