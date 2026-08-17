@@ -47,32 +47,34 @@ export const HandRack: React.FC<Props> = ({ hand, onRemoveTile, huTileId, onClea
             const colors = SUIT_COLORS[t.suit as Suit];
             const isHu = huTileId === t.id;
             const isSelected = selection ? selection.includes(t.id) : false;
+            const toggleTitle = isSelected ? `取消 選取 ${t.label}` : `選取 ${t.label}`;
             return (
               <div key={t.id} className="relative p-1">
                   <button
-                    onClick={() => onRemoveTile(t.id)}
+                      onClick={() => onToggleSelect ? onToggleSelect(t.id) : onRemoveTile(t.id)}
                     className={`
                       relative w-14 h-18 ${colors.base} ${colors.border} border-2 rounded-md
                       flex items-center justify-center font-bold text-slate-900 shadow
                       hover:brightness-95 active:scale-95 transition
                       ${isHu ? 'ring-2 ring-amber-400' : ''}
-                    `}
-                    title={`移除 ${t.label}`}
-                  >
-                    {t.label}
-                  </button>
-
-                  <div className="absolute -top-3 -left-1 flex gap-1">
-                    <button
-                      onClick={() => onToggleSelect && onToggleSelect(t.id)}
-                      className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center ${isSelected ? 'bg-amber-400 text-slate-900' : 'bg-slate-600 text-slate-200'} shadow transition hover:scale-105 active:scale-95`}
-                      title={isSelected ? '取消 選取' : '選取 此牌'}
+                        ${isSelected ? 'ring-2 ring-amber-400' : ''}
+                      `}
+                      title={toggleTitle}
                     >
-                      ✓
+                      {t.label}
                     </button>
 
-                    {/* removed per-tile meld buttons; use selection + 成組 in the action area */}
-                  </div>
+                    <div className="absolute -top-3 -left-1 flex gap-1">
+                      <button
+                        onClick={() => onRemoveTile(t.id)}
+                        className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center bg-red-600 text-white shadow transition hover:scale-105 active:scale-95`}
+                        title={`移除 ${t.label}`}
+                      >
+                        ×
+                      </button>
+
+                      {/* removed per-tile meld buttons; use selection + 成組 in the action area */}
+                    </div>
 
                   {/* badges moved to MeldArea; do not show meld badges on tiles in hand */}
                 </div>

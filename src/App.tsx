@@ -500,6 +500,10 @@ export default function App() {
               />
           </div>
 
+          <div className="w-40">
+            <HuArea huTile={huTile} onClearHu={() => { setHuTileId(null); setHuIsZimo(false); }} huIsZimo={huIsZimo} onToggleZimo={(next: boolean) => setHuIsZimo(next)} />
+          </div>
+
           <div className="w-64">
             <div className="bg-slate-900 border border-slate-700 rounded-lg p-3">
               <div className="flex gap-2 mb-2">
@@ -512,12 +516,11 @@ export default function App() {
               <div className="text-slate-400 text-sm">已選：{selection.length} 張</div>
             </div>
           </div>
+        </div>
 
-          <div className="w-40">
-            <div className="space-y-2">
-              <WindSelector prevalent={prevalentWind} seat={seatWind} onSetPrevalent={setPrevalentWind} onSetSeat={setSeatWind} />
-            </div>
-            <HuArea huTile={huTile} onClearHu={() => { setHuTileId(null); setHuIsZimo(false); }} huIsZimo={huIsZimo} onToggleZimo={(next: boolean) => setHuIsZimo(next)} />
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="w-full md:w-64">
+            <WindSelector prevalent={prevalentWind} seat={seatWind} onSetPrevalent={setPrevalentWind} onSetSeat={setSeatWind} />
           </div>
         </div>
 
