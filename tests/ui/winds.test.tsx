@@ -12,7 +12,11 @@ describe('Winds UI', () => {
     // Prevailing wind section
     const prevailingHeader = screen.getByText('場風 (Prevailing Wind)');
     expect(prevailingHeader).toBeTruthy();
-    const prevailingContainer = prevailingHeader.closest('div')!;
+    let prevailingContainer = prevailingHeader.closest('div')! as HTMLElement;
+    // climb to the wrapper with bg-slate-900 class
+    while (prevailingContainer && !prevailingContainer.className.includes('bg-slate-900')) {
+      prevailingContainer = prevailingContainer.parentElement as HTMLElement;
+    }
     const southBtn = within(prevailingContainer).getByText('南');
     await user.click(southBtn);
     // After clicking, button should have selected styling (bg-emerald-500)
@@ -21,7 +25,10 @@ describe('Winds UI', () => {
     // Seat selection
     const seatHeader = screen.getByText('座位 (Your Seat)');
     expect(seatHeader).toBeTruthy();
-    const seatContainer = seatHeader.closest('div')!;
+    let seatContainer = seatHeader.closest('div')! as HTMLElement;
+    while (seatContainer && !seatContainer.className.includes('bg-slate-900')) {
+      seatContainer = seatContainer.parentElement as HTMLElement;
+    }
     const westBtn = within(seatContainer).getByText('西');
     await user.click(westBtn);
     expect(westBtn.className).toContain('bg-emerald-500');
