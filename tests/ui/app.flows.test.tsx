@@ -101,4 +101,38 @@ describe('App flows (melds, flowers, hu)', () => {
     const huTile = within(huContainer).getByText('一萬');
     expect(huTile).toBeTruthy();
   });
+
+  it('removing hu tile returns it to the current hand', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    // add a tile to hand
+    const pickers = screen.getAllByText('選擇牌型 (Tile Selector)');
+    const picker = pickers[0].closest('div')!;
+    const p = within(picker);
+    await user.click(p.getByText('一萬'));
+
+    // select and set as hu
+    const selectButtons = screen.getAllByTitle(/選取/);
+    await user.click(selectButtons[0]);
+    const setHuBtn = screen.getAllByText('Set 胡')[0];
+    await user.click(setHuBtn);
+
+    // ensure hu is displayed
+    const huHeader = screen.getAllByText('胡牌 (Winning Tile)')[0];
+    const huContainer = huHeader.closest('div')!;
+    expect(within(huContainer).getByText('一萬')).toBeTruthy();
+
+    // hand rack should not display the hu tile while it's set
+    const handHeader = screen.getAllByText(/當前手牌/)[0];
+    const handContainer = handHeader.closest('div')!;
+    expect(within(handContainer).queryByText('一萬')).toBeNull();
+
+    // click the remove button on HuArea to return it to hand
+    const removeBtn = within(huContainer).getByTitle('移除胡牌，回到手牌 一萬');
+    await user.click(removeBtn);
+
+    // now the hand should display the tile again
+    expect(within(handContainer).getByText('一萬')).toBeTruthy();
+  });
 });
