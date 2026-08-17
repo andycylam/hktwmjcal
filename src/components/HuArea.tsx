@@ -3,7 +3,7 @@ import { Tile, Suit } from '../types/mahjong';
 
 interface Props {
   huTile?: Tile | null;
-  onRemoveHu: (tile: Tile) => void;
+  onRemoveHu: () => void;
   huIsZimo?: boolean;
   onToggleZimo?: (next: boolean) => void;
 }
@@ -32,7 +32,7 @@ export const HuArea: React.FC<Props> = ({ huTile, onRemoveHu, huIsZimo, onToggle
                 </div>
                 {/* Cross button to remove hu tile and return to hand - matches HandRack style */}
                 <button
-                  onClick={() => onRemoveHu(huTile)}
+                  onClick={onRemoveHu}
                   className="absolute -top-3 -right-1 w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center bg-red-600 text-white shadow transition hover:scale-105 active:scale-95"
                   title={`移除胡牌，回到手牌 ${huTile.label}`}
                 >

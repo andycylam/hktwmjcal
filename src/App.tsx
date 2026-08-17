@@ -501,7 +501,7 @@ export default function App() {
           </div>
 
           <div className="w-40">
-            <HuArea huTile={huTile} onRemoveHu={(tile) => { setHand(prev => [...prev, tile]); setHuTileId(null); setHuIsZimo(false); }} huIsZimo={huIsZimo} onToggleZimo={(next: boolean) => setHuIsZimo(next)} />
+            <HuArea huTile={huTile} onRemoveHu={() => { setHuTileId(null); setHuIsZimo(false); }} huIsZimo={huIsZimo} onToggleZimo={(next: boolean) => setHuIsZimo(next)} />
           </div>
 
           <div className="w-64">
