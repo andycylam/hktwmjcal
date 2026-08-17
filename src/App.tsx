@@ -239,6 +239,7 @@ export default function App() {
     const meldCount = Object.values(meldMap).reduce((s, m) => s + (m.kind === 'flower' ? 0 : m.tiles.length), 0);
     const totalTiles = hand.length + meldCount;
     const kongCount = Object.values(meldMap).filter(m => m.kind === 'kong').length;
+    // Four identical tiles still in hand do not count as a kong unless explicitly declared in meldMap.
     const totalLimit = 17 + kongCount;
     if (totalTiles >= totalLimit) {
       setErrorMessage(`已達總牌數上限 ${totalLimit} 張（包含已成組），請先移除或取消成組。`);

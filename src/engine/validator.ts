@@ -2,6 +2,12 @@ import { Tile, CalculationResult } from '../types/mahjong';
 
 type MeldEntry = { kind: 'kong' | 'pung' | 'shang' | 'flower'; tiles: Tile[]; concealed?: boolean };
 
+function getDeclaredKongCount(meldMap?: Record<string, MeldEntry>): number {
+  // Rule: only tiles that are explicitly declared as a kong meld count as a kong.
+  // Four identical tiles still in hand are not a kong unless they are moved into meldMap.
+  return meldMap ? Object.values(meldMap).filter(m => m.kind === 'kong').length : 0;
+}
+
 export function calculateHandFan(handTiles: Tile[], meldMap?: Record<string, MeldEntry>, huIsZimo?: boolean): CalculationResult {
   // include meld tiles when validating total tile count; flower melds do NOT count toward the 17-tile requirement
   const meldTilesAll: Tile[] = [];
@@ -15,7 +21,8 @@ export function calculateHandFan(handTiles: Tile[], meldMap?: Record<string, Mel
   const countedTiles = [...handTiles, ...meldTilesCounted];
 
   // Account for kongs: some rules allow an extra tile per kong (kong consumes an extra tile).
-  const kongCount = meldMap ? Object.values(meldMap).filter(m => m.kind === 'kong').length : 0;
+  // IMPORTANT: a four-of-a-kind left in hand is NOT a kong unless it is declared in meldMap.
+  const kongCount = getDeclaredKongCount(meldMap);
 
   // Count all tiles including flowers for per-type limits
   const counts = new Map<string, number>();

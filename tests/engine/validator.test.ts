@@ -48,6 +48,20 @@ describe('validator kong-adjusted total', () => {
     expect(res.isValid).toBe(true);
   });
 
+  it('does not count a four-of-a-kind left in hand as a kong unless declared in meldMap', () => {
+    const handTiles: Tile[] = [];
+    for (let i = 0; i < 4; i++) handTiles.push(makeTile('wan', 9, i + 1));
+    for (let i = 0; i < 4; i++) handTiles.push(makeTile('wan', 8, i + 10));
+    for (let i = 0; i < 4; i++) handTiles.push(makeTile('wan', 7, i + 20));
+    for (let i = 0; i < 4; i++) handTiles.push(makeTile('wan', 6, i + 30));
+    handTiles.push(makeTile('wan', 5, 99));
+
+    const res = calculateHandFan(handTiles, undefined, false);
+    expect(res.isValid).toBe(false);
+    expect(res.reason).toContain('無法胡牌');
+    expect(res.reason).not.toContain('槓');
+  });
+
   it('rejects when counted tiles exceed 17 + number_of_kongs', () => {
     // Create a kong (4 tiles)
     const kongTiles: Tile[] = [
