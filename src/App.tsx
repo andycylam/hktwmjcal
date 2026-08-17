@@ -446,7 +446,7 @@ export default function App() {
   const canCalculate = (countedTotalForCalculate === 17 + kongCountForCalculate);
 
   return (
-    <div className="max-w-4xl mx-auto p-4 md:p-8 space-y-6">
+    <div className="max-w-[2000px] mx-auto p-4 md:p-8 space-y-6">
       <header className="text-center space-y-2">
         <h1 className="text-3xl font-extrabold text-emerald-400">港式台灣麻將 16張 算牌器 (hktwmjcal)</h1>
         <p className="text-slate-400 text-sm">Open Source HK Taiwanese Mahjong Fan Calculator</p>
