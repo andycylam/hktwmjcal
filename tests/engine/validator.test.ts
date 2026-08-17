@@ -44,8 +44,8 @@ describe('validator kong-adjusted total', () => {
 
     const res = calculateHandFan(handTiles, meldMap, false);
     expect(res.isValid).toBe(true);
-    // Ensure the validator accepted the kong-adjusted total (winning composition validated)
-    expect(res.isValid).toBe(true);
+    expect(res.possibleCombinations).toBeDefined();
+    expect(res.possibleCombinations?.length).toBeGreaterThan(0);
   });
 
   it('does not count a four-of-a-kind left in hand as a kong unless declared in meldMap', () => {

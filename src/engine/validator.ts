@@ -67,6 +67,8 @@ export function calculateHandFan(handTiles: Tile[], meldMap?: Record<string, Mel
     };
   }
 
+  let possibleCombinations: string[] | undefined;
+
   // If the caller (UI) indicated strict validation (countedTiles matches UI expectations), validate winning hand structure.
   if (shouldValidateWinning) {
     // Validate winning hand structure: with existing melds, remaining tiles must be partitionable into
@@ -109,6 +111,85 @@ export function calculateHandFan(handTiles: Tile[], meldMap?: Record<string, Mel
         }
       }
       return next;
+    }
+
+    function tileLabel(tile: string): string {
+      const [suit, valueStr] = tile.split('_');
+      const value = Number(valueStr);
+      const suitLabel = suit === 'wan' ? '萬' : suit === 'tong' ? '筒' : suit === 'sou' ? '索' : suit === 'wind' ? '風' : suit === 'dragon' ? '字' : '';
+      return `${value}${suitLabel}`;
+    }
+
+    function meldLabel(tiles: string[]): string {
+      const ordered = [...tiles].sort((a, b) => Number(a.split('_')[1]) - Number(b.split('_')[1]));
+      const labels = ordered.map(tileLabel);
+
+      if (ordered.length === 3 && ordered.every(tile => tile.split('_')[1] === ordered[0].split('_')[1])) {
+        return `${tileLabel(ordered[0])}x3`;
+      }
+
+      if (ordered.length === 3) {
+        return labels.join('-');
+      }
+
+      if (ordered.length === 2) {
+        return `${tileLabel(ordered[0])}x2`;
+      }
+
+      return labels.join('-');
+    }
+
+    function collectMeldCombinations(countMap: Map<string, number>, visited = new Set<string>(), current: string[] = []): string[][] {
+      const stateKey = [...countMap.entries()]
+        .filter(([, v]) => v > 0)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([tile, count]) => `${tile}:${count}`)
+        .join('|');
+
+      if (visited.has(stateKey)) return [];
+      visited.add(stateKey);
+
+      if (![...countMap.values()].some(value => value > 0)) {
+        return [current.slice()];
+      }
+
+      const results: string[][] = [];
+
+      for (const [tile, count] of countMap.entries()) {
+        if ((count || 0) <= 0) continue;
+
+        const [suit, valStr] = tile.split('_');
+        const value = Number(valStr);
+
+        if (count >= 3) {
+          const tripletNext = removeTiles(countMap, [tile, tile, tile]);
+          if (tripletNext) {
+            const grouped = collectMeldCombinations(tripletNext, new Set(visited), [...current, meldLabel([tile, tile, tile])]);
+            results.push(...grouped);
+          }
+        }
+
+        if (suit === 'wan' || suit === 'tong' || suit === 'sou') {
+          const seqPatterns = [
+            [value, value + 1, value + 2],
+            [value - 2, value - 1, value]
+          ];
+
+          for (const [a, b, c] of seqPatterns) {
+            if (a < 1 || b > 9 || c < 1 || c > 9) continue;
+            const sequenceTiles = [`${suit}_${a}`, `${suit}_${b}`, `${suit}_${c}`];
+            if (sequenceTiles.every(key => (countMap.get(key) || 0) > 0)) {
+              const sequenceNext = removeTiles(countMap, sequenceTiles);
+              if (sequenceNext) {
+                const grouped = collectMeldCombinations(sequenceNext, new Set(visited), [...current, meldLabel(sequenceTiles)]);
+                results.push(...grouped);
+              }
+            }
+          }
+        }
+      }
+
+      return results.length > 0 ? results : [];
     }
 
     function canFormMelds(countMap: Map<string, number>, visited = new Set<string>()): boolean {
@@ -156,13 +237,23 @@ export function calculateHandFan(handTiles: Tile[], meldMap?: Record<string, Mel
 
     // Try every possible pair in remainingCounts
     let winning = false;
+    const validCombinations: string[] = [];
     for (const [k, c] of remainingCounts.entries()) {
       if (c >= 2) {
         const copy = cloneCounts(remainingCounts);
         copy.set(k, c - 2);
-        if (canFormMelds(copy)) { winning = true; break; }
+        if (canFormMelds(copy)) {
+          winning = true;
+          const pairLabel = tileLabel(k) + 'x2';
+          const decomposition = collectMeldCombinations(copy)
+            .map(melds => [pairLabel, ...melds])
+            .map(melds => melds.join(', '));
+          validCombinations.push(...decomposition);
+        }
       }
     }
+
+    possibleCombinations = [...new Set(validCombinations)].sort();
 
     if (!winning) {
       return { isValid: false, totalFan: 0, reason: '此手牌無法胡牌：無法將剩餘牌拆解為完整的組合與一對。', breakdown: [] };
@@ -198,6 +289,7 @@ export function calculateHandFan(handTiles: Tile[], meldMap?: Record<string, Mel
   return {
     isValid: true,
     totalFan,
-    breakdown
+    breakdown,
+    possibleCombinations
   };
 }

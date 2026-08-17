@@ -12,4 +12,5 @@ export interface CalculationResult {
   totalFan: number;
   reason?: string;
   breakdown: { rule: string; fan: number }[];
+  possibleCombinations?: string[];
 }
