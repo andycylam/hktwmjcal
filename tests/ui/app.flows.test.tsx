@@ -86,7 +86,9 @@ describe('App flows (melds, flowers, hu)', () => {
 
     // select the tile in hand (target the button inside HandRack to avoid ambiguous buttons)
     const handHeader = screen.getAllByText(/當前手牌/)[0];
-    const handContainer = handHeader.closest('div')!;
+    let handContainer = handHeader.closest('div')! as HTMLElement;
+    // climb up to the HandRack root which has bg-slate-800 class
+    while (handContainer && !handContainer.className.includes('bg-slate-800')) { handContainer = handContainer.parentElement as HTMLElement; }
     const selectButton = within(handContainer).getByTitle('選取 一萬');
     await user.click(selectButton);
 
@@ -116,7 +118,9 @@ describe('App flows (melds, flowers, hu)', () => {
 
     // select and set as hu (target the button inside HandRack to avoid ambiguous buttons)
     const handHeader = screen.getAllByText(/當前手牌/)[0];
-    const handContainer = handHeader.closest('div')!;
+    let handContainer = handHeader.closest('div')! as HTMLElement;
+    // climb up to the HandRack root which has bg-slate-800 class
+    while (handContainer && !handContainer.className.includes('bg-slate-800')) { handContainer = handContainer.parentElement as HTMLElement; }
     const selectButton = within(handContainer).getByTitle('選取 一萬');
     await user.click(selectButton);
     const setHuBtn = screen.getAllByText('Set 胡')[0];
