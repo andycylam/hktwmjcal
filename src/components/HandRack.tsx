@@ -26,26 +26,27 @@ const SUIT_COLORS: Record<Suit, { base: string; border: string }> = {
 // Render tiles individually in the hand (no grouping)
 
 export const HandRack: React.FC<Props> = ({ hand, onRemoveTile, huTileId, onClear, totalTiles, totalLimit, onToggleSelect, selection }) => {
+  // Filter out hu tile from display
+  const displayHand = huTileId ? hand.filter(t => t.id !== huTileId) : hand;
   return (
     <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 space-y-3">
       <div className="flex justify-between items-center">
-        <h2 className="text-lg font-bold text-amber-400">🀄 當前手牌 ({totalTiles ?? hand.length}/{totalLimit ?? 17} 張)</h2>
+        <h2 className="text-lg font-bold text-amber-400">🀄 當前手牌 ({totalTiles ?? displayHand.length}/{totalLimit ?? 17} 張)</h2>
         <button
           onClick={onClear}
           className="px-3 py-1 bg-red-600/80 hover:bg-red-600 text-xs text-white font-semibold rounded transition disabled:opacity-50"
-          disabled={hand.length === 0}
+          disabled={displayHand.length === 0}
         >
           清空手牌
         </button>
       </div>
 
       <div className="min-h-[72px] p-3 bg-slate-900 border border-slate-700 rounded-lg flex flex-wrap gap-3 items-center">
-        {hand.length === 0 ? (
+        {displayHand.length === 0 ? (
           <span className="text-slate-500 text-sm italic">請在下方點擊牌型加入手牌...</span>
         ) : (
-          hand.map(t => {
+          displayHand.map(t => {
             const colors = SUIT_COLORS[t.suit as Suit];
-            const isHu = huTileId === t.id;
             const isSelected = selection ? selection.includes(t.id) : false;
             const toggleTitle = isSelected ? `取消 選取 ${t.label}` : `選取 ${t.label}`;
             return (
@@ -56,7 +57,6 @@ export const HandRack: React.FC<Props> = ({ hand, onRemoveTile, huTileId, onClea
                       relative w-14 h-18 ${colors.base} ${colors.border} border-2 rounded-md
                       flex items-center justify-center font-bold text-slate-900 shadow
                       hover:brightness-95 active:scale-95 transition
-                      ${isHu ? 'ring-2 ring-amber-400' : ''}
                         ${isSelected ? 'ring-2 ring-amber-400' : ''}
                       `}
                       title={toggleTitle}

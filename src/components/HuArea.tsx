@@ -1,14 +1,24 @@
 import React from 'react';
-import { Tile } from '../types/mahjong';
+import { Tile, Suit } from '../types/mahjong';
 
 interface Props {
   huTile?: Tile | null;
-  onClearHu: () => void;
+  onRemoveHu: (tile: Tile) => void;
   huIsZimo?: boolean;
   onToggleZimo?: (next: boolean) => void;
 }
 
-export const HuArea: React.FC<Props> = ({ huTile, onClearHu, huIsZimo, onToggleZimo }) => {
+// Reuse same suit color scheme as TilePicker/HandRack
+const SUIT_COLORS: Record<Suit, { base: string; border: string; text: string }> = {
+  wan: { base: 'bg-amber-300', border: 'border-amber-600', text: 'text-amber-950' },
+  tong: { base: 'bg-red-300', border: 'border-red-600', text: 'text-red-950' },
+  sou: { base: 'bg-emerald-300', border: 'border-emerald-600', text: 'text-emerald-950' },
+  wind: { base: 'bg-blue-300', border: 'border-blue-600', text: 'text-blue-950' },
+  dragon: { base: 'bg-purple-300', border: 'border-purple-600', text: 'text-purple-950' },
+  flower: { base: 'bg-lime-300', border: 'border-lime-600', text: 'text-lime-950' }
+};
+
+export const HuArea: React.FC<Props> = ({ huTile, onRemoveHu, huIsZimo, onToggleZimo }) => {
   return (
     <div className="bg-slate-800 border border-slate-700 rounded-xl p-4 space-y-2">
       <h3 className="text-sm font-semibold text-amber-300">胡牌 (Winning Tile)</h3>
@@ -16,18 +26,18 @@ export const HuArea: React.FC<Props> = ({ huTile, onClearHu, huIsZimo, onToggleZ
         <div className="flex items-center gap-3">
           {huTile ? (
             <>
-              <div className="w-12 h-16 rounded-lg bg-amber-300 border border-amber-600 flex items-center justify-center font-bold text-amber-950 shadow">
-                {huTile.label}
-              </div>
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={onClearHu}
-                    className="px-3 py-1 bg-red-600 text-white rounded transition hover:bg-red-500"
-                  >
-                    清除
-                  </button>
+              <div className="relative">
+                <div className={`w-12 h-16 rounded-lg ${SUIT_COLORS[huTile.suit as Suit].base} ${SUIT_COLORS[huTile.suit as Suit].border} flex items-center justify-center font-bold ${SUIT_COLORS[huTile.suit as Suit].text} shadow`}>
+                  {huTile.label}
                 </div>
+                {/* Cross button to remove hu tile and return to hand - matches HandRack style */}
+                <button
+                  onClick={() => onRemoveHu(huTile)}
+                  className="absolute -top-3 -right-1 w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center bg-red-600 text-white shadow transition hover:scale-105 active:scale-95"
+                  title={`移除胡牌，回到手牌 ${huTile.label}`}
+                >
+                  ×
+                </button>
               </div>
             </>
           ) : (
