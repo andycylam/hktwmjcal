@@ -27,12 +27,13 @@ export const HuArea: React.FC<Props> = ({ huTile, onRemoveHu, huIsZimo, onToggle
           {huTile ? (
             <>
               <div className="relative">
-                <div className={`w-12 h-16 rounded-lg ${SUIT_COLORS[huTile.suit as Suit].base} ${SUIT_COLORS[huTile.suit as Suit].border} flex items-center justify-center font-bold ${SUIT_COLORS[huTile.suit as Suit].text} shadow`}>
+                <div data-testid="hu-tile" className={`w-12 h-16 rounded-lg ${SUIT_COLORS[huTile.suit as Suit].base} ${SUIT_COLORS[huTile.suit as Suit].border} flex items-center justify-center font-bold ${SUIT_COLORS[huTile.suit as Suit].text} shadow`}>
                   {huTile.label}
                 </div>
                 {/* Cross button to remove hu tile and return to hand - matches HandRack style */}
                 <button
                   onClick={onRemoveHu}
+                  data-testid="hu-remove"
                   className="absolute -top-3 -right-1 w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center bg-red-600 text-white shadow transition hover:scale-105 active:scale-95"
                   title={`移除胡牌，回到手牌 ${huTile.label}`}
                 >

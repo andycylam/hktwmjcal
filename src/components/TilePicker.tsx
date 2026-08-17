@@ -143,6 +143,8 @@ export const TilePicker: React.FC<Props> = ({ onSelectTile, onAddFlower, hand, m
                       : `${colors.base} ${colors.border} hover:scale-105 active:scale-95`}
                   `}
                   title={effectiveMaxed ? `最多 ${isFlower ? 1 : MAX_PER_TYPE} 張` : item.label}
+                  data-testid={`picker-tile-${key}`}
+                  data-tile-key={key}
                 >
                   {item.label}
                   {/* Count badge */}

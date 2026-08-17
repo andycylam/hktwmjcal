@@ -53,6 +53,8 @@ export const HandRack: React.FC<Props> = ({ hand, onRemoveTile, huTileId, onClea
               <div key={t.id} className="relative p-1">
                   <button
                       onClick={() => onToggleSelect ? onToggleSelect(t.id) : onRemoveTile(t.id)}
+                      data-testid={`hand-tile-${t.label}`}
+                      data-tile-id={t.id}
                     className={`
                       relative w-14 h-18 ${colors.base} ${colors.border} border-2 rounded-md
                       flex items-center justify-center font-bold text-slate-900 shadow
@@ -67,6 +69,8 @@ export const HandRack: React.FC<Props> = ({ hand, onRemoveTile, huTileId, onClea
                     <div className="absolute -top-3 -left-1 flex gap-1">
                       <button
                         onClick={() => onRemoveTile(t.id)}
+                        data-testid={`hand-remove-${t.label}`}
+                        data-tile-id={t.id}
                         className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center bg-red-600 text-white shadow transition hover:scale-105 active:scale-95`}
                         title={`移除 ${t.label}`}
                       >
