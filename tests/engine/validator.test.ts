@@ -62,6 +62,18 @@ describe('validator kong-adjusted total', () => {
     expect(res.reason).not.toContain('槓');
   });
 
+  it('accepts a valid hand that uses the remaining tiles as a descending sequence', () => {
+    const handTiles: Tile[] = [];
+    for (let i = 0; i < 4; i++) handTiles.push(makeTile('wan', 9, i + 1));
+    for (let i = 0; i < 4; i++) handTiles.push(makeTile('wan', 8, i + 10));
+    for (let i = 0; i < 4; i++) handTiles.push(makeTile('wan', 7, i + 20));
+    for (let i = 0; i < 3; i++) handTiles.push(makeTile('wan', 6, i + 30));
+    for (let i = 0; i < 2; i++) handTiles.push(makeTile('wan', 5, i + 40));
+
+    const res = calculateHandFan(handTiles, undefined, false);
+    expect(res.isValid).toBe(true);
+  });
+
   it('rejects when counted tiles exceed 17 + number_of_kongs', () => {
     // Create a kong (4 tiles)
     const kongTiles: Tile[] = [

@@ -116,17 +116,25 @@ export function calculateHandFan(handTiles: Tile[], meldMap?: Record<string, Mel
         if (canFormMelds(next)) return true;
       }
 
-      // Try sequence (only for numeric suits)
+      // Try sequence (only for numeric suits), both ascending and descending forms.
       if (suit === 'wan' || suit === 'tong' || suit === 'sou') {
-        const k1 = `${suit}_${v}`;
-        const k2 = `${suit}_${v + 1}`;
-        const k3 = `${suit}_${v + 2}`;
-        if ((countMap.get(k2) || 0) > 0 && (countMap.get(k3) || 0) > 0) {
-          const next = cloneCounts(countMap);
-          next.set(k1, (next.get(k1) || 0) - 1);
-          next.set(k2, (next.get(k2) || 0) - 1);
-          next.set(k3, (next.get(k3) || 0) - 1);
-          if (canFormMelds(next)) return true;
+        const seqPatterns = [
+          [v, v + 1, v + 2],
+          [v - 2, v - 1, v]
+        ];
+
+        for (const [a, b, c] of seqPatterns) {
+          if (a < 1 || b > 9 || c < 1 || c > 9) continue;
+          const k1 = `${suit}_${a}`;
+          const k2 = `${suit}_${b}`;
+          const k3 = `${suit}_${c}`;
+          if ((countMap.get(k1) || 0) > 0 && (countMap.get(k2) || 0) > 0 && (countMap.get(k3) || 0) > 0) {
+            const next = cloneCounts(countMap);
+            next.set(k1, (next.get(k1) || 0) - 1);
+            next.set(k2, (next.get(k2) || 0) - 1);
+            next.set(k3, (next.get(k3) || 0) - 1);
+            if (canFormMelds(next)) return true;
+          }
         }
       }
 
