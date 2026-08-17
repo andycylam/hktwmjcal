@@ -122,7 +122,8 @@ describe('App flows (melds, flowers, hu)', () => {
     let handContainer = handHeader.closest('div')! as HTMLElement;
     // climb up to the HandRack root which has bg-slate-800 class
     while (handContainer && !handContainer.className.includes('bg-slate-800')) { handContainer = handContainer.parentElement as HTMLElement; }
-    const selectButton = within(handContainer).getByTitle('選取 一萬');
+    const selectButtons = within(handContainer).getAllByTitle('選取 一萬');
+    const selectButton = selectButtons[selectButtons.length - 1];
     await user.click(selectButton);
     const setHuBtn = screen.getAllByText('Set 胡')[0];
     await user.click(setHuBtn);
