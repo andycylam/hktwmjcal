@@ -258,6 +258,8 @@ export default function App() {
     setResult(null);
     // clear hu if the hu tile was removed
     if (huTileId === id) setHuTileId(null);
+    // ensure selection does not keep removed id(s)
+    setSelection(prev => prev.filter(x => x !== id && updated.some(t => t.id === x)));
   };
 
   // Hu is set via selection action `createHuFromSelection`
@@ -267,6 +269,8 @@ export default function App() {
     setResult(null);
     setErrorMessage(null);
     setMeldMap({});
+    setSelection([]);
+    setHuTileId(null);
   };
 
   function createOrToggleMeld(key: string, kind: 'kong' | 'pung' | 'shang') {
