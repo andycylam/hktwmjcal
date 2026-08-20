@@ -498,23 +498,41 @@ export function calculateHandFan(
       breakdown.push({ rule: '正字 (場風)', fan: 1 });
     }
     windFan += 1;
+
+    if (windValue === 1) {
+      windFan += 1;
+      breakdown.push({ rule: '字牌 (東)', fan: 1 });
+    }
+    else if (windValue === 2) {
+      windFan += 1;
+      breakdown.push({ rule: '字牌 (南)', fan: 1 });
+    }
+    else if (windValue === 3) {
+      windFan += 1;
+      breakdown.push({ rule: '字牌 (西)', fan: 1 });
+    }
+    else if (windValue === 4) {
+      windFan += 1;
+      breakdown.push({ rule: '字牌 (北)', fan: 1 });
+    }
   }
 
   for (const meld of dragonMelds) {
     const dragonValue = meld.tiles[0].value;
     if (dragonValue === 5) {
       dragonFan += 1;
-      breakdown.push({ rule: '正字 (中)', fan: 1 });
+      breakdown.push({ rule: '字牌 (中)', fan: 1 });
     }
     else if (dragonValue === 6) {
       dragonFan += 1;
-      breakdown.push({ rule: '正字 (發)', fan: 1 });
+      breakdown.push({ rule: '字牌 (發)', fan: 1 });
     }
     else if (dragonValue === 7) {
       dragonFan += 1;
-      breakdown.push({ rule: '正字 (白)', fan: 1 });
+      breakdown.push({ rule: '字牌 (白)', fan: 1 });
     }
   }
+    totalFan += windFan + dragonFan;
 
   // 自摸 (zimo) grants +1 fan
   if (huIsZimo) {
