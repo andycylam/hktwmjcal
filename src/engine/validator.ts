@@ -1,5 +1,76 @@
 import { Tile, CalculationResult } from '../types/mahjong';
 
+/*
+  validator.ts — fan calculation and hand-structure validation
+
+  Purpose and conventions
+  - This module validates a mahjong hand and computes a simple "fan" (point) summary.
+  - Tile encoding: Tile objects use { suit: 'wan'|'tong'|'sou'|'wind'|'dragon'|'flower', value: number }.
+    Keys used in maps are `${suit}_${value}` (e.g. 'wan_5', 'wind_1'). Flowers use suit === 'flower'.
+  - meldMap: a record of declared melds (melds taken/declared by player). MeldEntry.kind values:
+      - 'kong'   : four-tile kong (can be concealed or declared)
+      - 'pung'   : three-of-a-kind meld (exposed)
+      - 'shang'  : sequence meld (usually exposed)
+      - 'flower' : flower tiles grouped as melds (do NOT count toward required tile total)
+    Each MeldEntry has `tiles: Tile[]` and optional `concealed: boolean` (for concealed kongs).
+
+  Counting rules and assumptions implemented here
+  - The required total for a winning hand (standard 5 melds + 1 pair) is 17 tiles in hand+melds,
+    with each declared kong consuming an extra tile (so total needed = 17 + kongCount).
+  - Flower melds do NOT count toward the 17-tile requirement but are included in `allTiles` for
+    rule checks that consider flowers explicitly.
+  - Only kongs declared in meldMap count as kongs. Four identical tiles still in the concealed hand
+    are NOT treated as a kong unless moved into meldMap.
+  - Tile-type limits: non-flower tiles may not exceed 4 copies across hand + melds (basic integrity check).
+
+  Structure and extension points for fan rules
+  - This file currently computes a minimal fan breakdown:
+      * Base point (always present)
+      * +1 for any honor tiles present (wind/dragon)
+      * +1 for zimo (self draw) when huIsZimo is true
+      * +1 per concealed kong declared in meldMap
+  - To add more fan rules, follow these guidelines:
+      1) Compute any helper summaries early (e.g. `allTiles`, `counts`, `meldMap` summary values).
+      2) Add deterministic checks that do not depend on specific winning partitioning (e.g. all-chows,
+         suits present/absent, presence of terminals/honors) before or after the winning-structure
+         validation as appropriate. Document whether the rule requires the hand to be a valid winning
+         hand (some rules only apply on actual winning hands).
+      3) For rules that depend on the winning decomposition (e.g. all pungs, pure hand, seven pairs,
+         thirteen orphans), compute them using `possibleCombinations` when `shouldValidateWinning` is true
+         and include clear comments about which decomposition(s) qualify.
+      4) Keep each rule's check isolated and append to `breakdown` with a descriptive `rule` label and
+         `fan` value so the UI can show the reasoning.
+
+  Example fan rules to add (TODO list)
+  - all-pungs (全刻) : +X fan when hand consists only of pungs/kongs + pair
+  - pure-suit (清一色) : +X fan when only one suit (no honors)
+  - mixed-one-suit-with-honors (混一色) : +X fan
+  - half-flush / full-flush variations
+  - small- and big-dragon (小/大三元) : based on dragon triplets
+  - all-honors (字一色) : only honor tiles
+  - seven pairs (七對) : special structure, not covered by standard meld partitioning
+  - thirteen orphans (十三么) : special terminals/honors pattern
+  - pure-chow (平胡 / 門前清/清一色 的組合差異) : chows-only variants
+  - rob-the-kong (搶槓), seat/wind/round-based bonuses (depends on game context)
+  - limit hands / yakuman-style rules (大役) : highest-value special hands
+
+  Implementation notes
+  - The combination collector (`collectMeldCombinations`) and canonicalization logic are helpful when
+    checking rules that require knowing which melds were used. They produce human-readable tokens like
+    '1萬-2萬-3萬' and '5筒x3' and a canonicalized string for uniqueness.
+  - For performance: `collectMeldCombinations` explores possible decompositions; for very large inputs
+    this could be constrained. When adding rules that only need to know existence of a decomposition,
+    prefer boolean checks like `canFormMelds` which prune earlier.
+  - Wherever a new rule requires game-state (seat wind, prevailing wind, discarder, scoring mode),
+    extend the function signature to accept an options object rather than adding many new parameters.
+
+  Next steps for development
+  - Start by grafting simple, decomposition-free rules (pure-suit, honors-only, terminals-only).
+  - Implement special-structure detectors (seven pairs, thirteen orphans) as separate helper functions
+    and make them short-circuit the normal decomposition logic when their patterns match.
+  - Add unit tests covering representative hands for each new fan rule.
+*/
+
 type MeldEntry = { kind: 'kong' | 'pung' | 'shang' | 'flower'; tiles: Tile[]; concealed?: boolean };
 
 function getDeclaredKongCount(meldMap?: Record<string, MeldEntry>): number {
