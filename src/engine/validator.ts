@@ -472,27 +472,48 @@ export function calculateHandFan(
   let totalFan = 0;//1;
   //breakdown.push({ rule: '底番 (Base Point)', fan: 1 });
 
-  // honor tiles rule preserved
-  const hasHonor = allTiles.filter(t => t.suit === 'wind' || t.suit === 'dragon').length;
-  if (hasHonor > 0) {
-    totalFan += hasHonor;
-    breakdown.push({ rule: '字牌 (Honor Tile)', fan: 1 });
-  }
-
   // wind and dragon melds for potential scoring
+  const windValueMap: Record<'east'|'south'|'west'|'north', number> = {
+    east: 1,
+    south: 2,
+    west: 3,
+    north: 4
+  };
+
   let windFan = 0;
   let dragonFan = 0;
+  // If seatWind can be undefined or unknown string, provide a fallback or optional check
+  const seatWindNum = seatWind ? windValueMap[seatWind] : undefined;
+  // If prevailingWind can be undefined or unknown string, provide a fallback or optional check
+  const prevailingWindNum = prevailingWind ? windValueMap[prevailingWind] : undefined;
 
   for (const meld of windMelds) {
     const windValue = meld.tiles[0].value;
-    //if (windValue === seatWind) windFan += 1;
-    //if (windValue === prevalentWind) windFan += 1;
+    if (windValue === seatWindNum) {
+      windFan += 1;
+      breakdown.push({ rule: '正字 (座位)', fan: 1 });
+    }
+    if (windValue === prevailingWindNum) {
+      windFan += 1;
+      breakdown.push({ rule: '正字 (場風)', fan: 1 });
+    }
+    windFan += 1;
   }
 
   for (const meld of dragonMelds) {
     const dragonValue = meld.tiles[0].value;
-    //if (dragonValue === seatWind) dragonFan += 1;
-    //if (dragonValue === prevalentWind) dragonFan += 1;
+    if (dragonValue === 5) {
+      dragonFan += 1;
+      breakdown.push({ rule: '正字 (中)', fan: 1 });
+    }
+    else if (dragonValue === 6) {
+      dragonFan += 1;
+      breakdown.push({ rule: '正字 (發)', fan: 1 });
+    }
+    else if (dragonValue === 7) {
+      dragonFan += 1;
+      breakdown.push({ rule: '正字 (白)', fan: 1 });
+    }
   }
 
   // 自摸 (zimo) grants +1 fan
