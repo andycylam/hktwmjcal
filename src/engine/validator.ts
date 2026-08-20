@@ -487,6 +487,7 @@ export function calculateHandFan(
   // If prevailingWind can be undefined or unknown string, provide a fallback or optional check
   const prevailingWindNum = prevailingWind ? windValueMap[prevailingWind] : undefined;
 
+  // Count declared melds (meldMap) as before
   for (const meld of windMelds) {
     const windValue = meld.tiles[0].value;
     if (windValue === seatWindNum) {
@@ -532,7 +533,75 @@ export function calculateHandFan(
       breakdown.push({ rule: '字牌 (白)', fan: 1 });
     }
   }
-    totalFan += windFan + dragonFan;
+
+  // If the concealed hand (remaining hand tiles) can form melds that include wind/dragon triplets,
+  // they should also contribute to fan. possibleCombinations contains canonicalized decomposition
+  // strings for the concealed tiles (if shouldValidateWinning was true). Analyze those decompositions
+  // and pick the one that yields the maximum honor-related fan (this matches choosing a winning
+  // decomposition that maximizes fan).
+  if (possibleCombinations && possibleCombinations.length > 0) {
+    let bestExtraFan = 0;
+    let bestBreakdownToAdd: { rule: string; fan: number }[] = [];
+
+    for (const combo of possibleCombinations) {
+      let comboWindExtra = 0;
+      let comboDragonExtra = 0;
+      const comboBreakdown: { rule: string; fan: number }[] = [];
+
+      const parts = combo.split(', ');
+      for (const part of parts) {
+        // Triplets are labeled with 'x3' (e.g. '1風x3', '5字x3')
+        if (!part.includes('x3')) continue;
+
+        // wind triplets
+        if (part.includes('風')) {
+          const match = part.match(/(\d+)/);
+          const val = match ? Number(match[1]) : NaN;
+          if (!Number.isNaN(val)) {
+            // seat / prevailing
+            if (val === seatWindNum) {
+              comboWindExtra += 1;
+              comboBreakdown.push({ rule: '正字 (座位)', fan: 1 });
+            }
+            if (val === prevailingWindNum) {
+              comboWindExtra += 1;
+              comboBreakdown.push({ rule: '正字 (場風)', fan: 1 });
+            }
+            comboWindExtra += 1; // base for having a wind triplet
+            if (val === 1) { comboWindExtra += 1; comboBreakdown.push({ rule: '字牌 (東)', fan: 1 }); }
+            else if (val === 2) { comboWindExtra += 1; comboBreakdown.push({ rule: '字牌 (南)', fan: 1 }); }
+            else if (val === 3) { comboWindExtra += 1; comboBreakdown.push({ rule: '字牌 (西)', fan: 1 }); }
+            else if (val === 4) { comboWindExtra += 1; comboBreakdown.push({ rule: '字牌 (北)', fan: 1 }); }
+          }
+        }
+
+        // dragon triplets
+        if (part.includes('字')) {
+          const match = part.match(/(\d+)/);
+          const val = match ? Number(match[1]) : NaN;
+          if (!Number.isNaN(val)) {
+            if (val === 5) { comboDragonExtra += 1; comboBreakdown.push({ rule: '字牌 (中)', fan: 1 }); }
+            else if (val === 6) { comboDragonExtra += 1; comboBreakdown.push({ rule: '字牌 (發)', fan: 1 }); }
+            else if (val === 7) { comboDragonExtra += 1; comboBreakdown.push({ rule: '字牌 (白)', fan: 1 }); }
+          }
+        }
+      }
+
+      const comboTotal = comboWindExtra + comboDragonExtra;
+      if (comboTotal > bestExtraFan) {
+        bestExtraFan = comboTotal;
+        bestBreakdownToAdd = comboBreakdown;
+      }
+    }
+
+    if (bestExtraFan > 0) {
+      totalFan += bestExtraFan;
+      // append the breakdown entries (may contain duplicates across multiple melds)
+      for (const e of bestBreakdownToAdd) breakdown.push(e);
+    }
+  }
+
+  totalFan += windFan + dragonFan;
 
   // 自摸 (zimo) grants +1 fan
   if (huIsZimo) {
