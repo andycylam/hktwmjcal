@@ -79,7 +79,13 @@ function getDeclaredKongCount(meldMap?: Record<string, MeldEntry>): number {
   return meldMap ? Object.values(meldMap).filter(m => m.kind === 'kong').length : 0;
 }
 
-export function calculateHandFan(handTiles: Tile[], meldMap?: Record<string, MeldEntry>, huIsZimo?: boolean, huTile?: Tile): CalculationResult {
+export function calculateHandFan(
+  handTiles: Tile[],
+  meldMap?: Record<string, MeldEntry>,
+  huIsZimo?: boolean,
+  huTile?: Tile,
+  gameContext?: { prevailingWind?: 'east' | 'south' | 'west' | 'north'; seatWind?: 'east' | 'south' | 'west' | 'north' }
+): CalculationResult {
   // include meld tiles when validating total tile count; flower melds do NOT count toward the 17-tile requirement
   const meldTilesAll: Tile[] = [];
   const meldTilesCounted: Tile[] = [];
@@ -91,6 +97,13 @@ export function calculateHandFan(handTiles: Tile[], meldMap?: Record<string, Mel
   }
   const countedTiles = [...handTiles, ...meldTilesCounted];
 
+  // Game context (optional)
+  // - prevailingWind and seatWind are strings: 'east'|'south'|'west'|'north'
+  // - This function will accept them and make them available for fan-rule decisions.
+  // - Currently we do NOT apply any automatic fan for winds here; these are exposed so
+  //   future fan rules can reference them. See comments in the header for guidance.
+  const prevailingWind = gameContext?.prevailingWind;
+  const seatWind = gameContext?.seatWind;
   // Account for kongs: some rules allow an extra tile per kong (kong consumes an extra tile).
   // IMPORTANT: a four-of-a-kind left in hand is NOT a kong unless it is declared in meldMap.
   const kongCount = getDeclaredKongCount(meldMap);
