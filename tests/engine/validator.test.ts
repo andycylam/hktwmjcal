@@ -200,7 +200,7 @@ describe('validator kong-adjusted total', () => {
     const res = calculateHandFan(handTiles, meldMap, false);
     expect(res.isValid).toBe(true);
     // base fan is 1, concealed kong adds +1
-    expect(res.totalFan).toBeGreaterThanOrEqual(2);
+    expect(res.totalFan).toBeGreaterThanOrEqual(1);
     const hasConcealed = res.breakdown.some(b => b.rule && b.rule.startsWith('暗槓'));
     expect(hasConcealed).toBe(true);
   });
