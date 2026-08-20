@@ -599,7 +599,7 @@ export function calculateHandFan(
     }
   }
 
-  totalFan += windFan + dragonFan;
+  // totalFan += windFan + dragonFan;
 
   // 自摸 (zimo) grants +1 fan
   if (huIsZimo) {
