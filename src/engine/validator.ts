@@ -79,7 +79,7 @@ function getDeclaredKongCount(meldMap?: Record<string, MeldEntry>): number {
   return meldMap ? Object.values(meldMap).filter(m => m.kind === 'kong').length : 0;
 }
 
-export function calculateHandFan(handTiles: Tile[], meldMap?: Record<string, MeldEntry>, huIsZimo?: boolean): CalculationResult {
+export function calculateHandFan(handTiles: Tile[], meldMap?: Record<string, MeldEntry>, huIsZimo?: boolean, huTile?: Tile): CalculationResult {
   // include meld tiles when validating total tile count; flower melds do NOT count toward the 17-tile requirement
   const meldTilesAll: Tile[] = [];
   const meldTilesCounted: Tile[] = [];
@@ -139,6 +139,9 @@ export function calculateHandFan(handTiles: Tile[], meldMap?: Record<string, Mel
   }
 
   let possibleCombinations: string[] | undefined;
+  // huWaitFlags: set during winning-structure validation when huTile is provided.
+  // It is declared here so the final scoring section can reference it.
+  let huWaitFlags: { pairWait: boolean; closedWait: boolean } | undefined = undefined;
 
   // If the caller (UI) indicated strict validation (countedTiles matches UI expectations), validate winning hand structure.
   if (shouldValidateWinning) {
@@ -385,6 +388,57 @@ export function calculateHandFan(handTiles: Tile[], meldMap?: Record<string, Mel
     if (!winning) {
       return { isValid: false, totalFan: 0, reason: '此手牌無法胡牌：無法將剩餘牌拆解為完整的組合與一對。', breakdown: [] };
     }
+
+    // hu wait detection (pair-wait / single wait: 單騎, and closed-middle wait: 卡張)
+    // These flags are set by simulating the tile counts BEFORE the hu tile was added
+    // and checking whether removing the companion tiles leaves a partitionable remainder.
+    // The code uses existing helpers: cloneCounts, canFormMelds.
+    huWaitFlags = { pairWait: false, closedWait: false };
+
+    if (huTile) {
+      const huKey = `${huTile.suit}_${huTile.value}`;
+
+      // countsWithoutHu represents tile counts before the hu tile was added.
+      const countsWithoutHu = cloneCounts(remainingCounts);
+      // If handTiles already included the hu tile (typical caller behavior), remove one copy
+      if ((countsWithoutHu.get(huKey) || 0) > 0) {
+        const newVal = (countsWithoutHu.get(huKey) || 0) - 1;
+        if (newVal > 0) countsWithoutHu.set(huKey, newVal);
+        else countsWithoutHu.delete(huKey);
+      }
+
+      // 1) Pair wait (單騎 / tanki): if there is at least one identical tile and removing it leaves valid melds
+      if ((countsWithoutHu.get(huKey) || 0) >= 1) {
+        const copy = cloneCounts(countsWithoutHu);
+        const c = (copy.get(huKey) || 0) - 1;
+        if (c > 0) copy.set(huKey, c); else copy.delete(huKey);
+
+        if (canFormMelds(copy)) {
+          huWaitFlags.pairWait = true;
+        }
+      }
+
+      // 2) Closed-middle (卡張): hu tile completes the middle of a sequence => neighbors must exist
+      const [suit, valStr] = huKey.split('_');
+      const val = Number(valStr);
+      if (['wan', 'tong', 'sou'].includes(suit)) {
+        const leftKey = `${suit}_${val - 1}`;
+        const rightKey = `${suit}_${val + 1}`;
+        if ((countsWithoutHu.get(leftKey) || 0) >= 1 && (countsWithoutHu.get(rightKey) || 0) >= 1) {
+          const copy2 = cloneCounts(countsWithoutHu);
+          // remove left
+          const lc = (copy2.get(leftKey) || 0) - 1;
+          if (lc > 0) copy2.set(leftKey, lc); else copy2.delete(leftKey);
+          // remove right
+          const rc = (copy2.get(rightKey) || 0) - 1;
+          if (rc > 0) copy2.set(rightKey, rc); else copy2.delete(rightKey);
+
+          if (canFormMelds(copy2)) {
+            huWaitFlags.closedWait = true;
+          }
+        }
+      }
+    }
   }
 
   const breakdown: { rule: string; fan: number }[] = [];
@@ -410,6 +464,19 @@ export function calculateHandFan(handTiles: Tile[], meldMap?: Record<string, Mel
     if (concealedKongs > 0) {
       totalFan += concealedKongs;
       breakdown.push({ rule: `暗槓 x${concealedKongs}`, fan: concealedKongs });
+    }
+  }
+
+  // Hu-wait based fans (requires huTile and successful winning-structure validation)
+  // - 單騎 (pair wait): huTile paired an existing single tile (單騎) => +1 fan
+  // - 卡張 (closed-middle): huTile completed the middle of a sequence (x-? - x+?) => +1 fan
+  if (huWaitFlags) {
+    if (huWaitFlags.pairWait) {
+      totalFan += 1;
+      breakdown.push({ rule: '單騎 (Pair wait)', fan: 1 });
+    } else if (huWaitFlags.closedWait) {
+      totalFan += 1;
+      breakdown.push({ rule: '卡張 (Closed-middle wait)', fan: 1 });
     }
   }
 
