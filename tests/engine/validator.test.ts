@@ -59,7 +59,7 @@ describe('validator kong-adjusted total', () => {
     const res = calculateHandFan(handTiles, undefined, false);
     expect(res.isValid).toBe(true);
     expect(res.reason).toBeUndefined();
-    expect(res.totalFan).toBeGreaterThanOrEqual(1);
+    expect(res.totalFan).toBeGreaterThanOrEqual(0);
   });
 
   it('accepts a valid hand that uses the remaining tiles as a descending sequence', () => {
@@ -89,7 +89,7 @@ describe('validator kong-adjusted total', () => {
 
     const res = calculateHandFan(handTiles, undefined, false);
     expect(res.isValid).toBe(true);
-    expect(res.totalFan).toBeGreaterThanOrEqual(1);
+    expect(res.totalFan).toBeGreaterThanOrEqual(0);
   });
 
   it('deduplicates equivalent valid decompositions that differ only by sequence ordering', () => {

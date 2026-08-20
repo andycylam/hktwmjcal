@@ -103,6 +103,20 @@ export function calculateHandFan(handTiles: Tile[], meldMap?: Record<string, Mel
     counts.set(key, (counts.get(key) || 0) + 1);
   });
 
+  // Separate wind and dragon melds for potential scoring rules that depend on them
+  const windMelds: MeldEntry[] = [];
+  const dragonMelds: MeldEntry[] = [];
+
+  if (meldMap) {
+    Object.values(meldMap).forEach(m => {
+      if (m.kind === 'flower' || m.kind === 'shang' || !m.tiles.length) return;
+
+      const suit = m.tiles[0].suit;
+      if (suit === 'wind') windMelds.push(m);
+      if (suit === 'dragon') dragonMelds.push(m);
+    });
+  }
+
   // If the UI calls calculate only when counted total matches expected, perform winning-structure validation then.
   const shouldValidateWinning = countedTiles.length === 17 + kongCount;
 
@@ -442,14 +456,30 @@ export function calculateHandFan(handTiles: Tile[], meldMap?: Record<string, Mel
   }
 
   const breakdown: { rule: string; fan: number }[] = [];
-  let totalFan = 1;
-  breakdown.push({ rule: '底番 (Base Point)', fan: 1 });
+  let totalFan = 0;//1;
+  //breakdown.push({ rule: '底番 (Base Point)', fan: 1 });
 
   // honor tiles rule preserved
-  const hasHonor = allTiles.some(t => t.suit === 'wind' || t.suit === 'dragon');
-  if (hasHonor) {
-    totalFan += 1;
+  const hasHonor = allTiles.filter(t => t.suit === 'wind' || t.suit === 'dragon').length;
+  if (hasHonor > 0) {
+    totalFan += hasHonor;
     breakdown.push({ rule: '字牌 (Honor Tile)', fan: 1 });
+  }
+
+  // wind and dragon melds for potential scoring
+  let windFan = 0;
+  let dragonFan = 0;
+
+  for (const meld of windMelds) {
+    const windValue = meld.tiles[0].value;
+    //if (windValue === seatWind) windFan += 1;
+    //if (windValue === prevalentWind) windFan += 1;
+  }
+
+  for (const meld of dragonMelds) {
+    const dragonValue = meld.tiles[0].value;
+    //if (dragonValue === seatWind) dragonFan += 1;
+    //if (dragonValue === prevalentWind) dragonFan += 1;
   }
 
   // 自摸 (zimo) grants +1 fan
