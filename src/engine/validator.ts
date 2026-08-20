@@ -498,8 +498,6 @@ export function calculateHandFan(
       windFan += 1;
       breakdown.push({ rule: '正字 (場風)', fan: 1 });
     }
-    windFan += 1;
-
     if (windValue === 1) {
       windFan += 1;
       breakdown.push({ rule: '字牌 (東)', fan: 1 });
