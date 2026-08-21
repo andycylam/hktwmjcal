@@ -31,9 +31,6 @@ describe('validator wind scoring', () => {
     handTiles.push(makeTile('sou', 1, 1));
     handTiles.push(makeTile('sou', 2, 1));
     handTiles.push(makeTile('sou', 3, 1));
-    handTiles.push(makeTile('sou', 4, 1));
-    handTiles.push(makeTile('sou', 5, 1));
-    handTiles.push(makeTile('sou', 6, 1));
     handTiles.push(makeTile('wan', 2, 1));
     handTiles.push(makeTile('wan', 2, 2));
 
