@@ -240,24 +240,61 @@ export function calculateHandFan(
       return labels.join('-');
     }
 
+    function honorNumberToChar(suitChar: string, num: number): string {
+      if (suitChar === '風') {
+        const map = ['東', '南', '西', '北'];
+        return map[num - 1] || String(num);
+      }
+      if (suitChar === '字') {
+        const map: Record<number, string> = { 5: '中', 6: '發', 7: '白' };
+        return map[num] || String(num);
+      }
+      return String(num);
+    }
+
+    function charToHonorNumber(ch: string): number | null {
+      if (ch === '東') return 1;
+      if (ch === '南') return 2;
+      if (ch === '西') return 3;
+      if (ch === '北') return 4;
+      if (ch === '中') return 5;
+      if (ch === '發') return 6;
+      if (ch === '白') return 7;
+      return null;
+    }
+
+    function getPrimaryNumberFromString(s: string): number {
+      const numMatch = s.match(/\d+/);
+      if (numMatch) return Number(numMatch[0]);
+      const charMatch = s.match(/[東南西北中發白]/)?.[0];
+      if (charMatch) return charToHonorNumber(charMatch) ?? 0;
+      return 0;
+    }
+
     function normalizeMeldPart(part: string): { sortKey: number; pair: boolean; token: string } {
       const suitMatch = part.match(/[萬筒索風字]/)?.[0] ?? '';
       const numbers = [...part.matchAll(/\d+/g)].map(Number);
       const firstNumber = numbers[0] ?? 0;
 
       if (part.includes('x3')) {
-        return { sortKey: firstNumber, pair: false, token: `${firstNumber}${suitMatch}x3` };
+        const displayNum = (suitMatch === '風' || suitMatch === '字') ? honorNumberToChar(suitMatch, firstNumber) : String(firstNumber);
+        return { sortKey: firstNumber, pair: false, token: `${displayNum}${suitMatch}x3` };
       }
 
       if (part.includes('x2')) {
-        return { sortKey: firstNumber, pair: true, token: `${firstNumber}${suitMatch}x2` };
+        const displayNum = (suitMatch === '風' || suitMatch === '字') ? honorNumberToChar(suitMatch, firstNumber) : String(firstNumber);
+        return { sortKey: firstNumber, pair: true, token: `${displayNum}${suitMatch}x2` };
       }
 
       const normalizedNumbers = [...numbers].sort((a, b) => a - b);
+      const displayParts = normalizedNumbers.map(value => {
+        return (suitMatch === '風' || suitMatch === '字') ? honorNumberToChar(suitMatch, value) + suitMatch : `${value}${suitMatch}`;
+      });
+
       return {
         sortKey: normalizedNumbers[0] ?? 0,
         pair: false,
-        token: normalizedNumbers.map(value => `${value}${suitMatch}`).join('-')
+        token: displayParts.join('-')
       };
     }
 
@@ -270,7 +307,7 @@ export function calculateHandFan(
         const aRank = a.token.includes('x3') ? 0 : a.token.includes('x2') ? 2 : 1;
         const bRank = b.token.includes('x3') ? 0 : b.token.includes('x2') ? 2 : 1;
         if (aRank !== bRank) return aRank - bRank;
-        return a.token.localeCompare(b.token);
+        return a.token.localeCompare(b.token, 'zh-Hant');
       });
 
       return parts.map(part => part.token).join(', ');
@@ -385,8 +422,8 @@ export function calculateHandFan(
           const decomposition = collectMeldCombinations(copy)
             .map(melds => {
               const meldParts = [...melds].sort((a, b) => {
-                const aNum = Number((a.match(/\d+/) || ['0'])[0]);
-                const bNum = Number((b.match(/\d+/) || ['0'])[0]);
+                const aNum = getPrimaryNumberFromString(a);
+                const bNum = getPrimaryNumberFromString(b);
                 return aNum - bNum;
               });
               return [...meldParts, pairLabel].sort((a, b) => {
@@ -394,8 +431,8 @@ export function calculateHandFan(
                 const bIsPair = b.includes('x2');
                 if (aIsPair && !bIsPair) return 1;
                 if (!aIsPair && bIsPair) return -1;
-                const aNum = Number((a.match(/\d+/) || ['0'])[0]);
-                const bNum = Number((b.match(/\d+/) || ['0'])[0]);
+                const aNum = getPrimaryNumberFromString(a);
+                const bNum = getPrimaryNumberFromString(b);
                 return aNum - bNum;
               }).join(', ');
             });
@@ -407,9 +444,17 @@ export function calculateHandFan(
     possibleCombinations = [...new Set(validCombinations.map(canonicalizeCombination))].sort((a, b) => {
       const aParts = a.split(', ');
       const bParts = b.split(', ');
-      const aKey = aParts.map(part => Number((part.match(/\d+/) || ['0'])[0])).join('|');
-      const bKey = bParts.map(part => Number((part.match(/\d+/) || ['0'])[0])).join('|');
-      return aKey.localeCompare(bKey);
+      const aKey = aParts.map(part => getPrimaryNumberFromString(part)).join('|');
+      const bKey = bParts.map(part => getPrimaryNumberFromString(part)).join('|');
+      // compare as sequences of numbers
+      const aNums = aKey.split('|').map(Number);
+      const bNums = bKey.split('|').map(Number);
+      for (let i = 0; i < Math.max(aNums.length, bNums.length); i++) {
+        const an = aNums[i] || 0;
+        const bn = bNums[i] || 0;
+        if (an !== bn) return an - bn;
+      }
+      return 0;
     });
 
     if (!winning) {
@@ -553,9 +598,8 @@ export function calculateHandFan(
 
         // wind triplets
         if (part.includes('風')) {
-          const match = part.match(/(\d+)/);
-          const val = match ? Number(match[1]) : NaN;
-          if (!Number.isNaN(val)) {
+          const val = getPrimaryNumberFromString(part);
+          if (val > 0) {
             // seat / prevailing
             if (val === seatWindNum) {
               comboWindExtra += 1;
@@ -565,7 +609,6 @@ export function calculateHandFan(
               comboWindExtra += 1;
               comboBreakdown.push({ rule: '正字 (場風)', fan: 1 });
             }
-            comboWindExtra += 1; // base for having a wind triplet
             if (val === 1) { comboWindExtra += 1; comboBreakdown.push({ rule: '字牌 (東)', fan: 1 }); }
             else if (val === 2) { comboWindExtra += 1; comboBreakdown.push({ rule: '字牌 (南)', fan: 1 }); }
             else if (val === 3) { comboWindExtra += 1; comboBreakdown.push({ rule: '字牌 (西)', fan: 1 }); }
@@ -575,9 +618,8 @@ export function calculateHandFan(
 
         // dragon triplets
         if (part.includes('字')) {
-          const match = part.match(/(\d+)/);
-          const val = match ? Number(match[1]) : NaN;
-          if (!Number.isNaN(val)) {
+          const val = getPrimaryNumberFromString(part);
+          if (val > 0) {
             if (val === 5) { comboDragonExtra += 1; comboBreakdown.push({ rule: '字牌 (中)', fan: 1 }); }
             else if (val === 6) { comboDragonExtra += 1; comboBreakdown.push({ rule: '字牌 (發)', fan: 1 }); }
             else if (val === 7) { comboDragonExtra += 1; comboBreakdown.push({ rule: '字牌 (白)', fan: 1 }); }
@@ -599,7 +641,7 @@ export function calculateHandFan(
     }
   }
 
-  // totalFan += windFan + dragonFan;
+  // // totalFan += windFan + dragonFan;
 
   // 自摸 (zimo) grants +1 fan
   if (huIsZimo) {
