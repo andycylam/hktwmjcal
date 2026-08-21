@@ -29,10 +29,16 @@ const TILE_GROUPS: { name: string; suit: Suit; items: { val: number; label: stri
     items: [1, 2, 3, 4, 5, 6, 7, 8, 9].map(v => ({ val: v, label: `${CHINESE_NUM[v]}索` }))
   },
   {
-    name: '字牌 (Winds & Dragons)',
+    name: '風牌 (Winds)',
     suit: 'wind',
     items: [
-      { val: 1, label: '東' }, { val: 2, label: '南' }, { val: 3, label: '西' }, { val: 4, label: '北' },
+      { val: 1, label: '東' }, { val: 2, label: '南' }, { val: 3, label: '西' }, { val: 4, label: '北' }
+    ]
+  },
+  {
+    name: '箭牌 (Dragons)',
+    suit: 'dragon',
+    items: [
       { val: 5, label: '中' }, { val: 6, label: '發' }, { val: 7, label: '白' }
     ]
   },
