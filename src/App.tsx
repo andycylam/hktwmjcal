@@ -436,7 +436,10 @@ export default function App() {
   const [seatWind, setSeatWind] = useState<'east'|'south'|'west'|'north'>('east');
 
   const handleCalculate = () => {
-    const res = calculateHandFan(hand, meldMap, huIsZimo);
+    const res = calculateHandFan(hand, meldMap, huIsZimo, huTile ?? undefined, {
+      prevailingWind: prevalentWind,
+      seatWind
+    });
     setResult(res);
     if (!res.isValid) {
       setErrorMessage(res.reason || '無法計算牌型。');
