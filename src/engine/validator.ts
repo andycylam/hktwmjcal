@@ -83,13 +83,13 @@ function honorNumberToChar(suitChar: string, num: number): string {
   if (suitChar === '風') {
     const map = ['東', '南', '西', '北'];
     if (num >= 5) {
-      const dragonMap: Record<number, string> = { 5: '中', 6: '發', 7: '白' };
+      const dragonMap: Record<number, string> = { 5: '紅中', 6: '發財', 7: '白板' };
       return dragonMap[num] || String(num);
     }
     return map[num - 1] || String(num);
   }
   if (suitChar === '字') {
-    const map: Record<number, string> = { 5: '中', 6: '發', 7: '白' };
+    const map: Record<number, string> = { 5: '紅中', 6: '發財', 7: '白板' };
     return map[num] || String(num);
   }
   return String(num);
@@ -281,19 +281,25 @@ export function calculateHandFan(
       const numbers = [...part.matchAll(/\d+/g)].map(Number);
       const firstNumber = numbers[0] ?? 0;
 
+      const dragonChars = ['紅中', '發財', '白板'];
+      const isDragon = (ch: string) => dragonChars.includes(ch);
+
       if (part.includes('x3')) {
         const displayNum = (suitMatch === '風' || suitMatch === '字') ? honorNumberToChar(suitMatch, firstNumber) : String(firstNumber);
-        return { sortKey: firstNumber, pair: false, token: `${displayNum}${suitMatch}x3` };
+        const suffix = isDragon(displayNum) ? '' : suitMatch;
+        return { sortKey: firstNumber, pair: false, token: `${displayNum}${suffix}x3` };
       }
 
       if (part.includes('x2')) {
         const displayNum = (suitMatch === '風' || suitMatch === '字') ? honorNumberToChar(suitMatch, firstNumber) : String(firstNumber);
-        return { sortKey: firstNumber, pair: true, token: `${displayNum}${suitMatch}x2` };
+        const suffix = isDragon(displayNum) ? '' : suitMatch;
+        return { sortKey: firstNumber, pair: true, token: `${displayNum}${suffix}x2` };
       }
 
       const normalizedNumbers = [...numbers].sort((a, b) => a - b);
       const displayParts = normalizedNumbers.map(value => {
-        return (suitMatch === '風' || suitMatch === '字') ? honorNumberToChar(suitMatch, value) + suitMatch : `${value}${suitMatch}`;
+        const ch = (suitMatch === '風' || suitMatch === '字') ? honorNumberToChar(suitMatch, value) : String(value);
+        return isDragon(ch) ? ch : `${ch}${suitMatch}`;
       });
 
       return {
