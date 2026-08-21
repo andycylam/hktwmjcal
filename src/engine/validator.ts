@@ -82,6 +82,10 @@ function getDeclaredKongCount(meldMap?: Record<string, MeldEntry>): number {
 function honorNumberToChar(suitChar: string, num: number): string {
   if (suitChar === '風') {
     const map = ['東', '南', '西', '北'];
+    if (num >= 5) {
+      const dragonMap: Record<number, string> = { 5: '中', 6: '發', 7: '白' };
+      return dragonMap[num] || String(num);
+    }
     return map[num - 1] || String(num);
   }
   if (suitChar === '字') {
