@@ -522,7 +522,7 @@ export default function App() {
             </div>
 
             <div className="w-48">
-              <HuArea huTile={huTile} onRemoveHu={() => { setHuTileId(null); setHuIsZimo(false); }} huIsZimo={huIsZimo} onToggleZimo={(next: boolean) => setHuIsZimo(next)} />
+              <HuArea huTile={huTile} onRemoveHu={() => { setHuTileId(null); }} huIsZimo={huIsZimo} onToggleZimo={(next: boolean) => setHuIsZimo(next)} />
             </div>
 
             <div className="w-72">
