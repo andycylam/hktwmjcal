@@ -597,34 +597,48 @@ export function calculateHandFan(
         // Triplets are labeled with 'x3' (e.g. '1風x3', '5字x3')
         if (!part.includes('x3')) continue;
 
-        // wind triplets
-        if (part.includes('風')) {
-          const val = getPrimaryNumberFromString(part);
-          if (val > 0) {
-            // seat / prevailing
-            if (val === seatWindNum) {
-              comboWindExtra += 1;
-              comboBreakdown.push({ rule: '正字 (座位)', fan: 1 });
-            }
-            if (val === prevailingWindNum) {
-              comboWindExtra += 1;
-              comboBreakdown.push({ rule: '正字 (場風)', fan: 1 });
-            }
-            if (val === 1) { comboWindExtra += 1; comboBreakdown.push({ rule: '字牌 (東)', fan: 1 }); }
-            else if (val === 2) { comboWindExtra += 1; comboBreakdown.push({ rule: '字牌 (南)', fan: 1 }); }
-            else if (val === 3) { comboWindExtra += 1; comboBreakdown.push({ rule: '字牌 (西)', fan: 1 }); }
-            else if (val === 4) { comboWindExtra += 1; comboBreakdown.push({ rule: '字牌 (北)', fan: 1 }); }
-          }
-        }
+        // Determine whether this triplet is a wind or dragon honor. Prefer explicit Chinese characters
+        // (東南西北 for winds, 中發白 for dragons). Fall back to suit characters (風/字) and then numeric ranges.
+        const primaryNum = getPrimaryNumberFromString(part);
+        const windCharMatch = part.match(/[東南西北]/)?.[0];
+        const dragonCharMatch = part.match(/[中發白]/)?.[0];
 
-        // dragon triplets
-        if (part.includes('字')) {
-          const val = getPrimaryNumberFromString(part);
-          if (val > 0) {
-            if (val === 5) { comboDragonExtra += 1; comboBreakdown.push({ rule: '字牌 (中)', fan: 1 }); }
-            else if (val === 6) { comboDragonExtra += 1; comboBreakdown.push({ rule: '字牌 (發)', fan: 1 }); }
-            else if (val === 7) { comboDragonExtra += 1; comboBreakdown.push({ rule: '字牌 (白)', fan: 1 }); }
-          }
+        // Helper to add wind breakdown
+        const addWindBreakdown = (val: number) => {
+          if (val === seatWindNum) { comboWindExtra += 1; comboBreakdown.push({ rule: '正字 (座位)', fan: 1 }); }
+          if (val === prevailingWindNum) { comboWindExtra += 1; comboBreakdown.push({ rule: '正字 (場風)', fan: 1 }); }
+          if (val === 1) { comboWindExtra += 1; comboBreakdown.push({ rule: '字牌 (東)', fan: 1 }); }
+          else if (val === 2) { comboWindExtra += 1; comboBreakdown.push({ rule: '字牌 (南)', fan: 1 }); }
+          else if (val === 3) { comboWindExtra += 1; comboBreakdown.push({ rule: '字牌 (西)', fan: 1 }); }
+          else if (val === 4) { comboWindExtra += 1; comboBreakdown.push({ rule: '字牌 (北)', fan: 1 }); }
+        };
+
+        // Helper to add dragon breakdown
+        const addDragonBreakdown = (val: number) => {
+          if (val === 5) { comboDragonExtra += 1; comboBreakdown.push({ rule: '字牌 (中)', fan: 1 }); }
+          else if (val === 6) { comboDragonExtra += 1; comboBreakdown.push({ rule: '字牌 (發)', fan: 1 }); }
+          else if (val === 7) { comboDragonExtra += 1; comboBreakdown.push({ rule: '字牌 (白)', fan: 1 }); }
+        };
+
+        if (windCharMatch) {
+          const val = charToHonorNumber(windCharMatch) || primaryNum;
+          addWindBreakdown(val);
+        } else if (dragonCharMatch) {
+          const val = charToHonorNumber(dragonCharMatch) || primaryNum;
+          addDragonBreakdown(val);
+        } else if (part.includes('風') && !part.includes('字')) {
+          // suit shows as 風: treat as wind unless numeric is >=5
+          const val = primaryNum;
+          if (val > 0 && val <= 4) addWindBreakdown(val);
+          else if (val >= 5) addDragonBreakdown(val);
+        } else if (part.includes('字') && !part.includes('風')) {
+          const val = primaryNum;
+          if (val > 0 && val <= 4) addWindBreakdown(val);
+          else if (val >= 5) addDragonBreakdown(val);
+        } else {
+          // fallback by numeric range: 1-4 wind, 5-7 dragon
+          if (primaryNum >= 1 && primaryNum <= 4) addWindBreakdown(primaryNum);
+          else if (primaryNum >= 5 && primaryNum <= 7) addDragonBreakdown(primaryNum);
         }
       }
 
