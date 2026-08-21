@@ -79,6 +79,37 @@ function getDeclaredKongCount(meldMap?: Record<string, MeldEntry>): number {
   return meldMap ? Object.values(meldMap).filter(m => m.kind === 'kong').length : 0;
 }
 
+function honorNumberToChar(suitChar: string, num: number): string {
+  if (suitChar === '風') {
+    const map = ['東', '南', '西', '北'];
+    return map[num - 1] || String(num);
+  }
+  if (suitChar === '字') {
+    const map: Record<number, string> = { 5: '中', 6: '發', 7: '白' };
+    return map[num] || String(num);
+  }
+  return String(num);
+}
+
+function charToHonorNumber(ch: string): number | null {
+  if (ch === '東') return 1;
+  if (ch === '南') return 2;
+  if (ch === '西') return 3;
+  if (ch === '北') return 4;
+  if (ch === '中') return 5;
+  if (ch === '發') return 6;
+  if (ch === '白') return 7;
+  return null;
+}
+
+function getPrimaryNumberFromString(s: string): number {
+  const numMatch = s.match(/\d+/);
+  if (numMatch) return Number(numMatch[0]);
+  const charMatch = s.match(/[東南西北中發白]/)?.[0];
+  if (charMatch) return charToHonorNumber(charMatch) ?? 0;
+  return 0;
+}
+
 export function calculateHandFan(
   handTiles: Tile[],
   meldMap?: Record<string, MeldEntry>,
@@ -240,36 +271,6 @@ export function calculateHandFan(
       return labels.join('-');
     }
 
-    function honorNumberToChar(suitChar: string, num: number): string {
-      if (suitChar === '風') {
-        const map = ['東', '南', '西', '北'];
-        return map[num - 1] || String(num);
-      }
-      if (suitChar === '字') {
-        const map: Record<number, string> = { 5: '中', 6: '發', 7: '白' };
-        return map[num] || String(num);
-      }
-      return String(num);
-    }
-
-    function charToHonorNumber(ch: string): number | null {
-      if (ch === '東') return 1;
-      if (ch === '南') return 2;
-      if (ch === '西') return 3;
-      if (ch === '北') return 4;
-      if (ch === '中') return 5;
-      if (ch === '發') return 6;
-      if (ch === '白') return 7;
-      return null;
-    }
-
-    function getPrimaryNumberFromString(s: string): number {
-      const numMatch = s.match(/\d+/);
-      if (numMatch) return Number(numMatch[0]);
-      const charMatch = s.match(/[東南西北中發白]/)?.[0];
-      if (charMatch) return charToHonorNumber(charMatch) ?? 0;
-      return 0;
-    }
 
     function normalizeMeldPart(part: string): { sortKey: number; pair: boolean; token: string } {
       const suitMatch = part.match(/[萬筒索風字]/)?.[0] ?? '';
