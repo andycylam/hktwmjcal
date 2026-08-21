@@ -155,6 +155,8 @@ export function calculateHandFan(
   const windMelds: MeldEntry[] = [];
   const dragonMelds: MeldEntry[] = [];
 
+  let isDukDuk = false;
+
   if (meldMap) {
     Object.values(meldMap).forEach(m => {
       if (m.kind === 'flower' || m.kind === 'shang' || !m.tiles.length) return;
@@ -472,6 +474,67 @@ export function calculateHandFan(
       return { isValid: false, totalFan: 0, reason: '此手牌無法胡牌：無法將剩餘牌拆解為完整的組合與一對。', breakdown: [] };
     }
 
+    // ==========================================
+    // 獨獨 / 聽牌形態判定 (獨獨、卡張、邊張 全部計為「獨獨」)
+    // ==========================================
+    
+
+    if (huTile) {
+      const huKey = `${huTile.suit}_${huTile.value}`;
+
+      // 1. 還原胡牌前 16 張手牌的數量 Map (countsBeforeHu)
+      const countsBeforeHu = cloneCounts(remainingCounts);
+      const currentHuCount = countsBeforeHu.get(huKey) || 0;
+      if (currentHuCount > 0) {
+        if (currentHuCount === 1) countsBeforeHu.delete(huKey);
+        else countsBeforeHu.set(huKey, currentHuCount - 1);
+      }
+
+      // 2. 生成全麻將 34 種牌型，測試「胡牌前」到底聽幾種牌
+      const allPossibleTileKeys: string[] = [];
+      ['wan', 'tong', 'sou'].forEach(s => {
+        for (let i = 1; i <= 9; i++) allPossibleTileKeys.push(`${s}_${i}`);
+      });
+      for (let i = 1; i <= 4; i++) allPossibleTileKeys.push(`wind_${i}`);
+      for (let i = 5; i <= 7; i++) allPossibleTileKeys.push(`dragon_${i}`);
+
+      const winningTileKeys: string[] = [];
+
+      // 3. 測試加入每一張 candidateTile 後，是否能組成 5 面子 + 1 雀頭
+      for (const candKey of allPossibleTileKeys) {
+        // 單種牌最多只能有 4 張
+        if ((countsBeforeHu.get(candKey) || 0) >= 4) continue;
+
+        const testCounts = cloneCounts(countsBeforeHu);
+        testCounts.set(candKey, (testCounts.get(candKey) || 0) + 1);
+
+        // 檢查 testCounts (17張) 是否可以成功胡牌
+        let testWinning = false;
+        for (const [k, c] of testCounts.entries()) {
+          if (c >= 2) {
+            const temp = cloneCounts(testCounts);
+            temp.set(k, c - 2);
+            if (canFormMelds(temp)) {
+              testWinning = true;
+              break;
+            }
+          }
+        }
+
+        if (testWinning) {
+          winningTileKeys.push(candKey);
+          // 效能優化：如果聽牌種類已超過 1 種（如兩面聽、三面聽），肯定不是獨獨，可提前 break
+          if (winningTileKeys.length > 1) break;
+        }
+      }
+
+      // 4. 當且僅當全盤「只聽 1 種牌」時，即成立廣義獨獨（單騎 / 卡張 / 邊張）
+      if (winningTileKeys.length === 1 && winningTileKeys[0] === huKey) {
+        isDukDuk = true;
+      }
+    }
+
+
     // hu wait detection (pair-wait / single wait: 單騎, and closed-middle wait: 卡張)
     // These flags are set by simulating the tile counts BEFORE the hu tile was added
     // and checking whether removing the companion tiles leaves a partitionable remainder.
@@ -683,17 +746,10 @@ export function calculateHandFan(
     }
   }
 
-  // Hu-wait based fans (requires huTile and successful winning-structure validation)
-  // - 單騎 (pair wait): huTile paired an existing single tile (單騎) => +1 fan
-  // - 卡張 (closed-middle): huTile completed the middle of a sequence (x-? - x+?) => +1 fan
-  if (huWaitFlags) {
-    if (huWaitFlags.pairWait) {
-      totalFan += 1;
-      breakdown.push({ rule: '單騎 (Pair wait)', fan: 1 });
-    } else if (huWaitFlags.closedWait) {
-      totalFan += 1;
-      breakdown.push({ rule: '卡張 (Closed-middle wait)', fan: 1 });
-    }
+  // 獨獨 (單獨聽一張牌：包含單騎、卡張、邊張) +1 番
+  if (isDukDuk) {
+    totalFan += 1;
+    breakdown.push({ rule: '獨獨 (單聽/卡張/邊張)', fan: 1 });
   }
 
   return {
