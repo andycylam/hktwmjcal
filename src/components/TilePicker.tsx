@@ -12,7 +12,7 @@ const MAX_PER_TYPE = 4;
 
 const CHINESE_NUM = ['零','一','二','三','四','五','六','七','八','九'];
 
-const TILE_GROUPS: { name: string; suit: Suit; items: { val: number; label: string }[] }[] = [
+const TILE_GROUPS: { name: string; suit: Suit; items: { val: number; label: string; suit?: Suit }[] }[] = [
   {
     name: '萬子 (Characters)',
     suit: 'wan',
@@ -29,17 +29,16 @@ const TILE_GROUPS: { name: string; suit: Suit; items: { val: number; label: stri
     items: [1, 2, 3, 4, 5, 6, 7, 8, 9].map(v => ({ val: v, label: `${CHINESE_NUM[v]}索` }))
   },
   {
-    name: '風牌 (Winds)',
-    suit: 'wind',
+    name: '字牌 (Winds & Dragons)',
+    suit: 'wind', // default suit, overridden per-item for dragons
     items: [
-      { val: 1, label: '東' }, { val: 2, label: '南' }, { val: 3, label: '西' }, { val: 4, label: '北' }
-    ]
-  },
-  {
-    name: '箭牌 (Dragons)',
-    suit: 'dragon',
-    items: [
-      { val: 5, label: '中' }, { val: 6, label: '發' }, { val: 7, label: '白' }
+      { val: 1, label: '東', suit: 'wind' },
+      { val: 2, label: '南', suit: 'wind' },
+      { val: 3, label: '西', suit: 'wind' },
+      { val: 4, label: '北', suit: 'wind' },
+      { val: 5, label: '中', suit: 'dragon' },
+      { val: 6, label: '發', suit: 'dragon' },
+      { val: 7, label: '白', suit: 'dragon' }
     ]
   },
   {
@@ -118,11 +117,12 @@ export const TilePicker: React.FC<Props> = ({ onSelectTile, onAddFlower, hand, m
           <span className="text-xs text-slate-400 uppercase font-semibold">{group.name}</span>
           <div className="flex flex-wrap gap-2">
             {group.items.map((item, idx) => {
-              const key = `${group.suit}_${item.val}`;
+              const itemSuit = item.suit || group.suit;
+              const key = `${itemSuit}_${item.val}`;
               const currentCount = counts.get(key) || 0;
-              const isFlower = group.suit === 'flower';
+              const isFlower = itemSuit === 'flower';
               const effectiveMaxed = isFlower ? currentCount >= 1 : currentCount >= MAX_PER_TYPE;
-              const colors = SUIT_COLORS[group.suit];
+              const colors = SUIT_COLORS[itemSuit];
 
               return (
                 <button
@@ -130,11 +130,11 @@ export const TilePicker: React.FC<Props> = ({ onSelectTile, onAddFlower, hand, m
                   onClick={() => {
                     const tile = {
                       id: `${key}_${Date.now()}_${idx}`,
-                      suit: group.suit,
+                      suit: itemSuit,
                       value: item.val,
                       label: item.label
                     } as Tile;
-                    if (group.suit === 'flower') {
+                    if (itemSuit === 'flower') {
                       if (onAddFlower) onAddFlower(tile);
                       return;
                     }
