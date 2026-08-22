@@ -681,8 +681,8 @@ export function calculateHandFan(
         }
       }
 
-      // Count honor triplet bonuses (excluding seat/prevailing wind bonuses)
-      const comboTotal = comboBreakdown.filter(e => e.rule.startsWith('字牌')).length;
+      // Sum ALL fan from comboBreakdown (including seat/prevailing wind bonuses)
+      const comboTotal = comboBreakdown.reduce((sum, e) => sum + e.fan, 0);
       if (comboTotal > bestExtraFan) {
         bestExtraFan = comboTotal;
         bestBreakdownToAdd = comboBreakdown;
