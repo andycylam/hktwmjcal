@@ -114,6 +114,41 @@ function getPrimaryNumberFromString(s: string): number {
   return 0;
 }
 
+// Helper to score a single honor triplet (wind or dragon)
+function scoreHonorTriplet(
+  value: number,
+  seatWindNum: number | undefined,
+  prevailingWindNum: number | undefined
+): { fan: number; breakdown: { rule: string; fan: number }[] } {
+  const honorNames: Record<number, string> = {
+    1: '東', 2: '南', 3: '西', 4: '北',
+    5: '中', 6: '發', 7: '白'
+  };
+  if (value < 1 || value > 7) return { fan: 0, breakdown: [] };
+
+  const breakdown: { rule: string; fan: number }[] = [];
+  let fan = 0;
+  const name = honorNames[value];
+
+  // Seat/prevailing wind bonus (only for winds 1-4)
+  if (value <= 4) {
+    if (value === seatWindNum) {
+      fan += 1;
+      breakdown.push({ rule: '正字 (座位)', fan: 1 });
+    }
+    if (value === prevailingWindNum) {
+      fan += 1;
+      breakdown.push({ rule: '正字 (場風)', fan: 1 });
+    }
+  }
+
+  // Honor triplet bonus
+  fan += 1;
+  breakdown.push({ rule: `字牌 (${name})`, fan: 1 });
+
+  return { fan, breakdown };
+}
+
 export function calculateHandFan(
   handTiles: Tile[],
   meldMap?: Record<string, MeldEntry>,
@@ -599,56 +634,18 @@ export function calculateHandFan(
     north: 4
   };
 
-  let windFan = 0;
-  let dragonFan = 0;
   // If seatWind can be undefined or unknown string, provide a fallback or optional check
   const seatWindNum = seatWind ? windValueMap[seatWind] : undefined;
   // If prevailingWind can be undefined or unknown string, provide a fallback or optional check
   const prevailingWindNum = prevailingWind ? windValueMap[prevailingWind] : undefined;
 
-  // Count declared melds (meldMap) as before
-  for (const meld of windMelds) {
-    const windValue = meld.tiles[0].value;
-    if (windValue === seatWindNum) {
-      windFan += 1;
-      breakdown.push({ rule: '正字 (座位)', fan: 1 });
-    }
-    if (windValue === prevailingWindNum) {
-      windFan += 1;
-      breakdown.push({ rule: '正字 (場風)', fan: 1 });
-    }
-    if (windValue === 1) {
-      windFan += 1;
-      breakdown.push({ rule: '字牌 (東)', fan: 1 });
-    }
-    else if (windValue === 2) {
-      windFan += 1;
-      breakdown.push({ rule: '字牌 (南)', fan: 1 });
-    }
-    else if (windValue === 3) {
-      windFan += 1;
-      breakdown.push({ rule: '字牌 (西)', fan: 1 });
-    }
-    else if (windValue === 4) {
-      windFan += 1;
-      breakdown.push({ rule: '字牌 (北)', fan: 1 });
-    }
-  }
-
-  for (const meld of dragonMelds) {
-    const dragonValue = meld.tiles[0].value;
-    if (dragonValue === 5) {
-      dragonFan += 1;
-      breakdown.push({ rule: '字牌 (中)', fan: 1 });
-    }
-    else if (dragonValue === 6) {
-      dragonFan += 1;
-      breakdown.push({ rule: '字牌 (發)', fan: 1 });
-    }
-    else if (dragonValue === 7) {
-      dragonFan += 1;
-      breakdown.push({ rule: '字牌 (白)', fan: 1 });
-    }
+  // Score honor triplets from declared melds (combined wind + dragon)
+  const honorMelds = [...windMelds, ...dragonMelds];
+  for (const meld of honorMelds) {
+    const value = meld.tiles[0].value;
+    const result = scoreHonorTriplet(value, seatWindNum, prevailingWindNum);
+    totalFan += result.fan;
+    breakdown.push(...result.breakdown);
   }
 
   // If the concealed hand (remaining hand tiles) can form melds that include wind/dragon triplets,
@@ -661,8 +658,6 @@ export function calculateHandFan(
     let bestBreakdownToAdd: { rule: string; fan: number }[] = [];
 
     for (const combo of possibleCombinations) {
-      let comboWindExtra = 0;
-      let comboDragonExtra = 0;
       const comboBreakdown: { rule: string; fan: number }[] = [];
 
       const parts = combo.split(', ');
@@ -670,52 +665,24 @@ export function calculateHandFan(
         // Triplets are labeled with 'x3' (e.g. '1風x3', '5字x3')
         if (!part.includes('x3')) continue;
 
-        // Determine whether this triplet is a wind or dragon honor. Prefer explicit Chinese characters
-        // (東南西北 for winds, 中發白 for dragons). Fall back to suit characters (風/字) and then numeric ranges.
+        // Determine the honor value
         const primaryNum = getPrimaryNumberFromString(part);
         const windCharMatch = part.match(/[東南西北]/)?.[0];
         const dragonCharMatch = part.match(/[中發白]/)?.[0];
 
-        // Helper to add wind breakdown
-        const addWindBreakdown = (val: number) => {
-          if (val === seatWindNum) { comboWindExtra += 1; comboBreakdown.push({ rule: '正字 (座位)', fan: 1 }); }
-          if (val === prevailingWindNum) { comboWindExtra += 1; comboBreakdown.push({ rule: '正字 (場風)', fan: 1 }); }
-          if (val === 1) { comboWindExtra += 1; comboBreakdown.push({ rule: '字牌 (東)', fan: 1 }); }
-          else if (val === 2) { comboWindExtra += 1; comboBreakdown.push({ rule: '字牌 (南)', fan: 1 }); }
-          else if (val === 3) { comboWindExtra += 1; comboBreakdown.push({ rule: '字牌 (西)', fan: 1 }); }
-          else if (val === 4) { comboWindExtra += 1; comboBreakdown.push({ rule: '字牌 (北)', fan: 1 }); }
-        };
+        let val = primaryNum;
+        if (windCharMatch) val = charToHonorNumber(windCharMatch) || val;
+        else if (dragonCharMatch) val = charToHonorNumber(dragonCharMatch) || val;
 
-        // Helper to add dragon breakdown
-        const addDragonBreakdown = (val: number) => {
-          if (val === 5) { comboDragonExtra += 1; comboBreakdown.push({ rule: '字牌 (中)', fan: 1 }); }
-          else if (val === 6) { comboDragonExtra += 1; comboBreakdown.push({ rule: '字牌 (發)', fan: 1 }); }
-          else if (val === 7) { comboDragonExtra += 1; comboBreakdown.push({ rule: '字牌 (白)', fan: 1 }); }
-        };
-
-        if (windCharMatch) {
-          const val = charToHonorNumber(windCharMatch) || primaryNum;
-          addWindBreakdown(val);
-        } else if (dragonCharMatch) {
-          const val = charToHonorNumber(dragonCharMatch) || primaryNum;
-          addDragonBreakdown(val);
-        } else if (part.includes('風') && !part.includes('字')) {
-          // suit shows as 風: treat as wind unless numeric is >=5
-          const val = primaryNum;
-          if (val > 0 && val <= 4) addWindBreakdown(val);
-          else if (val >= 5) addDragonBreakdown(val);
-        } else if (part.includes('字') && !part.includes('風')) {
-          const val = primaryNum;
-          if (val > 0 && val <= 4) addWindBreakdown(val);
-          else if (val >= 5) addDragonBreakdown(val);
-        } else {
-          // fallback by numeric range: 1-4 wind, 5-7 dragon
-          if (primaryNum >= 1 && primaryNum <= 4) addWindBreakdown(primaryNum);
-          else if (primaryNum >= 5 && primaryNum <= 7) addDragonBreakdown(primaryNum);
+        // Score using the shared helper
+        if (val >= 1 && val <= 7) {
+          const result = scoreHonorTriplet(val, seatWindNum, prevailingWindNum);
+          comboBreakdown.push(...result.breakdown);
         }
       }
 
-      const comboTotal = comboWindExtra + comboDragonExtra;
+      // Count honor triplet bonuses (excluding seat/prevailing wind bonuses)
+      const comboTotal = comboBreakdown.filter(e => e.rule.startsWith('字牌')).length;
       if (comboTotal > bestExtraFan) {
         bestExtraFan = comboTotal;
         bestBreakdownToAdd = comboBreakdown;

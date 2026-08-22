@@ -204,4 +204,76 @@ describe('validator kong-adjusted total', () => {
     const hasConcealed = res.breakdown.some(b => b.rule && b.rule.startsWith('暗槓'));
     expect(hasConcealed).toBe(true);
   });
+  it('awards +1 fan for dragon triplet (中) in declared melds', () => {
+    const pungTiles: Tile[] = [
+      makeTile('dragon', 5, 1), // 中 x3
+      makeTile('dragon', 5, 2),
+      makeTile('dragon', 5, 3),
+    ];
+
+    const handTiles: Tile[] = [];
+    handTiles.push(makeTile('tong', 1, 1));
+    handTiles.push(makeTile('tong', 2, 1));
+    handTiles.push(makeTile('tong', 3, 1));
+    handTiles.push(makeTile('tong', 4, 2));
+    handTiles.push(makeTile('tong', 5, 2));
+    handTiles.push(makeTile('tong', 6, 2));
+    handTiles.push(makeTile('sou', 1, 1));
+    handTiles.push(makeTile('sou', 2, 1));
+    handTiles.push(makeTile('sou', 3, 1));
+    // 筒 4-5-6
+    handTiles.push(makeTile('tong', 4, 3));
+    handTiles.push(makeTile('tong', 5, 3));
+    handTiles.push(makeTile('tong', 6, 3));
+    handTiles.push(makeTile('wan', 2, 1));
+    handTiles.push(makeTile('wan', 2, 2));
+
+    const meldMap: Record<string, any> = {
+      'dragon_5@pung': { kind: 'pung', tiles: pungTiles },
+    };
+
+    const res = calculateHandFan(handTiles, meldMap, false, undefined, {
+      prevailingWind: 'east',
+      seatWind: 'east',
+    });
+
+    expect(res.isValid).toBe(true);
+    const dragonFan = res.breakdown.filter(b => b.rule === '字牌 (中)');
+    expect(dragonFan.length).toBeGreaterThan(0);
+  });
+
+  it('awards +1 fan for each dragon triplet in concealed hand', () => {
+    const handTiles: Tile[] = [];
+    // 中 x3, 發 x3
+    handTiles.push(makeTile('dragon', 5, 1));
+    handTiles.push(makeTile('dragon', 5, 2));
+    handTiles.push(makeTile('dragon', 5, 3));
+    handTiles.push(makeTile('dragon', 6, 1));
+    handTiles.push(makeTile('dragon', 6, 2));
+    handTiles.push(makeTile('dragon', 6, 3));
+    // 筒 4-5-6
+    handTiles.push(makeTile('tong', 4, 3));
+    handTiles.push(makeTile('tong', 5, 3));
+    handTiles.push(makeTile('tong', 6, 3));
+    // 筒 4-5-6
+    handTiles.push(makeTile('tong', 4, 3));
+    handTiles.push(makeTile('tong', 5, 3));
+    handTiles.push(makeTile('tong', 6, 3));
+    // 萬 1-2-3
+    handTiles.push(makeTile('wan', 1, 1));
+    handTiles.push(makeTile('wan', 2, 1));
+    handTiles.push(makeTile('wan', 3, 1));
+    // pair: 索 1x2
+    handTiles.push(makeTile('sou', 1, 1));
+    handTiles.push(makeTile('sou', 1, 2));
+
+    const res = calculateHandFan(handTiles, undefined, false, undefined, {
+      prevailingWind: 'east',
+      seatWind: 'east',
+    });
+
+    expect(res.isValid).toBe(true);
+    const dragonFans = res.breakdown.filter(b => b.rule === '字牌 (中)' || b.rule === '字牌 (發)');
+    expect(dragonFans.length).toBe(2);
+  });
 });
