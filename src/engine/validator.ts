@@ -631,8 +631,9 @@ export function calculateHandFan(
     totalFan += 2;
     breakdown.push({ rule: `獨獨 (${typeLabel})`, fan: 2 });
   } else if (isFakeDuk && dukDukType) {
+    const typeLabel = typeNameMap[dukDukType];
     totalFan += 1;
-    breakdown.push({ rule: '假獨 (${typeLabel})', fan: 1 });
+    breakdown.push({ rule: `假獨 (${typeLabel})`, fan: 1 });
   }
 
   return {
