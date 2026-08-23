@@ -189,8 +189,12 @@ export function calculateHandFan(
   // Separate wind and dragon melds for potential scoring rules that depend on them
   const windMelds: MeldEntry[] = [];
   const dragonMelds: MeldEntry[] = [];
-
+  
+  let isDanDiaoStructure = false;  // 結構上符合單吊
+  let isKaZhangStructure = false;  // 結構上符合卡張
+  let isBianZhangStructure = false; // 結構上符合邊張
   let isDukDuk = false;
+  let isFakeDuk = false;
 
   if (meldMap) {
     Object.values(meldMap).forEach(m => {
@@ -240,7 +244,7 @@ export function calculateHandFan(
   let possibleCombinations: string[] | undefined;
   // huWaitFlags: set during winning-structure validation when huTile is provided.
   // It is declared here so the final scoring section can reference it.
-  let huWaitFlags: { pairWait: boolean; closedWait: boolean } | undefined = undefined;
+  //let huWaitFlags: { pairWait: boolean; closedWait: boolean } | undefined = undefined;
 
   // If the caller (UI) indicated strict validation (countedTiles matches UI expectations), validate winning hand structure.
   if (shouldValidateWinning) {
@@ -512,12 +516,17 @@ export function calculateHandFan(
     // ==========================================
     // 獨獨 / 聽牌形態判定 (獨獨、卡張、邊張 全部計為「獨獨」)
     // ==========================================
-    
+    let isTrueSingleWait = false;    // 是否為「真獨」（全盤精準只聽 1 種牌）
+    let winningTileCount = 0;        // 實際聽幾多種牌
 
     if (huTile) {
       const huKey = `${huTile.suit}_${huTile.value}`;
+      const [huSuit, huValStr] = huKey.split('_');
+      const huVal = Number(huValStr);
 
-      // 1. 還原胡牌前 16 張手牌的數量 Map (countsBeforeHu)
+      // =========================================================
+      // Step 1: 還原胡牌前 16 張牌 (countsBeforeHu)
+      // =========================================================
       const countsBeforeHu = cloneCounts(remainingCounts);
       const currentHuCount = countsBeforeHu.get(huKey) || 0;
       if (currentHuCount > 0) {
@@ -525,7 +534,98 @@ export function calculateHandFan(
         else countsBeforeHu.set(huKey, currentHuCount - 1);
       }
 
-      // 2. 生成全麻將 34 種牌型，測試「胡牌前」到底聽幾種牌
+      // =========================================================
+      // Step 2: 結構檢測 (Structural Analysis)
+      // 驗證 huTile 在胡牌牌型中是否可以作為「單吊」、「卡張」或「邊張」
+      // =========================================================
+
+      // A) 結構：單吊 (單騎)
+      // 條件：胡牌前手牌已有 1 張 huTile，胡牌後補成一對雀頭，剩餘 15 張牌可拆成 5 個面子
+      if ((countsBeforeHu.get(huKey) || 0) === 1) {
+        const testCopy = cloneCounts(countsBeforeHu);
+        testCopy.delete(huKey);
+        if (canFormMelds(testCopy)) {
+          isDanDiaoStructure = true;
+        }
+      }
+
+      // 序數牌（萬/筒/索）進行卡張與邊張結構檢測
+      if (['wan', 'tong', 'sou'].includes(huSuit)) {
+        
+        // B) 結構：卡張 (嵌張)
+        // 條件：手牌有 (val-1) 與 (val+1)，扣除這兩張搭子後，剩餘 14 張（含 1 雀頭）可拆解
+        if (huVal >= 2 && huVal <= 8) {
+          const leftKey = `${huSuit}_${huVal - 1}`;
+          const rightKey = `${huSuit}_${huVal + 1}`;
+
+          if ((countsBeforeHu.get(leftKey) || 0) >= 1 && (countsBeforeHu.get(rightKey) || 0) >= 1) {
+            const testCopy = cloneCounts(countsBeforeHu);
+            testCopy.set(leftKey, testCopy.get(leftKey)! - 1);
+            testCopy.set(rightKey, testCopy.get(rightKey)! - 1);
+
+            for (const [k, c] of testCopy.entries()) {
+              if (c >= 2) {
+                const temp = cloneCounts(testCopy);
+                temp.set(k, c - 2);
+                if (canFormMelds(temp)) {
+                  isKaZhangStructure = true;
+                  break;
+                }
+              }
+            }
+          }
+        }
+
+        // C) 結構：邊張
+        // 情況 1：胡 3，手握 1 與 2
+        if (huVal === 3) {
+          const key1 = `${huSuit}_1`;
+          const key2 = `${huSuit}_2`;
+          if ((countsBeforeHu.get(key1) || 0) >= 1 && (countsBeforeHu.get(key2) || 0) >= 1) {
+            const testCopy = cloneCounts(countsBeforeHu);
+            testCopy.set(key1, testCopy.get(key1)! - 1);
+            testCopy.set(key2, testCopy.get(key2)! - 1);
+
+            for (const [k, c] of testCopy.entries()) {
+              if (c >= 2) {
+                const temp = cloneCounts(testCopy);
+                temp.set(k, c - 2);
+                if (canFormMelds(temp)) {
+                  isBianZhangStructure = true;
+                  break;
+                }
+              }
+            }
+          }
+        }
+
+        // 情況 2：胡 7，手握 8 與 9
+        if (huVal === 7) {
+          const key8 = `${huSuit}_8`;
+          const key9 = `${huSuit}_9`;
+          if ((countsBeforeHu.get(key8) || 0) >= 1 && (countsBeforeHu.get(key9) || 0) >= 1) {
+            const testCopy = cloneCounts(countsBeforeHu);
+            testCopy.set(key8, testCopy.get(key8)! - 1);
+            testCopy.set(key9, testCopy.get(key9)! - 1);
+
+            for (const [k, c] of testCopy.entries()) {
+              if (c >= 2) {
+                const temp = cloneCounts(testCopy);
+                temp.set(k, c - 2);
+                if (canFormMelds(temp)) {
+                  isBianZhangStructure = true;
+                  break;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // =========================================================
+      // Step 3: 全局聽牌數檢測 (Wait Count Check)
+      // 計算胡牌前 16 張牌到底「實際能胡幾多種牌」
+      // =========================================================
       const allPossibleTileKeys: string[] = [];
       ['wan', 'tong', 'sou'].forEach(s => {
         for (let i = 1; i <= 9; i++) allPossibleTileKeys.push(`${s}_${i}`);
@@ -535,15 +635,12 @@ export function calculateHandFan(
 
       const winningTileKeys: string[] = [];
 
-      // 3. 測試加入每一張 candidateTile 後，是否能組成 5 面子 + 1 雀頭
       for (const candKey of allPossibleTileKeys) {
-        // 單種牌最多只能有 4 張
         if ((countsBeforeHu.get(candKey) || 0) >= 4) continue;
 
         const testCounts = cloneCounts(countsBeforeHu);
         testCounts.set(candKey, (testCounts.get(candKey) || 0) + 1);
 
-        // 檢查 testCounts (17張) 是否可以成功胡牌
         let testWinning = false;
         for (const [k, c] of testCounts.entries()) {
           if (c >= 2) {
@@ -558,66 +655,18 @@ export function calculateHandFan(
 
         if (testWinning) {
           winningTileKeys.push(candKey);
-          // 效能優化：如果聽牌種類已超過 1 種（如兩面聽、三面聽），肯定不是獨獨，可提前 break
-          if (winningTileKeys.length > 1) break;
         }
       }
 
-      // 4. 當且僅當全盤「只聽 1 種牌」時，即成立廣義獨獨（單騎 / 卡張 / 邊張）
-      if (winningTileKeys.length === 1 && winningTileKeys[0] === huKey) {
+      winningTileCount = winningTileKeys.length;
+      isTrueSingleWait = (winningTileCount === 1 && winningTileKeys[0] === huKey);
+
+
+      if ((isDanDiaoStructure || isKaZhangStructure || isBianZhangStructure ) && isTrueSingleWait ) {
         isDukDuk = true;
       }
-    }
-
-
-    // hu wait detection (pair-wait / single wait: 單騎, and closed-middle wait: 卡張)
-    // These flags are set by simulating the tile counts BEFORE the hu tile was added
-    // and checking whether removing the companion tiles leaves a partitionable remainder.
-    // The code uses existing helpers: cloneCounts, canFormMelds.
-    huWaitFlags = { pairWait: false, closedWait: false };
-
-    if (huTile) {
-      const huKey = `${huTile.suit}_${huTile.value}`;
-
-      // countsWithoutHu represents tile counts before the hu tile was added.
-      const countsWithoutHu = cloneCounts(remainingCounts);
-      // If handTiles already included the hu tile (typical caller behavior), remove one copy
-      if ((countsWithoutHu.get(huKey) || 0) > 0) {
-        const newVal = (countsWithoutHu.get(huKey) || 0) - 1;
-        if (newVal > 0) countsWithoutHu.set(huKey, newVal);
-        else countsWithoutHu.delete(huKey);
-      }
-
-      // 1) Pair wait (單騎 / tanki): if there is at least one identical tile and removing it leaves valid melds
-      if ((countsWithoutHu.get(huKey) || 0) >= 1) {
-        const copy = cloneCounts(countsWithoutHu);
-        const c = (copy.get(huKey) || 0) - 1;
-        if (c > 0) copy.set(huKey, c); else copy.delete(huKey);
-
-        if (canFormMelds(copy)) {
-          huWaitFlags.pairWait = true;
-        }
-      }
-
-      // 2) Closed-middle (卡張): hu tile completes the middle of a sequence => neighbors must exist
-      const [suit, valStr] = huKey.split('_');
-      const val = Number(valStr);
-      if (['wan', 'tong', 'sou'].includes(suit)) {
-        const leftKey = `${suit}_${val - 1}`;
-        const rightKey = `${suit}_${val + 1}`;
-        if ((countsWithoutHu.get(leftKey) || 0) >= 1 && (countsWithoutHu.get(rightKey) || 0) >= 1) {
-          const copy2 = cloneCounts(countsWithoutHu);
-          // remove left
-          const lc = (copy2.get(leftKey) || 0) - 1;
-          if (lc > 0) copy2.set(leftKey, lc); else copy2.delete(leftKey);
-          // remove right
-          const rc = (copy2.get(rightKey) || 0) - 1;
-          if (rc > 0) copy2.set(rightKey, rc); else copy2.delete(rightKey);
-
-          if (canFormMelds(copy2)) {
-            huWaitFlags.closedWait = true;
-          }
-        }
+      else if (isDanDiaoStructure || isKaZhangStructure || isBianZhangStructure){
+        isFakeDuk = true;
       }
     }
   }
@@ -716,7 +765,11 @@ export function calculateHandFan(
   // 獨獨 (單獨聽一張牌：包含單騎、卡張、邊張) +1 番
   if (isDukDuk) {
     totalFan += 1;
-    breakdown.push({ rule: '獨獨 (單聽/卡張/邊張)', fan: 1 });
+    breakdown.push({ rule: '獨獨 (單釣/卡窿/偏章)', fan: 1 });
+  }
+  else if (isFakeDuk){
+    totalFan += 1;
+    breakdown.push({ rule: '假獨 (單釣/卡窿/偏章)', fan: 1 });
   }
 
   return {
