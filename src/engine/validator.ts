@@ -613,10 +613,10 @@ export function calculateHandFan(
 
   // 4. 暗槓
   if (meldMap) {
-    const concealedKongs = Object.values(meldMap).filter(m => m.kind === 'kong' && m.concealed).length;
-    if (concealedKongs > 0) {
-      totalFan += concealedKongs;
-      breakdown.push({ rule: `暗槓 x${concealedKongs}`, fan: concealedKongs });
+    const kongs = Object.values(meldMap).filter(m => m.kind === 'kong').length;
+    if (kongs > 0) {
+      totalFan += kongs;
+      breakdown.push({ rule: `槓 x${kongs}`, fan: kongs*2 });
     }
   }
 

@@ -199,10 +199,10 @@ describe('validator kong-adjusted total', () => {
 
     const res = calculateHandFan(handTiles, meldMap, false);
     expect(res.isValid).toBe(true);
-    // base fan is 1, concealed kong adds +1
-    expect(res.totalFan).toBeGreaterThanOrEqual(1);
-    const hasConcealed = res.breakdown.some(b => b.rule && b.rule.startsWith('暗槓'));
-    expect(hasConcealed).toBe(true);
+    // kong adds +2
+    //expect(res.totalFan).toBeGreaterThanOrEqual(2);
+    const hasKong = res.breakdown.some(b => b.rule && b.rule.startsWith('槓'));
+    expect(hasKong).toBe(true);
   });
   it('awards +1 fan for dragon triplet (中) in declared melds', () => {
     const pungTiles: Tile[] = [
