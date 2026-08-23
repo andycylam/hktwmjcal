@@ -259,6 +259,14 @@ function scoreHonorTriplet(
   return { fan, breakdown };
 }
 
+function isMatchFlowerSeat(flowerValue: number, seatWindNum: number | undefined): boolean {
+  // 將 1-8 號花牌統一映射回 1, 2, 3, 4 號座位
+  // (1,5 -> 1 | 2,6 -> 2 | 3,7 -> 3 | 4,8 -> 4)
+  const normalizedFlower = ((flowerValue - 1) % 4) + 1;
+  
+  return normalizedFlower === seatWindNum;
+}
+
 function scoreFlower(
   value: number,
   seatWindNum: number | undefined
@@ -273,9 +281,9 @@ function scoreFlower(
   let fan = 0;
   const name = flowerNames[value];
 
-  if (value === seatWindNum || value % 5 === seatWindNum) {
+  if (isMatchFlowerSeat(value, seatWindNum)) {
     fan += 1;
-    breakdown.push({ rule: '正花', fan: 1 });
+    breakdown.push({ rule: `正花 (${name})`, fan: 1 });
   }
 
   fan += 1;
