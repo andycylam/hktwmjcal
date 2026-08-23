@@ -470,7 +470,7 @@ export function calculateHandFan(
       breakdown: []
     };
   }
-
+  const remainingCounts = new Map<string, number>();
   let possibleCombinations: string[] | undefined;
   let isDukDuk = false;
   let isFakeDuk = false;
@@ -491,7 +491,6 @@ export function calculateHandFan(
       return { isValid: false, totalFan: 0, reason: `此手牌無法胡牌：剩餘 ${remainingTiles.length} 張，預期 ${expectedRemaining} 張以構成 ${neededMelds} 組與一對。`, breakdown: [] };
     }
 
-    const remainingCounts = new Map<string, number>();
     remainingTiles.forEach(t => {
       const key = `${t.suit}_${t.value}`;
       remainingCounts.set(key, (remainingCounts.get(key) || 0) + 1);
@@ -537,14 +536,6 @@ export function calculateHandFan(
 
     if (!winning) {
       return { isValid: false, totalFan: 0, reason: '此手牌無法胡牌：無法將剩餘牌拆解為完整的組合與一對。', breakdown: [] };
-    }
-
-    // 進行獨獨 / 假獨檢測
-    if (huTile) {
-      const waitResult = detectWaitPattern(remainingCounts, huTile);
-      isDukDuk = waitResult.isDukDuk;
-      isFakeDuk = waitResult.isFakeDuk;
-      dukDukType = waitResult.dukDukType;
     }
   }
 
@@ -621,6 +612,12 @@ export function calculateHandFan(
   }
 
   // 5. 獨獨 / 假獨
+  if (huTile) {
+    const waitResult = detectWaitPattern(remainingCounts, huTile);
+    isDukDuk = waitResult.isDukDuk;
+    isFakeDuk = waitResult.isFakeDuk;
+    dukDukType = waitResult.dukDukType;
+  }
   const typeNameMap: Record<string, string> = {
     danDiao: '單釣',
     kaZhang: '卡窿',
