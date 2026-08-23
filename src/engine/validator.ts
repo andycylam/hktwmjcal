@@ -259,6 +259,31 @@ function scoreHonorTriplet(
   return { fan, breakdown };
 }
 
+function scoreFlower(
+  value: number,
+  seatWindNum: number | undefined
+): { fan: number; breakdown: { rule: string; fan: number }[] } {
+  const flowerNames: Record<number, string> = {
+    1: '梅', 2: '蘭', 3: '菊', 4: '竹',
+    5: '春', 6: '夏', 7: '秋', 8: '冬'
+  };
+  if (value < 1 || value > 8) return { fan: 0, breakdown: [] };
+
+  const breakdown: { rule: string; fan: number }[] = [];
+  let fan = 0;
+  const name = flowerNames[value];
+
+  if (value === seatWindNum || value % 5 === seatWindNum) {
+    fan += 1;
+    breakdown.push({ rule: '正花', fan: 1 });
+  }
+
+  fan += 1;
+  breakdown.push({ rule: `花牌 (${name})`, fan: 1 });
+
+  return { fan, breakdown };
+}
+
 // ----------------------------------------------------------------------
 // Wait Analysis Helper (單吊 / 卡張 / 邊張 與 聽牌數檢測)
 // ----------------------------------------------------------------------
@@ -429,13 +454,15 @@ export function calculateHandFan(
 
   const windMelds: MeldEntry[] = [];
   const dragonMelds: MeldEntry[] = [];
+  const flowerMelds: MeldEntry[] = [];
 
   if (meldMap) {
     Object.values(meldMap).forEach(m => {
-      if (m.kind === 'flower' || m.kind === 'shang' || !m.tiles.length) return;
+      if (m.kind === 'shang' || !m.tiles.length) return;
       const suit = m.tiles[0].suit;
       if (suit === 'wind') windMelds.push(m);
       if (suit === 'dragon') dragonMelds.push(m);
+      if (suit === 'flower') flowerMelds.push(m);
     });
   }
 
@@ -631,6 +658,14 @@ export function calculateHandFan(
     const typeLabel = typeNameMap[dukDukType];
     totalFan += 1;
     breakdown.push({ rule: `假獨 (${typeLabel})`, fan: 1 });
+  }
+
+  // 6. 花
+  for (const meld of flowerMelds) {
+    const value = meld.tiles[0].value;
+    const result = scoreFlower(value, seatWindNum);
+    totalFan += result.fan;
+    breakdown.push(...result.breakdown);
   }
 
   return {
