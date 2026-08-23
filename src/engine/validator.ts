@@ -611,7 +611,7 @@ export function calculateHandFan(
     breakdown.push({ rule: '自摸 (Zimo)', fan: 1 });
   }
 
-  // 4. 暗槓
+  // 4. 槓
   if (meldMap) {
     const kongs = Object.values(meldMap).filter(m => m.kind === 'kong').length;
     if (kongs > 0) {
