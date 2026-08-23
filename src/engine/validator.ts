@@ -611,7 +611,7 @@ export function calculateHandFan(
     }
   }
 
-  // 5. 獨獨 / 假獨（真獨獨 +1 番；假獨獨 0 番僅於 Breakdown 中顯示/記錄）
+  // 5. 獨獨 / 假獨
   if (isDukDuk) {
     totalFan += 2;
     breakdown.push({ rule: '獨獨 (單釣/卡窿/偏章)', fan: 2 });
