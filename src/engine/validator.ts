@@ -263,10 +263,12 @@ function scoreHonorTriplet(
 // Wait Analysis Helper (單吊 / 卡張 / 邊張 與 聽牌數檢測)
 // ----------------------------------------------------------------------
 
+type DukDukType = 'danDiao' | 'kaZhang' | 'bianZhang' | null;
+
 function detectWaitPattern(
   remainingCounts: Map<string, number>,
   huTile: Tile
-): { isDukDuk: boolean; isFakeDuk: boolean } {
+): { isDukDuk: boolean; isFakeDuk: boolean; dukDukType: DukDukType } {
   const huKey = `${huTile.suit}_${huTile.value}`;
   const [huSuit, huValStr] = huKey.split('_');
   const huVal = Number(huValStr);
@@ -342,10 +344,15 @@ function detectWaitPattern(
     }
   }
 
-  const hasStructure = isDanDiaoStructure || isKaZhangStructure || isBianZhangStructure;
-  if (!hasStructure) return { isDukDuk: false, isFakeDuk: false };
+  // 確定優先次序（若多重符合，以 單吊 > 卡張 > 邊張 順序標記類型）
+  let dukDukType: DukDukType = null;
+  if (isDanDiaoStructure) dukDukType = 'danDiao';
+  else if (isKaZhangStructure) dukDukType = 'kaZhang';
+  else if (isBianZhangStructure) dukDukType = 'bianZhang';
 
-  // 3. 全局聽牌數檢測 (Wait Count Check - 含提前剪枝優化)
+  if (!dukDukType) return { isDukDuk: false, isFakeDuk: false, dukDukType: null };
+
+  // 3. 全局聽牌數檢測
   const allPossibleTileKeys: string[] = [];
   ['wan', 'tong', 'sou'].forEach(s => {
     for (let i = 1; i <= 9; i++) allPossibleTileKeys.push(`${s}_${i}`);
@@ -375,7 +382,6 @@ function detectWaitPattern(
 
     if (testWinning) {
       winningTileKeys.push(candKey);
-      // 效能優化：一旦檢測到多於 1 種牌可以食糊，代表絕對不是精準獨聽，可立即剪枝跳出
       if (winningTileKeys.length > 1) break;
     }
   }
@@ -383,8 +389,9 @@ function detectWaitPattern(
   const isTrueSingleWait = winningTileKeys.length === 1 && winningTileKeys[0] === huKey;
 
   return {
-    isDukDuk: hasStructure && isTrueSingleWait,
-    isFakeDuk: hasStructure && !isTrueSingleWait
+    isDukDuk: isTrueSingleWait,
+    isFakeDuk: !isTrueSingleWait,
+    dukDukType
   };
 }
 
@@ -467,6 +474,7 @@ export function calculateHandFan(
   let possibleCombinations: string[] | undefined;
   let isDukDuk = false;
   let isFakeDuk = false;
+  let dukDukType: DukDukType = null;
 
   if (shouldValidateWinning) {
     const nonFlowerMelds = meldMap ? Object.values(meldMap).filter(m => m.kind !== 'flower') : [];
@@ -536,6 +544,7 @@ export function calculateHandFan(
       const waitResult = detectWaitPattern(remainingCounts, huTile);
       isDukDuk = waitResult.isDukDuk;
       isFakeDuk = waitResult.isFakeDuk;
+      dukDukType = waitResult.dukDukType;
     }
   }
 
@@ -612,12 +621,18 @@ export function calculateHandFan(
   }
 
   // 5. 獨獨 / 假獨
-  if (isDukDuk) {
+  const typeNameMap: Record<string, string> = {
+    danDiao: '單釣',
+    kaZhang: '卡窿',
+    bianZhang: '偏章'
+  };
+  if (isDukDuk && dukDukType) {
+    const typeLabel = typeNameMap[dukDukType];
     totalFan += 2;
-    breakdown.push({ rule: '獨獨 (單釣/卡窿/偏章)', fan: 2 });
-  } else if (isFakeDuk) {
+    breakdown.push({ rule: `獨獨 (${typeLabel})`, fan: 2 });
+  } else if (isFakeDuk && dukDukType) {
     totalFan += 1;
-    breakdown.push({ rule: '假獨 (單釣/卡窿/偏章)', fan: 1 });
+    breakdown.push({ rule: '假獨 (${typeLabel})', fan: 1 });
   }
 
   return {
