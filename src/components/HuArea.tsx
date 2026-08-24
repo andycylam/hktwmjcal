@@ -10,9 +10,9 @@ interface Props {
 
 // Reuse same suit color scheme as TilePicker/HandRack
 const SUIT_COLORS: Record<Suit, { base: string; border: string; text: string }> = {
-  wan: { base: 'bg-amber-300', border: 'border-amber-600', text: 'text-amber-950' },
-  tong: { base: 'bg-red-300', border: 'border-red-600', text: 'text-red-950' },
-  sou: { base: 'bg-emerald-300', border: 'border-emerald-600', text: 'text-emerald-950' },
+  character: { base: 'bg-amber-300', border: 'border-amber-600', text: 'text-amber-950' },
+  dot: { base: 'bg-red-300', border: 'border-red-600', text: 'text-red-950' },
+  bamboo: { base: 'bg-emerald-300', border: 'border-emerald-600', text: 'text-emerald-950' },
   wind: { base: 'bg-blue-300', border: 'border-blue-600', text: 'text-blue-950' },
   dragon: { base: 'bg-purple-300', border: 'border-purple-600', text: 'text-purple-950' },
   flower: { base: 'bg-lime-300', border: 'border-lime-600', text: 'text-lime-950' }

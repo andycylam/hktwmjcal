@@ -15,17 +15,17 @@ const CHINESE_NUM = ['零','一','二','三','四','五','六','七','八','九'
 const TILE_GROUPS: { name: string; suit: Suit; items: { val: number; label: string; suit?: Suit }[] }[] = [
   {
     name: '萬子 (Characters)',
-    suit: 'wan',
+    suit: 'character',
     items: [1, 2, 3, 4, 5, 6, 7, 8, 9].map(v => ({ val: v, label: `${CHINESE_NUM[v]}萬` }))
   },
   {
     name: '筒子 (Dots)',
-    suit: 'tong',
+    suit: 'dot',
     items: [1, 2, 3, 4, 5, 6, 7, 8, 9].map(v => ({ val: v, label: `${CHINESE_NUM[v]}筒` }))
   },
   {
     name: '索子 (Bamboo)',
-    suit: 'sou',
+    suit: 'bamboo',
     items: [1, 2, 3, 4, 5, 6, 7, 8, 9].map(v => ({ val: v, label: `${CHINESE_NUM[v]}索` }))
   },
   {
@@ -50,19 +50,19 @@ const TILE_GROUPS: { name: string; suit: Suit; items: { val: number; label: stri
 
 // Vibrant colors for visibility on dark background
 const SUIT_COLORS: Record<Suit, { base: string; border: string; text: string; disabled: string }> = {
-  wan: {
+  character: {
     base: 'bg-amber-300',
     border: 'border-amber-600',
     text: 'text-amber-950',
     disabled: 'bg-amber-300/40 border-amber-600/40 text-amber-950/40'
   },
-  tong: {
+  dot: {
     base: 'bg-red-300',
     border: 'border-red-600',
     text: 'text-red-950',
     disabled: 'bg-red-300/40 border-red-600/40 text-red-950/40'
   },
-  sou: {
+  bamboo: {
     base: 'bg-emerald-300',
     border: 'border-emerald-600',
     text: 'text-emerald-950',

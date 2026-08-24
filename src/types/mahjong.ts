@@ -1,4 +1,4 @@
-export type Suit = 'wan' | 'tong' | 'sou' | 'wind' | 'dragon' | 'flower';
+export type Suit = 'character' | 'dot' | 'bamboo' | 'wind' | 'dragon' | 'flower';
 
 export interface Tile {
   id: string;

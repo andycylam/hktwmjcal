@@ -65,7 +65,7 @@ function autoCreateMeldFromHand(hand: Tile[]) {
 
 describe('auto-create 成組 from hand', () => {
   it('creates kong when 4 identical tiles exist', () => {
-    const hand = [makeTile('wan',1,1), makeTile('wan',1,2), makeTile('wan',1,3), makeTile('wan',1,4), makeTile('wan',2,5)];
+    const hand = [makeTile('character',1,1), makeTile('character',1,2), makeTile('character',1,3), makeTile('character',1,4), makeTile('character',2,5)];
     const result = autoCreateMeldFromHand(hand);
     expect(result).not.toBeNull();
     expect(result!.kind).toBe('kong');
@@ -74,7 +74,7 @@ describe('auto-create 成組 from hand', () => {
   });
 
   it('creates pung when 3 identical tiles exist but no kong', () => {
-    const hand = [makeTile('wan',3,1), makeTile('wan',3,2), makeTile('wan',3,3), makeTile('wan',4,4)];
+    const hand = [makeTile('character',3,1), makeTile('character',3,2), makeTile('character',3,3), makeTile('character',4,4)];
     const result = autoCreateMeldFromHand(hand);
     expect(result).not.toBeNull();
     expect(result!.kind).toBe('pung');
@@ -82,7 +82,7 @@ describe('auto-create 成組 from hand', () => {
   });
 
   it('creates shang when a sequence exists', () => {
-    const hand = [makeTile('sou',4,1), makeTile('sou',5,2), makeTile('sou',6,3), makeTile('wan',2,4)];
+    const hand = [makeTile('bamboo',4,1), makeTile('bamboo',5,2), makeTile('bamboo',6,3), makeTile('character',2,4)];
     const result = autoCreateMeldFromHand(hand);
     expect(result).not.toBeNull();
     expect(result!.kind).toBe('shang');
@@ -91,7 +91,7 @@ describe('auto-create 成組 from hand', () => {
 
   it('prefers earliest window: uses early sequence over later kong', () => {
     // early 1-2-3 sequence at positions 0..2, but later there is a kong of 3s
-    const hand = [makeTile('wan',1,1), makeTile('wan',2,2), makeTile('wan',3,3), makeTile('wan',3,4), makeTile('wan',3,5), makeTile('wan',3,6)];
+    const hand = [makeTile('character',1,1), makeTile('character',2,2), makeTile('character',3,3), makeTile('character',3,4), makeTile('character',3,5), makeTile('character',3,6)];
     const result = autoCreateMeldFromHand(hand);
     expect(result).not.toBeNull();
     // Should pick the early shang (1-2-3) rather than the later kong of 3s
@@ -100,7 +100,7 @@ describe('auto-create 成組 from hand', () => {
   });
 
   it('returns null when no valid group exists', () => {
-    const hand = [makeTile('wan',1,1), makeTile('wan',2,2), makeTile('wan',4,3)];
+    const hand = [makeTile('character',1,1), makeTile('character',2,2), makeTile('character',4,3)];
     const result = autoCreateMeldFromHand(hand);
     expect(result).toBeNull();
   });
@@ -108,8 +108,8 @@ describe('auto-create 成組 from hand', () => {
   it('creates two identical sequences when two windows exist', () => {
     // hand contains two 1-2-3 sequences
     const hand = [
-      makeTile('wan',1,1), makeTile('wan',2,2), makeTile('wan',3,3),
-      makeTile('wan',1,4), makeTile('wan',2,5), makeTile('wan',3,6)
+      makeTile('character',1,1), makeTile('character',2,2), makeTile('character',3,3),
+      makeTile('character',1,4), makeTile('character',2,5), makeTile('character',3,6)
     ];
     const first = autoCreateMeldFromHand(hand);
     expect(first).not.toBeNull();

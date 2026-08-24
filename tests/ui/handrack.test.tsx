@@ -12,13 +12,13 @@ function makeTile(suit: string, value: number, idSuffix: number): Tile {
 describe('HandRack UI', () => {
   it('renders hand tiles and allows selection toggle', async () => {
     const user = userEvent.setup();
-    const hand: Tile[] = [makeTile('wan',1,1), makeTile('wan',2,2)];
+    const hand: Tile[] = [makeTile('character',1,1), makeTile('character',2,2)];
     const toggle = vi.fn();
     render(<HandRack hand={hand} onRemoveTile={() => {}} onClear={() => {}} onToggleSelect={toggle} selection={[]} totalTiles={2} totalLimit={17} />);
 
     // Expect tile labels to be present
-    expect(screen.getByText('1wan')).toBeTruthy();
-    expect(screen.getByText('2wan')).toBeTruthy();
+    expect(screen.getByText('1character')).toBeTruthy();
+    expect(screen.getByText('2character')).toBeTruthy();
 
     // Click first tile's select button
     const selectButtons = screen.getAllByTitle(/選取/);
@@ -28,8 +28,8 @@ describe('HandRack UI', () => {
 
   it('removing a selected tile clears selection', async () => {
     const user = userEvent.setup();
-    const t1 = makeTile('wan',1,1);
-    const t2 = makeTile('wan',2,2);
+    const t1 = makeTile('character',1,1);
+    const t2 = makeTile('character',2,2);
 
     function TestWrapper() {
       const [hand, setHand] = React.useState<Tile[]>([t1, t2]);

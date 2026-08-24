@@ -15,9 +15,9 @@ interface Props {
 
 // Reuse same suit color scheme as TilePicker
 const SUIT_COLORS: Record<Suit, { base: string; border: string }> = {
-  wan: { base: 'bg-amber-50', border: 'border-amber-700' },
-  tong: { base: 'bg-red-50', border: 'border-red-700' },
-  sou: { base: 'bg-emerald-50', border: 'border-emerald-700' },
+  character: { base: 'bg-amber-50', border: 'border-amber-700' },
+  dot: { base: 'bg-red-50', border: 'border-red-700' },
+  bamboo: { base: 'bg-emerald-50', border: 'border-emerald-700' },
   wind: { base: 'bg-blue-50', border: 'border-blue-700' },
   dragon: { base: 'bg-purple-50', border: 'border-purple-700' },
   flower: { base: 'bg-lime-50', border: 'border-lime-700' }

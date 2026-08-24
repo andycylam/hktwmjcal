@@ -13,9 +13,9 @@ describe('App flows (melds, flowers, hu)', () => {
     const pickers = screen.getAllByText('選擇牌型 (Tile Selector)');
     const picker = pickers[0].closest('div')!;
     const p = within(picker);
-    await user.click(screen.getAllByTestId('picker-tile-wan_1')[0]);
-    await user.click(screen.getAllByTestId('picker-tile-wan_2')[0]);
-    await user.click(screen.getAllByTestId('picker-tile-wan_3')[0]);
+    await user.click(screen.getAllByTestId('picker-tile-character_1')[0]);
+    await user.click(screen.getAllByTestId('picker-tile-character_2')[0]);
+    await user.click(screen.getAllByTestId('picker-tile-character_3')[0]);
 
     // select three tiles in hand
     const selectButtons = screen.getAllByTitle(/選取/);
@@ -96,7 +96,7 @@ describe('App flows (melds, flowers, hu)', () => {
     const pickers = screen.getAllByText('選擇牌型 (Tile Selector)');
     const picker = pickers[0].closest('div')!;
     const p = within(picker);
-    await user.click(screen.getAllByTestId('picker-tile-wan_1')[0]);
+    await user.click(screen.getAllByTestId('picker-tile-character_1')[0]);
 
     // select the tile in hand (target the button inside HandRack to avoid ambiguous buttons)
     const handHeader = screen.getAllByText(/當前手牌/)[0];
@@ -129,7 +129,7 @@ describe('App flows (melds, flowers, hu)', () => {
     const pickers = screen.getAllByText('選擇牌型 (Tile Selector)');
     const picker = pickers[0].closest('div')!;
     const p = within(picker);
-    await user.click(screen.getAllByTestId('picker-tile-wan_1')[0]);
+    await user.click(screen.getAllByTestId('picker-tile-character_1')[0]);
 
     // select and set as hu (target the button inside HandRack to avoid ambiguous buttons)
     const handHeader = screen.getAllByText(/當前手牌/)[0];

@@ -402,9 +402,9 @@ export default function App() {
       // helper to create Chinese label for synthetic tile
     const CHINESE_NUM = ['零','一','二','三','四','五','六','七','八','九'];
     const suitLabel = (s: string, v: number) => {
-      if (s === 'wan') return `${CHINESE_NUM[v]}萬`;
-      if (s === 'tong') return `${CHINESE_NUM[v]}筒`;
-      if (s === 'sou') return `${CHINESE_NUM[v]}索`;
+      if (s === 'character') return `${CHINESE_NUM[v]}萬`;
+      if (s === 'dot') return `${CHINESE_NUM[v]}筒`;
+      if (s === 'bamboo') return `${CHINESE_NUM[v]}索`;
       if (s === 'wind') {
         const map: Record<number,string> = { 1: '東', 2: '南', 3: '西', 4: '北' };
         return map[v] || `${v}`;
@@ -457,7 +457,7 @@ export default function App() {
     <div className="max-w-[1600px] mx-auto p-4 md:p-8 space-y-6">
       <header className="text-center space-y-2">
         <h1 className="text-3xl font-extrabold text-emerald-400">港式台灣麻將 16張 算牌器 (hktwmjcal)</h1>
-        <p className="text-slate-400 text-sm">Open Source HK Taiwanese Mahjong Fan Calculator</p>
+        <p className="text-slate-400 text-sm">Open Source HK Taicharacterese Mahjong Fan Calculator</p>
       </header>
 
       <ErrorDialog message={errorMessage} onClose={() => setErrorMessage(null)} />

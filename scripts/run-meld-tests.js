@@ -119,10 +119,10 @@ function simulate() {
 // Test scenario: start with 4 identical tiles in hand -> create kong -> click one tile in kong to downgrade to pung -> then click another tile in the downgraded pung to remove it and ensure remaining tile returns to hand
 (function run() {
   const s = simulate();
-  // build hand: 4x wan_1
-  s.setHand([makeTile('wan', 1, 1), makeTile('wan', 1, 2), makeTile('wan', 1, 3), makeTile('wan', 1, 4)]);
+  // build hand: 4x character_1
+  s.setHand([makeTile('character', 1, 1), makeTile('character', 1, 2), makeTile('character', 1, 3), makeTile('character', 1, 4)]);
   // create kong
-  s.createOrToggleMeld('wan_1', 'kong');
+  s.createOrToggleMeld('character_1', 'kong');
   assert.strictEqual(Object.keys(s.meldMap).length, 1, 'expected 1 meld');
   const kongKey = Object.keys(s.meldMap)[0];
   assert.ok(kongKey.endsWith('@kong'));
@@ -130,18 +130,18 @@ function simulate() {
   // click one tile to downgrade
   const tileToClick = kongTiles[0].id;
   s.handleMeldTileClick(kongKey, tileToClick);
-  // now we should have a pung at wan_1@pung
-  assert.ok(s.meldMap['wan_1@pung'], 'expected pung after downgrade');
+  // now we should have a pung at character_1@pung
+  assert.ok(s.meldMap['character_1@pung'], 'expected pung after downgrade');
   assert.strictEqual(s.hand.length, 1, 'expected clicked tile moved back to hand');
 
   // click one tile from the pung (simulate removing it) -> remaining two tiles should return to hand
-  const pungKey = 'wan_1@pung';
+  const pungKey = 'character_1@pung';
   const pungTiles = s.meldMap[pungKey].tiles;
   const clickId = pungTiles[0].id;
   s.handleMeldTileClick(pungKey, clickId);
 
-  // After removal, there should be no meld for wan_1
-  assert.strictEqual(!!s.meldMap['wan_1@pung'], false, 'pung should be removed');
+  // After removal, there should be no meld for character_1
+  assert.strictEqual(!!s.meldMap['character_1@pung'], false, 'pung should be removed');
   // hand should now contain the previously clicked kong tile + the remaining two from the pung
   assert.strictEqual(s.hand.length, 3, `expected 3 tiles in hand, got ${s.hand.length}`);
 
