@@ -67,7 +67,7 @@ function removeTiles(countMap: Map<string, number>, tiles: string[]): Map<string
 function tileLabel(tile: string): string {
   const [suit, valueStr] = tile.split('_');
   const value = Number(valueStr);
-  const suitLabel = suit === 'wan' ? '萬' : suit === 'tong' ? '筒' : suit === 'sou' ? '索' : suit === 'wind' ? '風' : suit === 'dragon' ? '字' : '';
+  const suitLabel = suit === 'character' ? '萬' : suit === 'dot' ? '筒' : suit === 'bamboo' ? '索' : suit === 'wind' ? '風' : suit === 'dragon' ? '字' : '';
   return `${value}${suitLabel}`;
 }
 
@@ -154,7 +154,7 @@ function canFormMelds(countMap: Map<string, number>, visited = new Set<string>()
       if (tripletNext && canFormMelds(tripletNext, new Set(visited))) return true;
     }
 
-    if (['wan', 'tong', 'sou'].includes(suit)) {
+    if (['character', 'dot', 'bamboo'].includes(suit)) {
       const seqPatterns = [
         [value, value + 1, value + 2],
         [value - 2, value - 1, value]
@@ -204,7 +204,7 @@ function collectMeldCombinations(countMap: Map<string, number>, visited = new Se
       }
     }
 
-    if (['wan', 'tong', 'sou'].includes(suit)) {
+    if (['character', 'dot', 'bamboo'].includes(suit)) {
       const seqPatterns = [
         [value, value + 1, value + 2],
         [value - 2, value - 1, value]
@@ -260,7 +260,7 @@ function scoreHonorTriplet(
 }
 
 function isMatchFlowerSeat(flowerValue: number, seatWindNum: number | undefined): boolean {
-  // 將 1-8 號花牌統一映射回 1, 2, 3, 4 號座位
+  // 將 1-8 號花牌轉換成 1, 2, 3, 4 號座位
   // (1,5 -> 1 | 2,6 -> 2 | 3,7 -> 3 | 4,8 -> 4)
   const normalizedFlower = ((flowerValue - 1) % 4) + 1;
   
@@ -293,10 +293,10 @@ function scoreFlower(
 }
 
 // ----------------------------------------------------------------------
-// Wait Analysis Helper (單吊 / 卡張 / 邊張 與 聽牌數檢測)
+// Wait Analysis Helper (單吊 / 卡窿 / 偏章 與 聽牌數檢測)
 // ----------------------------------------------------------------------
 
-type DukDukType = 'danDiao' | 'kaZhang' | 'bianZhang' | null;
+type DukDukType = 'danDiu' | 'kaLung' | 'pinZoeng' | null;
 
 function detectWaitPattern(
   remainingCounts: Map<string, number>,
@@ -315,22 +315,22 @@ function detectWaitPattern(
   }
 
   // 2. 結構檢測 (Structural Analysis)
-  let isDanDiaoStructure = false;
-  let isKaZhangStructure = false;
-  let isBianZhangStructure = false;
+  let isDanDiuStructure = false;
+  let isKaLungStructure = false;
+  let isPinZoengStructure = false;
 
   // A) 單吊
   if ((countsBeforeHu.get(huKey) || 0) === 1) {
     const testCopy = cloneCounts(countsBeforeHu);
     testCopy.delete(huKey);
     if (canFormMelds(testCopy)) {
-      isDanDiaoStructure = true;
+      isDanDiuStructure = true;
     }
   }
 
-  // B) 卡張 & 邊張
-  if (['wan', 'tong', 'sou'].includes(huSuit)) {
-    // 卡張 (胡 2~8 萬/筒/索)
+  // B) 卡窿 & 偏章
+  if (['character', 'dot', 'bamboo'].includes(huSuit)) {
+    // 卡窿 (胡 2~8 萬/筒/索)
     if (huVal >= 2 && huVal <= 8) {
       const leftKey = `${huSuit}_${huVal - 1}`;
       const rightKey = `${huSuit}_${huVal + 1}`;
@@ -345,7 +345,7 @@ function detectWaitPattern(
             const temp = cloneCounts(testCopy);
             temp.set(k, c - 2);
             if (canFormMelds(temp)) {
-              isKaZhangStructure = true;
+              isKaLungStructure = true;
               break;
             }
           }
@@ -353,7 +353,7 @@ function detectWaitPattern(
       }
     }
 
-    // 邊張 (胡 3 聽 1-2 或 胡 7 聽 8-9)
+    // 偏章 (胡 3 聽 1-2 或 胡 7 聽 8-9)
     if (huVal === 3 || huVal === 7) {
       const keyA = `${huSuit}_${huVal === 3 ? 1 : 8}`;
       const keyB = `${huSuit}_${huVal === 3 ? 2 : 9}`;
@@ -368,7 +368,7 @@ function detectWaitPattern(
             const temp = cloneCounts(testCopy);
             temp.set(k, c - 2);
             if (canFormMelds(temp)) {
-              isBianZhangStructure = true;
+              isPinZoengStructure = true;
               break;
             }
           }
@@ -377,17 +377,17 @@ function detectWaitPattern(
     }
   }
 
-  // 確定優先次序（若多重符合，以 單吊 > 卡張 > 邊張 順序標記類型）
+  // 確定優先次序（若多重符合，以 單吊 > 卡窿 > 偏章 順序標記類型）
   let dukDukType: DukDukType = null;
-  if (isDanDiaoStructure) dukDukType = 'danDiao';
-  else if (isKaZhangStructure) dukDukType = 'kaZhang';
-  else if (isBianZhangStructure) dukDukType = 'bianZhang';
+  if (isDanDiuStructure) dukDukType = 'danDiu';
+  else if (isKaLungStructure) dukDukType = 'kaLung';
+  else if (isPinZoengStructure) dukDukType = 'pinZoeng';
 
   if (!dukDukType) return { isDukDuk: false, isFakeDuk: false, dukDukType: null };
 
   // 3. 全局聽牌數檢測
   const allPossibleTileKeys: string[] = [];
-  ['wan', 'tong', 'sou'].forEach(s => {
+  ['character', 'dot', 'bamboo'].forEach(s => {
     for (let i = 1; i <= 9; i++) allPossibleTileKeys.push(`${s}_${i}`);
   });
   for (let i = 1; i <= 4; i++) allPossibleTileKeys.push(`wind_${i}`);
@@ -654,9 +654,9 @@ export function calculateHandFan(
     dukDukType = waitResult.dukDukType;
   }
   const typeNameMap: Record<string, string> = {
-    danDiao: '單釣',
-    kaZhang: '卡窿',
-    bianZhang: '偏章'
+    danDiu: '單吊',
+    kaLung: '卡窿',
+    pinZoeng: '偏章'
   };
   if (isDukDuk && dukDukType) {
     const typeLabel = typeNameMap[dukDukType];
