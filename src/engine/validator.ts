@@ -606,10 +606,11 @@ export function calculateHandFan(
     }
     countDukDuk = false;
   }
+  
   // 3. 自摸
   if (huIsZimo && countZimo) {
     totalFan += 1;
-    breakdown.push({ rule: '自摸 (Zimo)', fan: 1 });
+    breakdown.push({ rule: '自摸', fan: 1 });
   }
 
 
@@ -742,7 +743,7 @@ export function calculateHandFan(
       }
     }
   }
-  
+
   return {
     isValid: true,
     totalFan,

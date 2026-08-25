@@ -67,7 +67,7 @@ describe('meld behaviors', () => {
 
     const res = calculateHandFan(hand as Tile[], meldMap, true);
     expect(res.isValid).toBe(true);
-    expect(res.breakdown.some(b => b.rule === '自摸 (Zimo)')).toBe(true);
+    expect(res.breakdown.some(b => b.rule === '自摸')).toBe(true);
     //expect(res.breakdown.some(b => b.rule.startsWith('暗槓'))).toBe(true);
   });
 
