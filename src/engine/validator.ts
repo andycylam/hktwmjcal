@@ -507,9 +507,6 @@ export function calculateHandFan(
   }
   const remainingCounts = new Map<string, number>();
   let possibleCombinations: string[] | undefined;
-  let isDukDuk = false;
-  let isFakeDuk = false;
-  let dukDukType: DukDukType = null;
 
   if (shouldValidateWinning) {
     const nonFlowerMelds = meldMap ? Object.values(meldMap).filter(m => m.kind !== 'flower') : [];
@@ -579,7 +576,11 @@ export function calculateHandFan(
   // ----------------------------------------------------------------------
   const breakdown: { rule: string; fan: number }[] = [];
   let totalFan = 0;
-
+  
+  let isDukDuk = false;
+  let isFakeDuk = false;
+  let dukDukType: DukDukType = null;
+  
   const seatWindNum = seatWind ? WIND_VALUE_MAP[seatWind] : undefined;
   const prevailingWindNum = prevailingWind ? WIND_VALUE_MAP[prevailingWind] : undefined;
 
