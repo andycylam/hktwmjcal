@@ -671,52 +671,51 @@ export function calculateHandFan(
 
   // 21. 一台花, 154. 八仙過海
   // 收集所有花牌的 value
-const allFlowerValues = new Set(
-  flowerMelds.flatMap(meld => meld.tiles.map(tile => tile.value))
-);
+  const allFlowerValues = new Set(
+    flowerMelds.flatMap(meld => meld.tiles.map(tile => tile.value))
+  );
 
-const hasFirstGroup = [1, 2, 3, 4].every(val => allFlowerValues.has(val));  // 一台花 (1-4)
-const hasSecondGroup = [5, 6, 7, 8].every(val => allFlowerValues.has(val)); // 一台花 (5-8)
+  const hasFirstGroup = [1, 2, 3, 4].every(val => allFlowerValues.has(val));  // 一台花 (1-4)
+  const hasSecondGroup = [5, 6, 7, 8].every(val => allFlowerValues.has(val)); // 一台花 (5-8)
 
-// 處理「八仙過海」與「一台花」邏輯
-if (hasFirstGroup && hasSecondGroup) {
-  // 八仙過海 (40番)：不計一台花，亦不計任何單張正花
-  totalFan += 40;
-  breakdown.push({ rule: '八仙過海', fan: 40 });
-} else {
-  // 中了第一組一台花 (1-4)
-  if (hasFirstGroup) {
-    totalFan += 10;
-    breakdown.push({ rule: '一台花 (梅/蘭/竹/菊)', fan: 10 });
-  }
+  // 處理「八仙過海」與「一台花」邏輯
+  if (hasFirstGroup && hasSecondGroup) {
+    // 八仙過海 (40番)：不計一台花，亦不計任何單張正花
+    totalFan += 40;
+    breakdown.push({ rule: '八仙過海', fan: 40 });
+  } else {
+    // 中了第一組一台花 (1-4)
+    if (hasFirstGroup) {
+      totalFan += 10;
+      breakdown.push({ rule: '一台花 (梅/蘭/竹/菊)', fan: 10 });
+    }
 
-  // 中了第二組一台花 (5-8)
-  if (hasSecondGroup) {
-    totalFan += 10;
-    breakdown.push({ rule: '一台花 (春/夏/秋/冬)', fan: 10 });
-  }
+    // 中了第二組一台花 (5-8)
+    if (hasSecondGroup) {
+      totalFan += 10;
+      breakdown.push({ rule: '一台花 (春/夏/秋/冬)', fan: 10 });
+    }
 
-  // 處理「單張正花」：精準過濾掉已組成「一台花」的花牌
-  for (const meld of flowerMelds) {
-    for (const tile of meld.tiles) {
-      const flowerVal = tile.value;
+    // 處理「單張正花」：精準過濾掉已組成「一台花」的花牌
+    for (const meld of flowerMelds) {
+      for (const tile of meld.tiles) {
+        const flowerVal = tile.value;
 
-      // 關鍵過濾邏輯：
-      // - 如果已中第一組一台花，跳過 1, 2, 3, 4 號花的單張計數
-      if (hasFirstGroup && flowerVal >= 1 && flowerVal <= 4) continue;
-      // - 如果已中第二組一台花，跳過 5, 6, 7, 8 號花的單張計數
-      if (hasSecondGroup && flowerVal >= 5 && flowerVal <= 8) continue;
+        // 關鍵過濾邏輯：
+        // - 如果已中第一組一台花，跳過 1, 2, 3, 4 號花的單張計數
+        if (hasFirstGroup && flowerVal >= 1 && flowerVal <= 4) continue;
+        // - 如果已中第二組一台花，跳過 5, 6, 7, 8 號花的單張計數
+        if (hasSecondGroup && flowerVal >= 5 && flowerVal <= 8) continue;
 
-      // 只有「未湊成一台花」的組別，才會計算單張正花
-      const result = scoreFlower(flowerVal, seatWindNum);
-      if (result.fan > 0) {
-        totalFan += result.fan;
-        breakdown.push(...result.breakdown);
+        // 只有「未湊成一台花」的組別，才會計算單張正花
+        const result = scoreFlower(flowerVal, seatWindNum);
+        if (result.fan > 0) {
+          totalFan += result.fan;
+          breakdown.push(...result.breakdown);
+        }
       }
     }
   }
-}
-
 
   return {
     isValid: true,
