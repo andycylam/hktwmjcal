@@ -617,6 +617,12 @@ export function calculateHandFan(
   const seatWindNum = seatWind ? WIND_VALUE_MAP[seatWind] : undefined;
   const prevailingWindNum = prevailingWind ? WIND_VALUE_MAP[prevailingWind] : undefined;
 
+  // 26.莊家
+  if (seatWindNum === 1) {
+    totalFan += 1;
+    breakdown.push({ rule: '莊家', fan: 1 });
+  }
+
   // 收集所有花牌的 value
   const allFlowerTiles = flowerMelds.flatMap(meld => meld.tiles);
   const allFlowerValues = new Set(allFlowerTiles.map(tile => tile.value));
@@ -725,7 +731,7 @@ export function calculateHandFan(
   if (meldMap) {
     const kongs = Object.values(meldMap).filter(m => m.kind === 'kong').length;
     if (kongs > 0) {
-      totalFan += kongs;
+      totalFan += kongs * 2;
       breakdown.push({ rule: `槓 x${kongs}`, fan: kongs*2 });
     }
   }
