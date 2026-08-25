@@ -590,7 +590,9 @@ export function calculateHandFan(
   
   let countDukDuk = true;
   let countZimo = true;
+  
 
+  // 151. 全求人, 152. 半求人
   if (handTiles.length === 2)
   {
     if (!huIsZimo){
@@ -610,7 +612,9 @@ export function calculateHandFan(
     breakdown.push({ rule: '自摸 (Zimo)', fan: 1 });
   }
 
-  // 1. 計算露牌中的字牌番數
+
+  // 15. 字牌, 16. 正字
+  // 計算露牌中的字牌番數
   const honorMelds = [...windMelds, ...dragonMelds];
   for (const meld of honorMelds) {
     const value = meld.tiles[0].value;
@@ -619,7 +623,7 @@ export function calculateHandFan(
     breakdown.push(...result.breakdown);
   }
 
-  // 2. 計算暗牌解構中的字牌番數
+  // 計算暗牌解構中的字牌番數
   if (possibleCombinations && possibleCombinations.length > 0) {
     let bestExtraFan = 0;
     let bestBreakdownToAdd: { rule: string; fan: number }[] = [];
@@ -658,7 +662,7 @@ export function calculateHandFan(
     }
   }
 
-  // 4. 槓
+  // 92. 槓
   if (meldMap) {
     const kongs = Object.values(meldMap).filter(m => m.kind === 'kong').length;
     if (kongs > 0) {
@@ -667,7 +671,7 @@ export function calculateHandFan(
     }
   }
 
-  // 5. 獨獨 / 假獨
+  // 23. 假獨, 24. 獨獨
   if (huTile && countDukDuk) {
     const waitResult = detectWaitPattern(remainingCounts, huTile);
     isDukDuk = waitResult.isDukDuk;
@@ -738,6 +742,7 @@ export function calculateHandFan(
       }
     }
   }
+  
   return {
     isValid: true,
     totalFan,
