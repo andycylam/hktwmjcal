@@ -313,6 +313,18 @@ function scoreFlower(
   return { fan, breakdown };
 }
 
+function hasNonFlowerMelds(meldMap?: Record<string, MeldEntry>): boolean {
+  if (!meldMap) return false;
+
+  for (const key in meldMap) {
+    if (meldMap[key].kind !== 'flower') {
+      return true; // 只要有一組不是 flower，立刻 Return true
+    }
+  }
+
+  return false;
+}
+
 // ----------------------------------------------------------------------
 // Wait Analysis Helper (單吊 / 卡窿 / 偏章 與 聽牌數檢測)
 // ----------------------------------------------------------------------
@@ -609,12 +621,14 @@ export function calculateHandFan(
   const allFlowerTiles = flowerMelds.flatMap(meld => meld.tiles);
   const allFlowerValues = new Set(allFlowerTiles.map(tile => tile.value));
   
+  let hasNonFlowerMeld = hasNonFlowerMelds(meldMap);
   let hasHonor = hasHonorTiles(handTiles, meldMap);
   let hasFlower = allFlowerTiles.length === 0 ? false : true;
   let countDukDuk = true;
   let countZimo = true;
   let countNoHonor = true;
   let countNoFlower = true;
+  let countFullyConcealedHand = true;
 
 
   // 151. 全求人, 152. 半求人
@@ -788,6 +802,13 @@ export function calculateHandFan(
         }
       }
     }
+  }
+  
+  // 2. 門清
+  if (!hasNonFlowerMeld && !hasFlower && countFullyConcealedHand)
+  {
+    totalFan += 1;
+    breakdown.push({ rule: '門清', fan: 1 });
   }
 
   return {
