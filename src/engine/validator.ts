@@ -580,13 +580,35 @@ export function calculateHandFan(
   let isDukDuk = false;
   let isFakeDuk = false;
   let dukDukType: DukDukType = null;
-  
+
   const seatWindNum = seatWind ? WIND_VALUE_MAP[seatWind] : undefined;
   const prevailingWindNum = prevailingWind ? WIND_VALUE_MAP[prevailingWind] : undefined;
 
   // 收集所有花牌的 value
   const allFlowerTiles = flowerMelds.flatMap(meld => meld.tiles);
   const allFlowerValues = new Set(allFlowerTiles.map(tile => tile.value));
+  
+  let countDukDuk = true;
+  let countZimo = true;
+
+  if (handTiles.length === 2)
+  {
+    if (!huIsZimo){
+      totalFan += 40;
+      breakdown.push({ rule: '全求人', fan: 40 });
+    }
+    else{
+      totalFan += 20;
+      breakdown.push({ rule: '半求人', fan: 20 });
+      countZimo = false;
+    }
+    countDukDuk = false;
+  }
+  // 3. 自摸
+  if (huIsZimo && countZimo) {
+    totalFan += 1;
+    breakdown.push({ rule: '自摸 (Zimo)', fan: 1 });
+  }
 
   // 1. 計算露牌中的字牌番數
   const honorMelds = [...windMelds, ...dragonMelds];
@@ -636,12 +658,6 @@ export function calculateHandFan(
     }
   }
 
-  // 3. 自摸
-  if (huIsZimo) {
-    totalFan += 1;
-    breakdown.push({ rule: '自摸 (Zimo)', fan: 1 });
-  }
-
   // 4. 槓
   if (meldMap) {
     const kongs = Object.values(meldMap).filter(m => m.kind === 'kong').length;
@@ -652,27 +668,27 @@ export function calculateHandFan(
   }
 
   // 5. 獨獨 / 假獨
-  if (huTile) {
+  if (huTile && countDukDuk) {
     const waitResult = detectWaitPattern(remainingCounts, huTile);
     isDukDuk = waitResult.isDukDuk;
     isFakeDuk = waitResult.isFakeDuk;
     dukDukType = waitResult.dukDukType;
+  
+    const typeNameMap: Record<string, string> = {
+      danDiu: '單吊',
+      kaLung: '卡窿',
+      pinZoeng: '偏章'
+    };
+    if (isDukDuk && dukDukType) {
+      const typeLabel = typeNameMap[dukDukType];
+      totalFan += 2;
+      breakdown.push({ rule: `獨獨 (${typeLabel})`, fan: 2 });
+    } else if (isFakeDuk && dukDukType) {
+      const typeLabel = typeNameMap[dukDukType];
+      totalFan += 1;
+      breakdown.push({ rule: `假獨 (${typeLabel})`, fan: 1 });
+    }
   }
-  const typeNameMap: Record<string, string> = {
-    danDiu: '單吊',
-    kaLung: '卡窿',
-    pinZoeng: '偏章'
-  };
-  if (isDukDuk && dukDukType) {
-    const typeLabel = typeNameMap[dukDukType];
-    totalFan += 2;
-    breakdown.push({ rule: `獨獨 (${typeLabel})`, fan: 2 });
-  } else if (isFakeDuk && dukDukType) {
-    const typeLabel = typeNameMap[dukDukType];
-    totalFan += 1;
-    breakdown.push({ rule: `假獨 (${typeLabel})`, fan: 1 });
-  }
-
 
   // 17. 無花, 21. 一台花, 154. 八仙過海
   if (allFlowerTiles.length === 0) {
