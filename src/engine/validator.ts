@@ -665,47 +665,47 @@ export function calculateHandFan(
   }
 
   // 計算暗牌解構中的字牌番數
-if (possibleCombinations && possibleCombinations.length > 0) {
-  let bestExtraFan = 0;
-  let bestBreakdownToAdd: { rule: string; fan: number }[] = [];
+  if (possibleCombinations && possibleCombinations.length > 0) {
+    let bestExtraFan = 0;
+    let bestBreakdownToAdd: { rule: string; fan: number }[] = [];
 
-  for (const combo of possibleCombinations) {
-    const comboBreakdown: { rule: string; fan: number }[] = [];
-    const parts = combo.split(', ');
+    for (const combo of possibleCombinations) {
+      const comboBreakdown: { rule: string; fan: number }[] = [];
+      const parts = combo.split(', ');
 
-    for (const part of parts) {
-      if (!part.includes('x3')) continue;
+      for (const part of parts) {
+        if (!part.includes('x3')) continue;
 
-      const windCharMatch = part.match(/[東南西北]/)?.[0];
-      const dragonCharMatch = part.match(/[中發白]/)?.[0];
+        const windCharMatch = part.match(/[東南西北]/)?.[0];
+        const dragonCharMatch = part.match(/[中發白]/)?.[0];
 
-      // 關鍵修正：只有當 matches 到風牌或三元牌字眼時，才進行字牌處理
-      let val: number | null = null;
-      if (windCharMatch) {
-        val = charToHonorNumber(windCharMatch);
-      } else if (dragonCharMatch) {
-        val = charToHonorNumber(dragonCharMatch);
+        // 關鍵修正：只有當 matches 到風牌或三元牌字眼時，才進行字牌處理
+        let val: number | null = null;
+        if (windCharMatch) {
+          val = charToHonorNumber(windCharMatch);
+        } else if (dragonCharMatch) {
+          val = charToHonorNumber(dragonCharMatch);
+        }
+
+        // 只有成功轉化為字牌編號 (1~7) 才計算
+        if (val !== null && val >= 1 && val <= 7) {
+          const result = scoreHonorTriplet(val, seatWindNum, prevailingWindNum);
+          comboBreakdown.push(...result.breakdown);
+        }
       }
 
-      // 只有成功轉化為字牌編號 (1~7) 才計算
-      if (val !== null && val >= 1 && val <= 7) {
-        const result = scoreHonorTriplet(val, seatWindNum, prevailingWindNum);
-        comboBreakdown.push(...result.breakdown);
+      const comboTotal = comboBreakdown.reduce((sum, e) => sum + e.fan, 0);
+      if (comboTotal > bestExtraFan) {
+        bestExtraFan = comboTotal;
+        bestBreakdownToAdd = comboBreakdown;
       }
     }
 
-    const comboTotal = comboBreakdown.reduce((sum, e) => sum + e.fan, 0);
-    if (comboTotal > bestExtraFan) {
-      bestExtraFan = comboTotal;
-      bestBreakdownToAdd = comboBreakdown;
+    if (bestExtraFan > 0) {
+      totalFan += bestExtraFan;
+      breakdown.push(...bestBreakdownToAdd);
     }
   }
-
-  if (bestExtraFan > 0) {
-    totalFan += bestExtraFan;
-    breakdown.push(...bestBreakdownToAdd);
-  }
-}
 
   // 92. 槓
   if (meldMap) {
