@@ -227,6 +227,27 @@ function collectMeldCombinations(countMap: Map<string, number>, visited = new Se
   return results.length > 0 ? results : [];
 }
 
+function hasHonorTiles(handTiles: Tile[], meldMap?: Record<string, MeldEntry>): boolean {
+  // 1. 手牌（暗牌）：直接用 some 檢查，只要遇到第一個風/字就即刻 Stop（Short-circuit）
+  const hasInHand = handTiles.some(t => t.suit === 'wind' || t.suit === 'dragon');
+  if (hasInHand) return true;
+
+  // 2. 副露（碰/槓）：直接檢查 第一張牌 的 suit（因為一個 Meld 裡面的牌 suit 必定相同）
+  if (meldMap) {
+    for (const meld of Object.values(meldMap)) {
+      if (meld.tiles.length === 0) continue;
+      
+      // 核心優化：只睇呢個 Meld 第一張牌係咪 wind / dragon
+      const firstTileSuit = meld.tiles[0].suit;
+      if (firstTileSuit === 'wind' || firstTileSuit === 'dragon') {
+        return true; // 只要找到一個字牌 Meld 就即刻回傳 true
+      }
+    }
+  }
+
+  return false;
+}
+
 function scoreHonorTriplet(
   value: number,
   seatWindNum: number | undefined,
@@ -588,9 +609,13 @@ export function calculateHandFan(
   const allFlowerTiles = flowerMelds.flatMap(meld => meld.tiles);
   const allFlowerValues = new Set(allFlowerTiles.map(tile => tile.value));
   
+  let hasHonor = hasHonorTiles(handTiles, meldMap);
+  let hasFlower = allFlowerTiles.length === 0 ? false : true;
   let countDukDuk = true;
   let countZimo = true;
-  
+  let countNoHonor = true;
+  let countNoFlower = true;
+
 
   // 151. 全求人, 152. 半求人
   if (handTiles.length === 2)
@@ -606,13 +631,28 @@ export function calculateHandFan(
     }
     countDukDuk = false;
   }
-  
+
   // 3. 自摸
   if (huIsZimo && countZimo) {
     totalFan += 1;
     breakdown.push({ rule: '自摸', fan: 1 });
   }
 
+  // 20. 無字花
+  if (!hasHonor && !hasFlower)
+  {
+    countNoHonor = false;
+    countNoFlower = false;
+    totalFan += 5;
+    breakdown.push({ rule: `無字花`, fan: 5 });
+  }
+
+  // 14. 無字
+  if (!hasHonor && countNoHonor)
+  {
+      totalFan += 1;
+      breakdown.push({ rule: `無字`, fan: 1 });
+  }
 
   // 15. 字牌, 16. 正字
   // 計算露牌中的字牌番數
@@ -625,43 +665,47 @@ export function calculateHandFan(
   }
 
   // 計算暗牌解構中的字牌番數
-  if (possibleCombinations && possibleCombinations.length > 0) {
-    let bestExtraFan = 0;
-    let bestBreakdownToAdd: { rule: string; fan: number }[] = [];
+if (possibleCombinations && possibleCombinations.length > 0) {
+  let bestExtraFan = 0;
+  let bestBreakdownToAdd: { rule: string; fan: number }[] = [];
 
-    for (const combo of possibleCombinations) {
-      const comboBreakdown: { rule: string; fan: number }[] = [];
-      const parts = combo.split(', ');
+  for (const combo of possibleCombinations) {
+    const comboBreakdown: { rule: string; fan: number }[] = [];
+    const parts = combo.split(', ');
 
-      for (const part of parts) {
-        if (!part.includes('x3')) continue;
+    for (const part of parts) {
+      if (!part.includes('x3')) continue;
 
-        const primaryNum = getPrimaryNumberFromString(part);
-        const windCharMatch = part.match(/[東南西北]/)?.[0];
-        const dragonCharMatch = part.match(/[中發白]/)?.[0];
+      const windCharMatch = part.match(/[東南西北]/)?.[0];
+      const dragonCharMatch = part.match(/[中發白]/)?.[0];
 
-        let val = primaryNum;
-        if (windCharMatch) val = charToHonorNumber(windCharMatch) || val;
-        else if (dragonCharMatch) val = charToHonorNumber(dragonCharMatch) || val;
-
-        if (val >= 1 && val <= 7) {
-          const result = scoreHonorTriplet(val, seatWindNum, prevailingWindNum);
-          comboBreakdown.push(...result.breakdown);
-        }
+      // 關鍵修正：只有當 matches 到風牌或三元牌字眼時，才進行字牌處理
+      let val: number | null = null;
+      if (windCharMatch) {
+        val = charToHonorNumber(windCharMatch);
+      } else if (dragonCharMatch) {
+        val = charToHonorNumber(dragonCharMatch);
       }
 
-      const comboTotal = comboBreakdown.reduce((sum, e) => sum + e.fan, 0);
-      if (comboTotal > bestExtraFan) {
-        bestExtraFan = comboTotal;
-        bestBreakdownToAdd = comboBreakdown;
+      // 只有成功轉化為字牌編號 (1~7) 才計算
+      if (val !== null && val >= 1 && val <= 7) {
+        const result = scoreHonorTriplet(val, seatWindNum, prevailingWindNum);
+        comboBreakdown.push(...result.breakdown);
       }
     }
 
-    if (bestExtraFan > 0) {
-      totalFan += bestExtraFan;
-      breakdown.push(...bestBreakdownToAdd);
+    const comboTotal = comboBreakdown.reduce((sum, e) => sum + e.fan, 0);
+    if (comboTotal > bestExtraFan) {
+      bestExtraFan = comboTotal;
+      bestBreakdownToAdd = comboBreakdown;
     }
   }
+
+  if (bestExtraFan > 0) {
+    totalFan += bestExtraFan;
+    breakdown.push(...bestBreakdownToAdd);
+  }
+}
 
   // 92. 槓
   if (meldMap) {
@@ -696,9 +740,11 @@ export function calculateHandFan(
   }
 
   // 17. 無花, 21. 一台花, 154. 八仙過海
-  if (allFlowerTiles.length === 0) {
-    totalFan += 1;
-    breakdown.push({ rule: '無花', fan: 1 });
+  if (!hasFlower) {
+    if (countNoFlower){
+      totalFan += 1;
+      breakdown.push({ rule: '無花', fan: 1 });
+    }
   }
   else {
     const hasFirstGroup = [1, 2, 3, 4].every(val => allFlowerValues.has(val));  // 一台花 (1-4)
