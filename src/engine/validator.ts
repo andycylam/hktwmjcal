@@ -331,6 +331,20 @@ function hasNonFlowerMelds(meldMap?: Record<string, MeldEntry>): boolean {
 
 type DukDukType = 'danDiu' | 'kaLung' | 'pinZoeng' | null;
 
+//FanBreakdownEntry取代{ rule: string; fan: number }
+type FanBreakdownEntry = {
+  rule: string;
+  fan: number;
+};
+
+type CombinationScoreResult = {
+  combination: string;
+  fan: number;
+  breakdown: FanBreakdownEntry[];
+};
+
+
+
 function detectWaitPattern(
   remainingCounts: Map<string, number>,
   huTile: Tile
@@ -461,6 +475,146 @@ function detectWaitPattern(
   };
 }
 
+/**
+ * 判斷指定拆牌組合有沒有使用二、五、八做眼。
+ *
+ * 將眼只包括：
+ * - 2、5、8 萬
+ * - 2、5、8 筒
+ * - 2、5、8 索
+ *
+ * 風牌及三元牌不屬於將眼。
+ */
+function getJeungNgaanBreakdown(
+  parts: string[]
+): FanBreakdownEntry[] {
+  for (const part of parts) {
+    // 只檢查眼
+    if (!part.includes('x2')) continue;
+
+    const suit = part.match(/[萬筒索]/)?.[0];
+    const valueMatch = part.match(/\d+/);
+    const value = valueMatch ? Number(valueMatch[0]) : null;
+
+    if (
+      suit &&
+      value !== null &&
+      [2, 5, 8].includes(value)
+    ) {
+      return [
+        {
+          rule: `將眼 (${value}${suit})`,
+          fan: 1
+        }
+      ];
+    }
+  }
+
+  return [];
+}
+
+/**
+ * 計算單一暗牌拆解組合的番數。
+ *
+ * 所有依賴拆牌方法的番種都應該集中在這裡計算，
+ * 確保所有番數來自同一個有效拆牌組合。
+ *
+ * 現時計算：
+ * - 暗牌字牌刻子
+ * - 暗牌正字刻子
+ * - 將眼
+ *
+ * 日後亦可以加入：
+ * - 對對胡
+ * - 平胡
+ * - 一般高
+ * - 三相逢
+ * - 其他依賴拆牌結構的規則
+ */
+function scoreCombination(
+  combination: string,
+  seatWindNum: number | undefined,
+  prevailingWindNum: number | undefined
+): CombinationScoreResult {
+  const breakdown: FanBreakdownEntry[] = [];
+  const parts = combination.split(', ');
+
+  // --------------------------------------------------
+  // 字牌及正字
+  // --------------------------------------------------
+  for (const part of parts) {
+    // 字牌及正字只計刻子
+    if (!part.includes('x3')) continue;
+
+    const windCharMatch = part.match(/[東南西北]/)?.[0];
+    const dragonCharMatch = part.match(/[中發白]/)?.[0];
+
+    let value: number | null = null;
+
+    if (windCharMatch) {
+      value = charToHonorNumber(windCharMatch);
+    } else if (dragonCharMatch) {
+      value = charToHonorNumber(dragonCharMatch);
+    }
+
+    if (value !== null && value >= 1 && value <= 7) {
+      const result = scoreHonorTriplet(
+        value,
+        seatWindNum,
+        prevailingWindNum
+      );
+
+      breakdown.push(...result.breakdown);
+    }
+  }
+
+  // --------------------------------------------------
+  // 將眼
+  // --------------------------------------------------
+  const jeungNgaanBreakdown = getJeungNgaanBreakdown(parts);
+  breakdown.push(...jeungNgaanBreakdown);
+
+  const fan = breakdown.reduce(
+    (sum, entry) => sum + entry.fan,
+    0
+  );
+
+  return {
+    combination,
+    fan,
+    breakdown
+  };
+}
+
+/**
+ * 對所有有效拆牌組合進行計番，
+ * 最後選擇總番數最高的同一個組合。
+ */
+function findBestCombinationScore(
+  possibleCombinations: string[],
+  seatWindNum: number | undefined,
+  prevailingWindNum: number | undefined
+): CombinationScoreResult | null {
+  let bestResult: CombinationScoreResult | null = null;
+
+  for (const combination of possibleCombinations) {
+    const result = scoreCombination(
+      combination,
+      seatWindNum,
+      prevailingWindNum
+    );
+
+    if (!bestResult || result.fan > bestResult.fan) {
+      bestResult = result;
+    }
+  }
+
+  return bestResult;
+}
+
+
+
+
 // ----------------------------------------------------------------------
 // Main Function: calculateHandFan
 // ----------------------------------------------------------------------
@@ -540,6 +694,7 @@ export function calculateHandFan(
   }
   const remainingCounts = new Map<string, number>();
   let possibleCombinations: string[] | undefined;
+  let selectedCombination: string | undefined;
 
   if (shouldValidateWinning) {
     const nonFlowerMelds = meldMap ? Object.values(meldMap).filter(m => m.kind !== 'flower') : [];
@@ -674,56 +829,60 @@ export function calculateHandFan(
       breakdown.push({ rule: `無字`, fan: 1 });
   }
 
-  // 15. 字牌, 16. 正字
-  // 計算露牌中的字牌番數
-  const honorMelds = [...windMelds, ...dragonMelds];
+  // 15. 字牌、16. 正字、25.將眼
+
+  // --------------------------------------------------
+  // A. 計算露牌中的字牌及正字
+  // --------------------------------------------------
+  //
+  // 露牌的碰或槓已經固定，不受暗牌拆解方式影響，
+  // 因此可以直接加入整副牌的 totalFan。
+  //
+  const honorMelds = [
+    ...windMelds,
+    ...dragonMelds
+  ];
+
   for (const meld of honorMelds) {
     const value = meld.tiles[0].value;
-    const result = scoreHonorTriplet(value, seatWindNum, prevailingWindNum);
+
+    const result = scoreHonorTriplet(
+      value,
+      seatWindNum,
+      prevailingWindNum
+    );
+
     totalFan += result.fan;
     breakdown.push(...result.breakdown);
   }
 
-  // 計算暗牌解構中的字牌番數
-  if (possibleCombinations && possibleCombinations.length > 0) {
-    let bestExtraFan = 0;
-    let bestBreakdownToAdd: { rule: string; fan: number }[] = [];
+  // --------------------------------------------------
+  // B. 計算暗牌拆解中的字牌、正字及將眼
+  // --------------------------------------------------
+  //
+  // 每個 possibleCombination 都獨立計算，
+  // 最後只採用番數最高的一個拆解方法。
+  //
+  if (
+    possibleCombinations &&
+    possibleCombinations.length > 0
+  ) {
+    const bestCombinationScore = findBestCombinationScore(
+      possibleCombinations,
+      seatWindNum,
+      prevailingWindNum
+    );
 
-    for (const combo of possibleCombinations) {
-      const comboBreakdown: { rule: string; fan: number }[] = [];
-      const parts = combo.split(', ');
+    if (bestCombinationScore) {
+      selectedCombination =
+        bestCombinationScore.combination;
 
-      for (const part of parts) {
-        if (!part.includes('x3')) continue;
-
-        const windCharMatch = part.match(/[東南西北]/)?.[0];
-        const dragonCharMatch = part.match(/[中發白]/)?.[0];
-
-        // 關鍵修正：只有當 matches 到風牌或三元牌字眼時，才進行字牌處理
-        let val: number | null = null;
-        if (windCharMatch) {
-          val = charToHonorNumber(windCharMatch);
-        } else if (dragonCharMatch) {
-          val = charToHonorNumber(dragonCharMatch);
-        }
-
-        // 只有成功轉化為字牌編號 (1~7) 才計算
-        if (val !== null && val >= 1 && val <= 7) {
-          const result = scoreHonorTriplet(val, seatWindNum, prevailingWindNum);
-          comboBreakdown.push(...result.breakdown);
-        }
+      if (bestCombinationScore.fan > 0) {
+        totalFan += bestCombinationScore.fan;
+        breakdown.push(
+          ...bestCombinationScore.breakdown
+        );
       }
-
-      const comboTotal = comboBreakdown.reduce((sum, e) => sum + e.fan, 0);
-      if (comboTotal > bestExtraFan) {
-        bestExtraFan = comboTotal;
-        bestBreakdownToAdd = comboBreakdown;
-      }
-    }
-
-    if (bestExtraFan > 0) {
-      totalFan += bestExtraFan;
-      breakdown.push(...bestBreakdownToAdd);
     }
   }
 
@@ -821,6 +980,7 @@ export function calculateHandFan(
     isValid: true,
     totalFan,
     breakdown,
-    possibleCombinations
+    possibleCombinations,
+    selectedCombination
   };
 }
