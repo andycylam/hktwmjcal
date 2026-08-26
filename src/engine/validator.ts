@@ -684,6 +684,7 @@ export function calculateHandFan(
   let countZimo = true;
   let countNoHonor = true;
   let countNoFlower = true;
+  let countNoHonorFlower = true;
   let countFullyConcealedHand = true;
 
   // 151. 全求人, 152. 半求人
@@ -702,6 +703,7 @@ export function calculateHandFan(
   {
     calc.add('清一色', 120);
     countNoHonor = false;
+    countNoHonorFlower = false;
   }
 
   // 3. 自摸
@@ -710,7 +712,7 @@ export function calculateHandFan(
   }
 
   // 20. 無字花
-  if (!hasHonor && !hasFlower) {
+  if (!hasHonor && !hasFlower && countNoHonorFlower) {
     countNoHonor = false;
     countNoFlower = false;
     calc.add('無字花', 5);
