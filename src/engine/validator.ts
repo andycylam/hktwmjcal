@@ -1,5 +1,5 @@
 import { Tile, CalculationResult } from '../types/mahjong';
-
+import { evaluateLikGooSpecialPatterns } from './likgoo.helper';
 type MeldEntry = { kind: 'kong' | 'pung' | 'shang' | 'flower'; tiles: Tile[]; concealed?: boolean };
 
 // ----------------------------------------------------------------------
@@ -32,6 +32,13 @@ class FanCalculator {
     for (const item of items) {
       this.add(item.rule, item.fan);
     }
+  }
+
+  clone(): FanCalculator {
+    const copy = new FanCalculator();
+    copy.totalFan = this.totalFan;
+    copy.breakdown = [...this.breakdown];
+    return copy;
   }
 }
 
@@ -341,12 +348,10 @@ function hasNonFlowerMelds(meldMap?: Record<string, MeldEntry>): boolean {
 }
 
 function isFullFlush(handTiles: Tile[], meldMap?: Record<string, MeldEntry>): boolean {
-  // 1. 收集所有需要參與牌型判斷的牌（手牌 + 數字牌副露，排除花牌）
   const relevantTiles: Tile[] = [...handTiles];
 
   if (meldMap) {
     Object.values(meldMap).forEach(meld => {
-      // 花牌不影響清一色判斷
       if (meld.kind !== 'flower') {
         relevantTiles.push(...meld.tiles);
       }
@@ -355,20 +360,14 @@ function isFullFlush(handTiles: Tile[], meldMap?: Record<string, MeldEntry>): bo
 
   if (relevantTiles.length === 0) return false;
 
-  // 2. 如果包含任何字牌（風牌、元牌/番子），直接否定
   const hasHonorTiles = relevantTiles.some(t => t.suit === 'wind' || t.suit === 'dragon');
   if (hasHonorTiles) return false;
 
-  // 3. 檢查剩餘的數牌（character 萬 / dot 筒 / bamboo 索）
-  // 取得第一張數牌的花色作為基準
   const firstSuit = relevantTiles[0].suit;
-
-  // 確保這張牌真的是數牌（萬/筒/索）
   if (!['character', 'dot', 'bamboo'].includes(firstSuit)) {
     return false;
   }
 
-  // 4. 檢查是否所有牌的花色都跟第一張完全一致
   return relevantTiles.every(t => t.suit === firstSuit);
 }
 
@@ -397,7 +396,6 @@ function detectWaitPattern(
   let isKaLungStructure = false;
   let isPinZoengStructure = false;
 
-  // 輔助函式：檢查扣除一對眼後能否成糊
   const canFormWithPair = (counts: Map<string, number>): boolean => {
     for (const [k, c] of counts.entries()) {
       if (c >= 2) {
@@ -409,7 +407,6 @@ function detectWaitPattern(
     return false;
   };
 
-  // A) 單吊
   if ((countsBeforeHu.get(huKey) || 0) === 1) {
     const testCopy = cloneCounts(countsBeforeHu);
     testCopy.delete(huKey);
@@ -418,7 +415,6 @@ function detectWaitPattern(
     }
   }
 
-  // B) 卡窿 & 偏章
   if (['character', 'dot', 'bamboo'].includes(huSuit)) {
     if (huVal >= 2 && huVal <= 8) {
       const leftKey = `${huSuit}_${huVal - 1}`;
@@ -452,7 +448,6 @@ function detectWaitPattern(
 
   if (!dukDukType) return { isDukDuk: false, isFakeDuk: false, dukDukType: null };
 
-  // 聽牌數檢測
   const allPossibleTileKeys: string[] = [];
   ['character', 'dot', 'bamboo'].forEach(s => {
     for (let i = 1; i <= 9; i++) allPossibleTileKeys.push(`${s}_${i}`);
@@ -484,8 +479,69 @@ function detectWaitPattern(
 }
 
 // ----------------------------------------------------------------------
+// 嚦咕嚦咕 (Lik Goo Lik Goo) 檢測 Helper
+// ----------------------------------------------------------------------
+
+interface LikGooAnalysis {
+  isLikGoo: boolean;
+  combinationLabel?: string;
+  tripletTileKey?: string;
+}
+
+function checkLikGoo(
+  handTiles: Tile[],
+  meldMap?: Record<string, MeldEntry>
+): LikGooAnalysis {
+  if (hasNonFlowerMelds(meldMap)) {
+    return { isLikGoo: false };
+  }
+
+  if (handTiles.length !== 17) {
+    return { isLikGoo: false };
+  }
+
+  const handCounts = new Map<string, number>();
+  handTiles.forEach(t => {
+    const key = `${t.suit}_${t.value}`;
+    handCounts.set(key, (handCounts.get(key) || 0) + 1);
+  });
+
+  let pairCount = 0;
+  let tripletCount = 0;
+  let tripletTileKey = '';
+  const partsLabel: string[] = [];
+
+  for (const [key, count] of handCounts.entries()) {
+    if (count === 2) {
+      pairCount++;
+      partsLabel.push(`${tileLabel(key)}x2`);
+    } else if (count === 3) {
+      tripletCount++;
+      tripletTileKey = key;
+      partsLabel.push(`${tileLabel(key)}x3`);
+    } else if (count === 4) {
+      pairCount += 2;
+      partsLabel.push(`${tileLabel(key)}x2`, `${tileLabel(key)}x2`);
+    } else {
+      return { isLikGoo: false };
+    }
+  }
+
+  if (pairCount === 7 && tripletCount === 1) {
+    const combinationLabel = partsLabel.sort().join(', ');
+    return {
+      isLikGoo: true,
+      combinationLabel,
+      tripletTileKey
+    };
+  }
+
+  return { isLikGoo: false };
+}
+
+// ----------------------------------------------------------------------
 // 將眼 Helper
-// ------------------------------------------
+// ----------------------------------------------------------------------
 
 function getJeungNgaanFromCombination(
   combination: string
@@ -513,6 +569,190 @@ function getJeungNgaanFromCombination(
   return null;
 }
 
+// ----------------------------------------------------------------------
+// 通用單一形牌型番數計算器 (Unified Single Form Engine)
+// ----------------------------------------------------------------------
+
+function calculateSingleHandForm(
+  formType: 'basic' | 'likGoo',
+  handTiles: Tile[],
+  meldMap?: Record<string, MeldEntry>,
+  huIsZimo?: boolean,
+  comboStr?: string,
+  huTile?: Tile,
+  remainingCounts?: Map<string, number>,
+  gameContext?: { prevailingWind?: 'east' | 'south' | 'west' | 'north'; seatWind?: 'east' | 'south' | 'west' | 'north' }
+): FanCalculator {
+  const calc = new FanCalculator();
+  const seatWindNum = gameContext?.seatWind ? WIND_VALUE_MAP[gameContext.seatWind] : undefined;
+  const prevailingWindNum = gameContext?.prevailingWind ? WIND_VALUE_MAP[gameContext.prevailingWind] : undefined;
+
+  const flowerMelds = meldMap ? Object.values(meldMap).filter(m => m.kind === 'flower') : [];
+  const allFlowerTiles = flowerMelds.flatMap(meld => meld.tiles);
+  const allFlowerValues = new Set(allFlowerTiles.map(tile => tile.value));
+
+  const hasHonor = hasHonorTiles(handTiles, meldMap);
+  const hasFlower = allFlowerTiles.length > 0;
+  const hasNonFlowerMeld = hasNonFlowerMelds(meldMap);
+
+  let countNoHonor = true;
+  let countNoFlower = true;
+  let countNoHonorFlower = true;
+  let countZimo = true;
+  
+  const huKey = huTile? `${huTile.suit}_${huTile.value}` : undefined;
+  // 1. 形態專屬主牌型 (嚦咕嚦咕)
+  if (formType === 'likGoo') {
+    calc.add('嚦咕嚦咕', 40);
+    // 八對嚦咕
+    if (huKey){
+      // 1. 統計包含胡牌在內嘅所有手牌數量
+      const counts = new Map<string, number>();
+      for (const t of handTiles) {
+        const key = `${t.suit}_${t.value}`;
+        counts.set(key, (counts.get(key) || 0) + 1);
+      }
+
+      // 2. 扣除胡牌嗰 1 張，計算「食糊前」嘅數量
+      const countBeforeHu = (counts.get(huKey) || 0) - 1;
+
+      // 3. 檢查食糊前是否剛好兩隻
+      if(countBeforeHu === 2) {
+        calc.add('八對嚦咕', 10);
+      }
+    }
+    // 評估嚦咕嚦咕的特殊牌型組合（三元、四喜、三色同對、連對系列）
+    const specialLikGooFans = evaluateLikGooSpecialPatterns(handTiles);
+    for (const item of specialLikGooFans) {
+      calc.add(item.rule, item.fan);
+    }
+  }
+
+  // 2. 特殊求人牌型 (僅限基本形)
+  if (formType === 'basic' && handTiles.length === 2) {
+    if (!huIsZimo) calc.add('全求人', 40);
+    else { calc.add('半求人', 20); countZimo = false; }
+  }
+
+  // 3. 清一色 (共通)
+  if (isFullFlush(handTiles, meldMap)) {
+    calc.add('清一色', 120);
+    countNoHonor = false;
+    countNoHonorFlower = false;
+  }
+
+  // 4. 自摸 (共通)
+  if (huIsZimo && countZimo) calc.add('自摸', 1);
+
+  // 5. 無字花 / 無字 (共通)
+  if (!hasHonor && !hasFlower && countNoHonorFlower) {
+    countNoHonor = false;
+    countNoFlower = false;
+    calc.add('無字花', 5);
+  }
+  if (!hasHonor && countNoHonor) calc.add('無字', 1);
+
+  // 6. 字牌刻子
+  if (formType === 'basic') {
+    // 基本形：副露 + 組合解構
+    const windMelds = meldMap ? Object.values(meldMap).filter(m => m.kind !== 'flower' && m.tiles[0]?.suit === 'wind') : [];
+    const dragonMelds = meldMap ? Object.values(meldMap).filter(m => m.kind !== 'flower' && m.tiles[0]?.suit === 'dragon') : [];
+    
+    for (const meld of [...windMelds, ...dragonMelds]) {
+      const value = meld.tiles[0].value;
+      calc.addMany(scoreHonorTriplet(value, seatWindNum, prevailingWindNum).breakdown);
+    }
+
+    if (comboStr) {
+      const parts = comboStr.split(', ');
+      for (const part of parts) {
+        if (!part.includes('x3')) continue;
+        const windCharMatch = part.match(/[東南西北]/)?.[0];
+        const dragonCharMatch = part.match(/[中發白]/)?.[0];
+        let val: number | null = null;
+        if (windCharMatch) val = charToHonorNumber(windCharMatch);
+        else if (dragonCharMatch) val = charToHonorNumber(dragonCharMatch);
+
+        if (val !== null && val >= 1 && val <= 7) {
+          calc.addMany(scoreHonorTriplet(val, seatWindNum, prevailingWindNum).breakdown);
+        }
+      }
+    }
+  }
+
+  // 7. 將眼 (僅限基本形)
+  if (formType === 'basic' && comboStr) {
+    const jeungNgaan = getJeungNgaanFromCombination(comboStr);
+    if (jeungNgaan) calc.add(jeungNgaan.rule, jeungNgaan.fan);
+  }
+
+  // 8. 槓 (僅限基本形)
+  if (formType === 'basic' && meldMap) {
+    const kongs = Object.values(meldMap).filter(m => m.kind === 'kong').length;
+    if (kongs > 0) calc.add(`槓 x${kongs}`, kongs * 2);
+  }
+
+  // 9. 聽牌獨獨/假獨 (基本)
+  if (formType === 'basic' && huTile && handTiles.length !== 2 && remainingCounts) {
+    const waitResult = detectWaitPattern(remainingCounts, huTile);
+    const typeNameMap: Record<string, string> = { danDiu: '單吊', kaLung: '卡窿', pinZoeng: '偏章' };
+    if (waitResult.isDukDuk && waitResult.dukDukType) {
+      calc.add(`獨獨 (${typeNameMap[waitResult.dukDukType]})`, 2);
+    } else if (waitResult.isFakeDuk && waitResult.dukDukType) {
+      calc.add(`假獨 (${typeNameMap[waitResult.dukDukType]})`, 1);
+    }
+  }
+  // 獨獨 (嚦咕)
+  if (formType === 'likGoo' && huKey) {
+    // 1. 統計包含胡牌在內嘅所有手牌數量
+    const counts = new Map<string, number>();
+    for (const t of handTiles) {
+      const key = `${t.suit}_${t.value}`;
+      counts.set(key, (counts.get(key) || 0) + 1);
+    }
+
+    // 2. 扣除胡牌嗰 1 張，計算「食糊前」嘅數量
+    const countBeforeHu = (counts.get(huKey) || 0) - 1;
+
+    // 3. 檢查食糊前是否剛好得一隻
+    if(countBeforeHu === 1) {
+      calc.add('獨獨 (單吊)', 2);
+    }
+  }
+
+  // 10. 花牌 (共通)
+  if (!hasFlower) {
+    if (countNoFlower) calc.add('無花', 1);
+  } else {
+    const hasFirstGroup = [1, 2, 3, 4].every(val => allFlowerValues.has(val));
+    const hasSecondGroup = [5, 6, 7, 8].every(val => allFlowerValues.has(val));
+
+    if (hasFirstGroup && hasSecondGroup) calc.add('八仙過海', 40);
+    else {
+      if (hasFirstGroup) calc.add('一台花 (梅,蘭,竹,菊)', 10);
+      if (hasSecondGroup) calc.add('一台花 (春,夏,秋,冬)', 10);
+
+      for (const meld of flowerMelds) {
+        for (const tile of meld.tiles) {
+          const flowerVal = tile.value;
+          if (hasFirstGroup && flowerVal >= 1 && flowerVal <= 4) continue;
+          if (hasSecondGroup && flowerVal >= 5 && flowerVal <= 8) continue;
+          calc.addMany(scoreFlower(flowerVal, seatWindNum).breakdown);
+        }
+      }
+    }
+  }
+
+  // 11. 門清 (僅基本形成立)
+  if (formType === 'basic' && !hasNonFlowerMeld && !hasFlower) {
+    calc.add('門清', 5);
+  }
+
+
+  
+
+  return calc;
+}
 
 // ----------------------------------------------------------------------
 // Main Function: calculateHandFan
@@ -525,8 +765,6 @@ export function calculateHandFan(
   huTile?: Tile,
   gameContext?: { prevailingWind?: 'east' | 'south' | 'west' | 'north'; seatWind?: 'east' | 'south' | 'west' | 'north' }
 ): CalculationResult {
-  const calc = new FanCalculator(); // ✅ 區域變數 (避免併發污染)
-
   const meldTilesAll: Tile[] = [];
   const meldTilesCounted: Tile[] = [];
   if (meldMap) {
@@ -537,8 +775,6 @@ export function calculateHandFan(
   }
   const countedTiles = [...handTiles, ...meldTilesCounted];
 
-  const prevailingWind = gameContext?.prevailingWind;
-  const seatWind = gameContext?.seatWind;
   const kongCount = getDeclaredKongCount(meldMap);
 
   const counts = new Map<string, number>();
@@ -547,22 +783,6 @@ export function calculateHandFan(
     const key = `${t.suit}_${t.value}`;
     counts.set(key, (counts.get(key) || 0) + 1);
   });
-
-  const windMelds: MeldEntry[] = [];
-  const dragonMelds: MeldEntry[] = [];
-  const flowerMelds: MeldEntry[] = [];
-
-  if (meldMap) {
-    Object.values(meldMap).forEach(m => {
-      if (m.kind === 'shang' || !m.tiles.length) return;
-      const suit = m.tiles[0].suit;
-      if (suit === 'wind') windMelds.push(m);
-      if (suit === 'dragon') dragonMelds.push(m);
-      if (suit === 'flower') flowerMelds.push(m);
-    });
-  }
-
-  const shouldValidateWinning = countedTiles.length === 17 + kongCount;
 
   for (const [key, count] of counts.entries()) {
     if (!key.startsWith('flower') && count > 4) {
@@ -581,7 +801,7 @@ export function calculateHandFan(
     return {
       isValid: false,
       totalFan: 0,
-      reason: `目前手牌共有 ${countedTiles.length} 張，需滿 ${totalTilesNeeded} 張 (完成 5 組與一對，含 ${kongCount} 個槓) 才可計算。`,
+      reason: `目前手牌共有 ${countedTiles.length} 張，需滿 ${totalTilesNeeded} 張才可計算。`,
       breakdown: []
     };
   }
@@ -589,277 +809,135 @@ export function calculateHandFan(
     return {
       isValid: false,
       totalFan: 0,
-      reason: `目前手牌共有 ${countedTiles.length} 張，超出允許的上限 ${totalTilesNeeded} 張（含 ${kongCount} 個槓）。`,
+      reason: `目前手牌共有 ${countedTiles.length} 張，超出允許的上限 ${totalTilesNeeded} 張。`,
       breakdown: []
     };
   }
 
+  // 1. 檢查嚦咕嚦咕
+  const likGooResult = checkLikGoo(handTiles, meldMap);
+
+  // 2. 檢查基本形 (5面子 + 1眼)
   const remainingCounts = new Map<string, number>();
   let possibleCombinations: string[] | undefined;
+  let canFormBasicHu = false;
 
-  if (shouldValidateWinning) {
-    const nonFlowerMelds = meldMap ? Object.values(meldMap).filter(m => m.kind !== 'flower') : [];
-    const existingMeldCount = nonFlowerMelds.length;
-    const neededMelds = 5 - existingMeldCount;
+  const nonFlowerMelds = meldMap ? Object.values(meldMap).filter(m => m.kind !== 'flower') : [];
+  const existingMeldCount = nonFlowerMelds.length;
+  const neededMelds = 5 - existingMeldCount;
 
-    if (neededMelds < 0) {
-      return { isValid: false, totalFan: 0, reason: '成組數量超過允許的 5 組，無法計算。', breakdown: [] };
-    }
-
+  if (neededMelds >= 0) {
     const remainingTiles = handTiles.slice();
     const expectedRemaining = neededMelds * 3 + 2;
-    if (remainingTiles.length !== expectedRemaining) {
-      return { isValid: false, totalFan: 0, reason: `此手牌無法胡牌：剩餘 ${remainingTiles.length} 張，預期 ${expectedRemaining} 張以構成 ${neededMelds} 組與一對。`, breakdown: [] };
-    }
 
-    remainingTiles.forEach(t => {
-      const key = `${t.suit}_${t.value}`;
-      remainingCounts.set(key, (remainingCounts.get(key) || 0) + 1);
-    });
+    if (remainingTiles.length === expectedRemaining) {
+      remainingTiles.forEach(t => {
+        const key = `${t.suit}_${t.value}`;
+        remainingCounts.set(key, (remainingCounts.get(key) || 0) + 1);
+      });
 
-    let winning = false;
-    const validCombinations: string[] = [];
-    for (const [k, c] of remainingCounts.entries()) {
-      if (c >= 2) {
-        const copy = cloneCounts(remainingCounts);
-        copy.set(k, c - 2);
-        if (canFormMelds(copy)) {
-          winning = true;
-          const pairLabel = tileLabel(k) + 'x2';
-          const decomposition = collectMeldCombinations(copy)
-            .map(melds => {
-              const meldParts = [...melds].sort((a, b) => getPrimaryNumberFromString(a) - getPrimaryNumberFromString(b));
-              return [...meldParts, pairLabel].sort((a, b) => {
-                const aIsPair = a.includes('x2');
-                const bIsPair = b.includes('x2');
-                if (aIsPair && !bIsPair) return 1;
-                if (!aIsPair && bIsPair) return -1;
-                return getPrimaryNumberFromString(a) - getPrimaryNumberFromString(b);
-              }).join(', ');
-            });
-          validCombinations.push(...decomposition);
-        }
-      }
-    }
-
-    possibleCombinations = [...new Set(validCombinations.map(canonicalizeCombination))].sort((a, b) => {
-      const aKey = a.split(', ').map(part => getPrimaryNumberFromString(part)).join('|');
-      const bKey = b.split(', ').map(part => getPrimaryNumberFromString(part)).join('|');
-      const aNums = aKey.split('|').map(Number);
-      const bNums = bKey.split('|').map(Number);
-      for (let i = 0; i < Math.max(aNums.length, bNums.length); i++) {
-        const an = aNums[i] || 0;
-        const bn = bNums[i] || 0;
-        if (an !== bn) return an - bn;
-      }
-      return 0;
-    });
-
-    if (!winning) {
-      return { isValid: false, totalFan: 0, reason: '此手牌無法胡牌：無法將剩餘牌拆解為完整的組合與一對。', breakdown: [] };
-    }
-  }
-
-  // ----------------------------------------------------------------------
-  // Fan Scoring Calculations
-  // ----------------------------------------------------------------------
-  let isDukDuk = false;
-  let isFakeDuk = false;
-  let dukDukType: DukDukType = null;
-
-  const seatWindNum = seatWind ? WIND_VALUE_MAP[seatWind] : undefined;
-  const prevailingWindNum = prevailingWind ? WIND_VALUE_MAP[prevailingWind] : undefined;
-
-  const allFlowerTiles = flowerMelds.flatMap(meld => meld.tiles);
-  const allFlowerValues = new Set(allFlowerTiles.map(tile => tile.value));
-  
-  const hasNonFlowerMeld = hasNonFlowerMelds(meldMap);
-  const hasHonor = hasHonorTiles(handTiles, meldMap);
-  const hasFlower = allFlowerTiles.length > 0;
-
-  let countDukDuk = true;
-  let countZimo = true;
-  let countNoHonor = true;
-  let countNoFlower = true;
-  let countNoHonorFlower = true;
-  let countFullyConcealedHand = true;
-
-  // 151. 全求人, 152. 半求人
-  if (handTiles.length === 2) {
-    if (!huIsZimo) {
-      calc.add('全求人', 40);
-    } else {
-      calc.add('半求人', 20);
-      countZimo = false;
-    }
-    countDukDuk = false;
-  }
-  
-  // 114. 清一色
-  if (isFullFlush(handTiles, meldMap))
-  {
-    calc.add('清一色', 120);
-    countNoHonor = false;
-    countNoHonorFlower = false;
-  }
-
-  // 3. 自摸
-  if (huIsZimo && countZimo) {
-    calc.add('自摸', 1);
-  }
-
-  // 20. 無字花
-  if (!hasHonor && !hasFlower && countNoHonorFlower) {
-    countNoHonor = false;
-    countNoFlower = false;
-    calc.add('無字花', 5);
-  }
-
-  // 14. 無字
-  if (!hasHonor && countNoHonor) {
-    calc.add('無字', 1);
-  }
-
-  // 15. 字牌, 16. 正字
-  const honorMelds = [...windMelds, ...dragonMelds];
-  for (const meld of honorMelds) {
-    const value = meld.tiles[0].value;
-    const result = scoreHonorTriplet(value, seatWindNum, prevailingWindNum);
-    calc.addMany(result.breakdown);
-  }
-
-  // 暗牌解構字牌
-  if (possibleCombinations && possibleCombinations.length > 0) {
-    let bestExtraFan = 0;
-    let bestBreakdownToAdd: { rule: string; fan: number }[] = [];
-
-    for (const combo of possibleCombinations) {
-      const comboBreakdown: { rule: string; fan: number }[] = [];
-      const parts = combo.split(', ');
-
-      for (const part of parts) {
-        if (!part.includes('x3')) continue;
-
-        const windCharMatch = part.match(/[東南西北]/)?.[0];
-        const dragonCharMatch = part.match(/[中發白]/)?.[0];
-
-        let val: number | null = null;
-        if (windCharMatch) {
-          val = charToHonorNumber(windCharMatch);
-        } else if (dragonCharMatch) {
-          val = charToHonorNumber(dragonCharMatch);
-        }
-
-        if (val !== null && val >= 1 && val <= 7) {
-          const result = scoreHonorTriplet(val, seatWindNum, prevailingWindNum);
-          comboBreakdown.push(...result.breakdown);
-        }
-      }
-
-      const comboTotal = comboBreakdown.reduce((sum, e) => sum + e.fan, 0);
-      if (comboTotal > bestExtraFan) {
-        bestExtraFan = comboTotal;
-        bestBreakdownToAdd = comboBreakdown;
-      }
-    }
-
-    if (bestExtraFan > 0) {
-      calc.addMany(bestBreakdownToAdd);
-    }
-  }
-
-  // 25. 將眼：任何有效拆牌中有二、五、八萬／筒／索做眼
-  if (possibleCombinations && possibleCombinations.length > 0) {
-    let jeungNgaanResult: FanResult | null = null;
-
-    for (const combination of possibleCombinations) {
-      const result = getJeungNgaanFromCombination(combination);
-
-      if (result) {
-        jeungNgaanResult = result;
-        break;
-      }
-    }
-
-    if (jeungNgaanResult) {
-      calc.add(
-        jeungNgaanResult.rule,
-        jeungNgaanResult.fan
-      );
-    }
-  }
-
-
-  // 92. 槓
-  if (meldMap) {
-    const kongs = Object.values(meldMap).filter(m => m.kind === 'kong').length;
-    if (kongs > 0) {
-      calc.add(`槓 x${kongs}`, kongs * 2);
-    }
-  }
-
-  // 23. 假獨, 24. 獨獨
-  if (huTile && countDukDuk) {
-    const waitResult = detectWaitPattern(remainingCounts, huTile);
-    isDukDuk = waitResult.isDukDuk;
-    isFakeDuk = waitResult.isFakeDuk;
-    dukDukType = waitResult.dukDukType;
-  
-    const typeNameMap: Record<string, string> = {
-      danDiu: '單吊',
-      kaLung: '卡窿',
-      pinZoeng: '偏章'
-    };
-    if (isDukDuk && dukDukType) {
-      const typeLabel = typeNameMap[dukDukType];
-      calc.add(`獨獨 (${typeLabel})`, 2);
-    } else if (isFakeDuk && dukDukType) {
-      const typeLabel = typeNameMap[dukDukType];
-      calc.add(`假獨 (${typeLabel})`, 1);
-    }
-  }
-
-  // 17. 無花, 21. 一台花, 154. 八仙過海
-  if (!hasFlower) {
-    if (countNoFlower) {
-      calc.add('無花', 1);
-    }
-  } else {
-    const hasFirstGroup = [1, 2, 3, 4].every(val => allFlowerValues.has(val));
-    const hasSecondGroup = [5, 6, 7, 8].every(val => allFlowerValues.has(val));
-
-    if (hasFirstGroup && hasSecondGroup) {
-      calc.add('八仙過海', 40);
-    } else {
-      if (hasFirstGroup) calc.add('一台花 (梅,蘭,竹,菊)', 10);
-      if (hasSecondGroup) calc.add('一台花 (春,夏,秋,冬)', 10);
-
-      for (const meld of flowerMelds) {
-        for (const tile of meld.tiles) {
-          const flowerVal = tile.value;
-          if (hasFirstGroup && flowerVal >= 1 && flowerVal <= 4) continue;
-          if (hasSecondGroup && flowerVal >= 5 && flowerVal <= 8) continue;
-
-          const result = scoreFlower(flowerVal, seatWindNum);
-          if (result.fan > 0) {
-            calc.addMany(result.breakdown);
+      const validCombinations: string[] = [];
+      for (const [k, c] of remainingCounts.entries()) {
+        if (c >= 2) {
+          const copy = cloneCounts(remainingCounts);
+          copy.set(k, c - 2);
+          if (canFormMelds(copy)) {
+            canFormBasicHu = true;
+            const pairLabel = tileLabel(k) + 'x2';
+            const decomposition = collectMeldCombinations(copy)
+              .map(melds => {
+                const meldParts = [...melds].sort((a, b) => getPrimaryNumberFromString(a) - getPrimaryNumberFromString(b));
+                return [...meldParts, pairLabel].sort((a, b) => {
+                  const aIsPair = a.includes('x2');
+                  const bIsPair = b.includes('x2');
+                  if (aIsPair && !bIsPair) return 1;
+                  if (!aIsPair && bIsPair) return -1;
+                  return getPrimaryNumberFromString(a) - getPrimaryNumberFromString(b);
+                }).join(', ');
+              });
+            validCombinations.push(...decomposition);
           }
         }
       }
+
+      if (canFormBasicHu) {
+        possibleCombinations = [...new Set(validCombinations.map(canonicalizeCombination))];
+      }
     }
   }
-  
-  // 2. 門清 
-  if (!hasNonFlowerMeld && !hasFlower && countFullyConcealedHand) {
-    calc.add('門清', 5);
-  }
-  
 
+  // 若兩者皆不成立，回傳無法食糊
+  if (!canFormBasicHu && !likGooResult.isLikGoo) {
+    return {
+      isValid: false,
+      totalFan: 0,
+      reason: '此手牌無法食糊：未能達成基本形（5組與一對）或嚦咕嚦咕牌型。',
+      breakdown: []
+    };
+  }
+
+  // ----------------------------------------------------------------------
+  // 計算番數
+  // ----------------------------------------------------------------------
+
+  // A. 計算基本形得分 (取最高分的牌型分解)
+  let basicCalc: FanCalculator | null = null;
+
+  if (canFormBasicHu && possibleCombinations) {
+    let maxBasicFan = -1;
+    for (const combo of possibleCombinations) {
+      const comboCalc = calculateSingleHandForm(
+        'basic', handTiles, meldMap, huIsZimo, combo, huTile, remainingCounts, gameContext
+      );
+      if (comboCalc.totalFan > maxBasicFan) {
+        maxBasicFan = comboCalc.totalFan;
+        basicCalc = comboCalc;
+      }
+    }
+  }
+
+  // B. 計算嚦咕形得分
+  let likGooCalc: FanCalculator | null = null;
+
+  if (likGooResult.isLikGoo) {
+    likGooCalc = calculateSingleHandForm(
+      'likGoo', handTiles, meldMap, huIsZimo, undefined, huTile, undefined, gameContext
+    );
+  }
+
+  // ----------------------------------------------------------------------
+  // 結算與兩食處理 (Double Eat Settlement)
+  // ----------------------------------------------------------------------
+  let finalCalc = new FanCalculator();
+  const allCombinations: string[] = [];
+
+  if (possibleCombinations) {
+    allCombinations.push(...possibleCombinations);
+  }
+
+  if (canFormBasicHu && likGooResult.isLikGoo && basicCalc && likGooCalc) {
+    // 【嚦咕兩食】：直接將「基本形」與「嚦咕形」的番數完全加總（包含無花/自摸等雙重計算）
+    finalCalc.addMany(basicCalc.breakdown);
+    finalCalc.addMany(likGooCalc.breakdown);
+
+    if (likGooResult.combinationLabel) {
+      allCombinations.push(`[嚦咕形] ${likGooResult.combinationLabel}`);
+    }
+  } else if (likGooResult.isLikGoo && likGooCalc) {
+    // 僅成立嚦咕形
+    finalCalc = likGooCalc;
+    if (likGooResult.combinationLabel) {
+      allCombinations.push(`[嚦咕形] ${likGooResult.combinationLabel}`);
+    }
+  } else if (basicCalc) {
+    // 僅成立基本形
+    finalCalc = basicCalc;
+  }
 
   return {
     isValid: true,
-    totalFan: calc.totalFan,
-    breakdown: calc.breakdown,
-    possibleCombinations
+    totalFan: finalCalc.totalFan,
+    breakdown: finalCalc.breakdown,
+    possibleCombinations: allCombinations.length > 0 ? allCombinations : undefined
   };
 }
