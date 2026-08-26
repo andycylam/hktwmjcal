@@ -504,7 +504,7 @@ function getJeungNgaanBreakdown(
       return [
         {
           rule: `將眼 (${value}${suit})`,
-          fan: 1
+          fan: 2
         }
       ];
     }
