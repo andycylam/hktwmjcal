@@ -13,4 +13,8 @@ export interface CalculationResult {
   reason?: string;
   breakdown: { rule: string; fan: number }[];
   possibleCombinations?: string[];
+  /**
+    * 最終採用作計番的暗牌拆解組合
+    */
+  selectedCombination?: string;
 }
