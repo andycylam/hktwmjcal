@@ -452,6 +452,37 @@ function detectWaitPattern(
 }
 
 // ----------------------------------------------------------------------
+// 將眼 Helper
+// ------------------------------------------
+
+function getJeungNgaanFromCombination(
+  combination: string
+): FanResult | null {
+  const parts = combination.split(', ');
+  const pairPart = parts.find(part => part.includes('x2'));
+
+  if (!pairPart) return null;
+
+  const suit = pairPart.match(/[萬筒索]/)?.[0];
+  const valueMatch = pairPart.match(/\d+/);
+  const value = valueMatch ? Number(valueMatch[0]) : null;
+
+  if (
+    suit &&
+    value !== null &&
+    [2, 5, 8].includes(value)
+  ) {
+    return {
+      rule: `將眼 (${value}${suit})`,
+      fan: 2
+    };
+  }
+
+  return null;
+}
+
+
+// ----------------------------------------------------------------------
 // Main Function: calculateHandFan
 // ----------------------------------------------------------------------
 
@@ -695,6 +726,28 @@ export function calculateHandFan(
       calc.addMany(bestBreakdownToAdd);
     }
   }
+
+  // 25. 將眼：任何有效拆牌中有二、五、八萬／筒／索做眼
+  if (possibleCombinations && possibleCombinations.length > 0) {
+    let jeungNgaanResult: FanResult | null = null;
+
+    for (const combination of possibleCombinations) {
+      const result = getJeungNgaanFromCombination(combination);
+
+      if (result) {
+        jeungNgaanResult = result;
+        break;
+      }
+    }
+
+    if (jeungNgaanResult) {
+      calc.add(
+        jeungNgaanResult.rule,
+        jeungNgaanResult.fan
+      );
+    }
+  }
+
 
   // 92. 槓
   if (meldMap) {
