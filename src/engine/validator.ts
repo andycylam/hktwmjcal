@@ -340,9 +340,6 @@ function hasNonFlowerMelds(meldMap?: Record<string, MeldEntry>): boolean {
   return false;
 }
 
-/**
- * 檢查手牌與副露是否構成「清一色」
- */
 function isFullFlush(handTiles: Tile[], meldMap?: Record<string, MeldEntry>): boolean {
   // 1. 收集所有需要參與牌型判斷的牌（手牌 + 數字牌副露，排除花牌）
   const relevantTiles: Tile[] = [...handTiles];
