@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { calculateHandFan } from '../../src/engine/validator';
 import { Tile } from '../../src/types/mahjong';
+import { expectRuleScored } from '../testHelpers';
 
 function makeTile(suit: Tile['suit'], value: number, idx: number): Tile {
   return { id: `${suit}_${value}_${idx}`, suit, value, label: `${value}${suit}` };
@@ -45,8 +46,7 @@ describe('validator wind scoring', () => {
     });
 
     expect(res.isValid).toBe(true);
-    const seatFan = res.breakdown.filter(b => b.rule === '正字 (座位)');
-    expect(seatFan.length).toBeGreaterThan(0);
+    expectRuleScored(res, '正字 (座位)', 1);
   });
 
   it('awards +1 fan when prevailing wind matches a wind triplet in declared melds', () => {
@@ -82,8 +82,7 @@ describe('validator wind scoring', () => {
     });
 
     expect(res.isValid).toBe(true);
-    const prevailingFan = res.breakdown.filter(b => b.rule === '正字 (場風)');
-    expect(prevailingFan.length).toBeGreaterThan(0);
+    expectRuleScored(res, '正字 (場風)', 1);
   });
 
   it('awards +1 fan when seat wind matches a wind triplet in concealed hand', () => {
@@ -118,8 +117,7 @@ describe('validator wind scoring', () => {
     });
 
     expect(res.isValid).toBe(true);
-    const seatFan = res.breakdown.filter(b => b.rule === '正字 (座位)');
-    expect(seatFan.length).toBeGreaterThan(0);
+    expectRuleScored(res, '正字 (座位)', 1);
   });
 
   it('awards +1 fan when prevailing wind matches a wind triplet in concealed hand', () => {
@@ -154,8 +152,7 @@ describe('validator wind scoring', () => {
     });
 
     expect(res.isValid).toBe(true);
-    const prevailingFan = res.breakdown.filter(b => b.rule === '正字 (場風)');
-    expect(prevailingFan.length).toBeGreaterThan(0);
+    expectRuleScored(res, '正字 (場風)', 1);
   });
 
   it('awards both seat and prevailing fan when they match the same wind triplet', () => {
@@ -190,9 +187,42 @@ describe('validator wind scoring', () => {
     });
 
     expect(res.isValid).toBe(true);
-    const seatFan = res.breakdown.filter(b => b.rule === '正字 (座位)');
-    const prevailingFan = res.breakdown.filter(b => b.rule === '正字 (場風)');
-    expect(seatFan.length).toBeGreaterThan(0);
-    expect(prevailingFan.length).toBeGreaterThan(0);
+    expectRuleScored(res, '正字 (座位)', 1);
+    expectRuleScored(res, '正字 (場風)', 1);
+  });
+
+  it('東風', () => {
+    const handTiles: Tile[] = [];
+    // 東 x3
+    handTiles.push(makeTile('wind', 1, 1));
+    handTiles.push(makeTile('wind', 1, 2));
+    handTiles.push(makeTile('wind', 1, 3));
+    // 萬 1-2-3
+    handTiles.push(makeTile('character', 1, 1));
+    handTiles.push(makeTile('character', 2, 1));
+    handTiles.push(makeTile('character', 3, 1));
+    // 萬 4-5-6
+    handTiles.push(makeTile('character', 4, 1));
+    handTiles.push(makeTile('character', 5, 1));
+    handTiles.push(makeTile('character', 6, 1));
+    // 筒 1-2-3
+    handTiles.push(makeTile('dot', 1, 1));
+    handTiles.push(makeTile('dot', 2, 1));
+    handTiles.push(makeTile('dot', 3, 1));
+    // 筒 4-5-6
+    handTiles.push(makeTile('dot', 4, 1));
+    handTiles.push(makeTile('dot', 5, 1));
+    handTiles.push(makeTile('dot', 6, 1));
+    // pair: 索 1x2
+    handTiles.push(makeTile('bamboo', 1, 1));
+    handTiles.push(makeTile('bamboo', 1, 2));
+
+    const res = calculateHandFan(handTiles, undefined, false, undefined, {
+      prevailingWind: 'south',
+      seatWind: 'south',
+    });
+
+    expect(res.isValid).toBe(true);
+    expectRuleScored(res, '字牌 (東)', 1);
   });
 });

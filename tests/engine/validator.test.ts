@@ -6,6 +6,20 @@ function makeTile(suit: Tile['suit'], value: number, idx: number): Tile {
   return { id: `${suit}_${value}_${idx}`, suit, value, label: `${value}${suit}` };
 }
 
+// 測試專用的輔助函數
+function expectRuleScored(
+  res: ReturnType<typeof calculateHandFan>, 
+  ruleName: string, 
+  expectedFan?: number
+) {
+  const target = res.breakdown.find(b => b.rule && b.rule.startsWith(ruleName));
+  expect(target).toBeDefined(); // 確保 breakdown 裡一定有這項規則
+  
+  if (expectedFan !== undefined) {
+    expect(target?.fan).toBe(expectedFan); // 確保番數正確
+  }
+}
+
 describe('validator kong-adjusted total', () => {
   it('accepts counted tiles equal to 17 + number_of_kongs', () => {
     // Create a kong (4 tiles)
@@ -59,6 +73,8 @@ describe('validator kong-adjusted total', () => {
     const res = calculateHandFan(handTiles, undefined, false);
     expect(res.isValid).toBe(true);
     expect(res.reason).toBeUndefined();
+    const hasKong = res.breakdown.some(item => item.rule?.includes('槓'));
+    expect(hasKong).toBe(false);
     expect(res.totalFan).toBeGreaterThanOrEqual(0);
   });
 
@@ -72,6 +88,7 @@ describe('validator kong-adjusted total', () => {
 
     const res = calculateHandFan(handTiles, undefined, false);
     expect(res.isValid).toBe(true);
+    expect(res.totalFan).toBeGreaterThanOrEqual(0);
   });
 
   it('accepts a valid hand built from 999, 888, 666, 567, 789, and a 77 pair', () => {
@@ -201,8 +218,7 @@ describe('validator kong-adjusted total', () => {
     expect(res.isValid).toBe(true);
     // kong adds +2
     //expect(res.totalFan).toBeGreaterThanOrEqual(2);
-    const hasKong = res.breakdown.some(b => b.rule && b.rule.startsWith('槓'));
-    expect(hasKong).toBe(true);
+    expectRuleScored(res, '槓', 2);
   });
   it('awards +1 fan for dragon triplet (中) in declared melds', () => {
     const pungTiles: Tile[] = [
@@ -238,8 +254,7 @@ describe('validator kong-adjusted total', () => {
     });
 
     expect(res.isValid).toBe(true);
-    const dragonFan = res.breakdown.filter(b => b.rule === '字牌 (中)');
-    expect(dragonFan.length).toBeGreaterThan(0);
+    expectRuleScored(res, '字牌 (中)', 1);
   });
 
   it('awards +1 fan for each dragon triplet in concealed hand', () => {
@@ -273,7 +288,269 @@ describe('validator kong-adjusted total', () => {
     });
 
     expect(res.isValid).toBe(true);
-    const dragonFans = res.breakdown.filter(b => b.rule === '字牌 (中)' || b.rule === '字牌 (發)');
-    expect(dragonFans.length).toBe(2);
+    expectRuleScored(res, '字牌 (中)', 1);
+    expectRuleScored(res, '字牌 (發)', 1);
+  });
+
+  it('識別全求人 (5組副露 + 1張單吊眼牌)', () => {
+    // 1. 準備 5 組副露 (露牌：碰/槓/吃)
+    const meldMap: Record<string, any> = {
+      'wind_2@pung': {
+        kind: 'pung',
+        tiles: [makeTile('wind', 2, 1), makeTile('wind', 2, 2), makeTile('wind', 2, 3)] // 南風碰
+      },
+      'bamboo_1@chow': {
+        kind: 'chow',
+        tiles: [makeTile('bamboo', 1, 1), makeTile('bamboo', 2, 2), makeTile('bamboo', 3, 3)] // 123索吃
+      },
+      'dot_4@pung': {
+        kind: 'pung',
+        tiles: [makeTile('dot', 4, 1), makeTile('dot', 4, 2), makeTile('dot', 4, 3)] // 4筒碰
+      },
+      'character_7@chow': {
+        kind: 'chow',
+        tiles: [makeTile('character', 7, 1), makeTile('character', 8, 2), makeTile('character', 9, 3)] // 789萬吃
+      },
+      'dragon_1@kong': {
+        kind: 'kong',
+        tiles: [makeTile('dragon', 1, 1), makeTile('dragon', 1, 2), makeTile('dragon', 1, 3), makeTile('dragon', 1, 4)] // 中發白 (紅中槓)
+      }
+    };
+    // 指定食糊牌 (huTile) - 單吊 2萬
+    const huTile = makeTile('character', 2, 99);
+
+    // 手牌 (handTiles)
+    const handTiles: Tile[] = [
+      makeTile('character', 2, 1),
+      huTile // 併入食糊牌湊成對子眼
+    ];
+
+    // 執行算番 (假設 isSelfDrawn = false 代表非自摸，即靠他人出牌食糊)
+    const isSelfDrawn = false;
+    const res = calculateHandFan(handTiles, meldMap, isSelfDrawn, huTile, {
+      prevailingWind: 'south',
+      seatWind: 'east',
+    });
+
+    // 測試斷言 (Assertions)
+    expect(res.isValid).toBe(true);
+
+    // 檢查是否有「全求人」規則
+    expectRuleScored(res, '全求人', 40);
+  });
+  it('識別半求人 (5組副露 + 1張單吊眼牌)', () => {
+    // 1. 準備 5 組副露 (露牌：碰/槓/吃)
+    const meldMap: Record<string, any> = {
+      'wind_2@pung': {
+        kind: 'pung',
+        tiles: [makeTile('wind', 2, 1), makeTile('wind', 2, 2), makeTile('wind', 2, 3)] // 南風碰
+      },
+      'bamboo_1@chow': {
+        kind: 'chow',
+        tiles: [makeTile('bamboo', 1, 1), makeTile('bamboo', 2, 2), makeTile('bamboo', 3, 3)] // 123索吃
+      },
+      'dot_4@pung': {
+        kind: 'pung',
+        tiles: [makeTile('dot', 4, 1), makeTile('dot', 4, 2), makeTile('dot', 4, 3)] // 4筒碰
+      },
+      'character_7@chow': {
+        kind: 'chow',
+        tiles: [makeTile('character', 7, 1), makeTile('character', 8, 2), makeTile('character', 9, 3)] // 789萬吃
+      },
+      'dragon_1@kong': {
+        kind: 'kong',
+        tiles: [makeTile('dragon', 1, 1), makeTile('dragon', 1, 2), makeTile('dragon', 1, 3), makeTile('dragon', 1, 4)] // 中發白 (紅中槓)
+      }
+    };
+    // 指定食糊牌 (huTile) - 單吊 2萬
+    const huTile = makeTile('character', 2, 99);
+
+    // 手牌 (handTiles)
+    const handTiles: Tile[] = [
+      makeTile('character', 2, 1),
+      huTile // 併入食糊牌湊成對子眼
+    ];
+
+    // 執行算番 (假設 isSelfDrawn = false 代表非自摸，即靠他人出牌食糊)
+    const isSelfDrawn = true;
+    const res = calculateHandFan(handTiles, meldMap, isSelfDrawn, huTile, {
+      prevailingWind: 'south',
+      seatWind: 'east',
+    });
+
+    // 測試斷言 (Assertions)
+    expect(res.isValid).toBe(true);
+
+    // 檢查是否有「半求人」規則
+    expectRuleScored(res, '半求人', 20);
+  });
+  it('識別門清', () => {
+    const handTiles: Tile[] = [];
+    // 中 x3, 發 x3
+    handTiles.push(makeTile('dragon', 5, 1));
+    handTiles.push(makeTile('dragon', 5, 2));
+    handTiles.push(makeTile('dragon', 5, 3));
+    handTiles.push(makeTile('dragon', 6, 1));
+    handTiles.push(makeTile('dragon', 6, 2));
+    handTiles.push(makeTile('dragon', 6, 3));
+    // 筒 4-5-6
+    handTiles.push(makeTile('dot', 4, 3));
+    handTiles.push(makeTile('dot', 5, 3));
+    handTiles.push(makeTile('dot', 6, 3));
+    // 筒 4-5-6
+    handTiles.push(makeTile('dot', 4, 3));
+    handTiles.push(makeTile('dot', 5, 3));
+    handTiles.push(makeTile('dot', 6, 3));
+    // 萬 1-2-3
+    handTiles.push(makeTile('character', 1, 1));
+    handTiles.push(makeTile('character', 2, 1));
+    handTiles.push(makeTile('character', 3, 1));
+    // pair: 索 1x2
+    handTiles.push(makeTile('bamboo', 1, 1));
+    handTiles.push(makeTile('bamboo', 1, 2));
+
+    // 執行算番 (假設 isSelfDrawn = false 代表非自摸，即靠他人出牌食糊)
+    const isSelfDrawn = true;
+    const res = calculateHandFan(handTiles, undefined, isSelfDrawn, undefined, {
+      prevailingWind: 'south',
+      seatWind: 'east',
+    });
+
+    // 測試斷言 (Assertions)
+    expect(res.isValid).toBe(true);
+
+    // 檢查是否有「門清」規則
+    expectRuleScored(res, '門清', 5);
+  });
+  it('八仙過海', () => {
+    const meldMap: Record<string, { kind: 'kong'|'pung'|'shang'|'flower'; tiles: Tile[]; concealed?: boolean }> = {};
+    meldMap['flower_1@flower'] = { kind: 'flower', tiles: [makeTile('flower', 1, 1)] };
+    meldMap['flower_2@flower'] = { kind: 'flower', tiles: [makeTile('flower', 2, 2)] };
+    meldMap['flower_3@flower'] = { kind: 'flower', tiles: [makeTile('flower', 3, 3)] };
+    meldMap['flower_4@flower'] = { kind: 'flower', tiles: [makeTile('flower', 4, 4)] };
+    meldMap['flower_5@flower'] = { kind: 'flower', tiles: [makeTile('flower', 5, 5)] };
+    meldMap['flower_6@flower'] = { kind: 'flower', tiles: [makeTile('flower', 6, 6)] };
+    meldMap['flower_7@flower'] = { kind: 'flower', tiles: [makeTile('flower', 7, 7)] };
+    meldMap['flower_8@flower'] = { kind: 'flower', tiles: [makeTile('flower', 8, 8)] };
+    const handTiles: Tile[] = [];
+    // 中 x3, 發 x3
+    handTiles.push(makeTile('dragon', 5, 1));
+    handTiles.push(makeTile('dragon', 5, 2));
+    handTiles.push(makeTile('dragon', 5, 3));
+    handTiles.push(makeTile('dragon', 6, 1));
+    handTiles.push(makeTile('dragon', 6, 2));
+    handTiles.push(makeTile('dragon', 6, 3));
+    // 筒 4-5-6
+    handTiles.push(makeTile('dot', 4, 3));
+    handTiles.push(makeTile('dot', 5, 3));
+    handTiles.push(makeTile('dot', 6, 3));
+    // 筒 4-5-6
+    handTiles.push(makeTile('dot', 4, 3));
+    handTiles.push(makeTile('dot', 5, 3));
+    handTiles.push(makeTile('dot', 6, 3));
+    // 萬 1-2-3
+    handTiles.push(makeTile('character', 1, 1));
+    handTiles.push(makeTile('character', 2, 1));
+    handTiles.push(makeTile('character', 3, 1));
+    // pair: 索 1x2
+    handTiles.push(makeTile('bamboo', 1, 1));
+    handTiles.push(makeTile('bamboo', 1, 2));
+
+    // 執行算番 (假設 isSelfDrawn = false 代表非自摸，即靠他人出牌食糊)
+    const isSelfDrawn = true;
+    const res = calculateHandFan(handTiles, meldMap, isSelfDrawn, undefined, {
+      prevailingWind: 'south',
+      seatWind: 'east',
+    });
+
+    // 測試斷言 (Assertions)
+    expect(res.isValid).toBe(true);
+
+    // 檢查是否有「八仙過海」規則
+    expectRuleScored(res, '八仙過海', 40);
+  });
+  it('一台花', () => {
+    const meldMap: Record<string, { kind: 'kong'|'pung'|'shang'|'flower'; tiles: Tile[]; concealed?: boolean }> = {};
+    meldMap['flower_1@flower'] = { kind: 'flower', tiles: [makeTile('flower', 1, 1)] };
+    meldMap['flower_2@flower'] = { kind: 'flower', tiles: [makeTile('flower', 2, 2)] };
+    meldMap['flower_3@flower'] = { kind: 'flower', tiles: [makeTile('flower', 3, 3)] };
+    meldMap['flower_4@flower'] = { kind: 'flower', tiles: [makeTile('flower', 4, 4)] };
+    meldMap['flower_5@flower'] = { kind: 'flower', tiles: [makeTile('flower', 5, 5)] };
+    meldMap['flower_6@flower'] = { kind: 'flower', tiles: [makeTile('flower', 6, 6)] };
+    meldMap['flower_7@flower'] = { kind: 'flower', tiles: [makeTile('flower', 7, 7)] };
+    const handTiles: Tile[] = [];
+    // 中 x3, 發 x3
+    handTiles.push(makeTile('dragon', 5, 1));
+    handTiles.push(makeTile('dragon', 5, 2));
+    handTiles.push(makeTile('dragon', 5, 3));
+    handTiles.push(makeTile('dragon', 6, 1));
+    handTiles.push(makeTile('dragon', 6, 2));
+    handTiles.push(makeTile('dragon', 6, 3));
+    // 筒 4-5-6
+    handTiles.push(makeTile('dot', 4, 3));
+    handTiles.push(makeTile('dot', 5, 3));
+    handTiles.push(makeTile('dot', 6, 3));
+    // 筒 4-5-6
+    handTiles.push(makeTile('dot', 4, 3));
+    handTiles.push(makeTile('dot', 5, 3));
+    handTiles.push(makeTile('dot', 6, 3));
+    // 萬 1-2-3
+    handTiles.push(makeTile('character', 1, 1));
+    handTiles.push(makeTile('character', 2, 1));
+    handTiles.push(makeTile('character', 3, 1));
+    // pair: 索 1x2
+    handTiles.push(makeTile('bamboo', 1, 1));
+    handTiles.push(makeTile('bamboo', 1, 2));
+
+    // 執行算番 (假設 isSelfDrawn = false 代表非自摸，即靠他人出牌食糊)
+    const isSelfDrawn = true;
+    const res = calculateHandFan(handTiles, meldMap, isSelfDrawn, undefined, {
+      prevailingWind: 'south',
+      seatWind: 'east',
+    });
+
+    // 測試斷言 (Assertions)
+    expect(res.isValid).toBe(true);
+
+    // 檢查是否有「一台花」規則
+    expectRuleScored(res, '一台花', 10);
+  });
+  it('無花', () => {
+    const handTiles: Tile[] = [];
+    // 中 x3, 發 x3
+    handTiles.push(makeTile('dragon', 5, 1));
+    handTiles.push(makeTile('dragon', 5, 2));
+    handTiles.push(makeTile('dragon', 5, 3));
+    handTiles.push(makeTile('dragon', 6, 1));
+    handTiles.push(makeTile('dragon', 6, 2));
+    handTiles.push(makeTile('dragon', 6, 3));
+    // 筒 4-5-6
+    handTiles.push(makeTile('dot', 4, 3));
+    handTiles.push(makeTile('dot', 5, 3));
+    handTiles.push(makeTile('dot', 6, 3));
+    // 筒 4-5-6
+    handTiles.push(makeTile('dot', 4, 3));
+    handTiles.push(makeTile('dot', 5, 3));
+    handTiles.push(makeTile('dot', 6, 3));
+    // 萬 1-2-3
+    handTiles.push(makeTile('character', 1, 1));
+    handTiles.push(makeTile('character', 2, 1));
+    handTiles.push(makeTile('character', 3, 1));
+    // pair: 索 1x2
+    handTiles.push(makeTile('bamboo', 1, 1));
+    handTiles.push(makeTile('bamboo', 1, 2));
+
+    // 執行算番 (假設 isSelfDrawn = false 代表非自摸，即靠他人出牌食糊)
+    const isSelfDrawn = true;
+    const res = calculateHandFan(handTiles, undefined, isSelfDrawn, undefined, {
+      prevailingWind: 'south',
+      seatWind: 'east',
+    });
+
+    // 測試斷言 (Assertions)
+    expect(res.isValid).toBe(true);
+
+    // 檢查是否有「無花」規則
+    expectRuleScored(res, '無花', 1);
   });
 });

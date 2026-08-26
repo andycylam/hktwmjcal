@@ -13,6 +13,36 @@ const WIND_VALUE_MAP: Record<'east' | 'south' | 'west' | 'north', number> = {
   north: 4
 };
 
+// 1. 定義統一的介面
+interface FanResult {
+  rule: string;
+  fan: number;
+}
+
+class FanCalculator {
+  totalFan = 0;
+  breakdown: FanResult[] = [];
+
+  /**
+   * 統一加番接口：保證番數與 Breakdown 永遠同步
+   */
+  add(rule: string, fan: number) {
+    if (fan <= 0) return;
+    this.totalFan += fan;
+    this.breakdown.push({ rule, fan });
+  }
+
+  /**
+   * 批量加入 Breakdown (例如來自 scoreHonorTriplet 或暗牌解構)
+   */
+  addMany(items: FanResult[]) {
+    for (const item of items) {
+      this.add(item.rule, item.fan);
+    }
+  }
+}
+
+let calc = new FanCalculator();
 function getDeclaredKongCount(meldMap?: Record<string, MeldEntry>): number {
   return meldMap ? Object.values(meldMap).filter(m => m.kind === 'kong').length : 0;
 }
@@ -472,6 +502,7 @@ export function calculateHandFan(
   huTile?: Tile,
   gameContext?: { prevailingWind?: 'east' | 'south' | 'west' | 'north'; seatWind?: 'east' | 'south' | 'west' | 'north' }
 ): CalculationResult {
+  calc = new FanCalculator();
   const meldTilesAll: Tile[] = [];
   const meldTilesCounted: Tile[] = [];
   if (meldMap) {
@@ -607,8 +638,8 @@ export function calculateHandFan(
   // ----------------------------------------------------------------------
   // Fan Scoring Calculations
   // ----------------------------------------------------------------------
-  const breakdown: { rule: string; fan: number }[] = [];
-  let totalFan = 0;
+  //const breakdown: { rule: string; fan: number }[] = [];
+  //let totalFan = 0;
   
   let isDukDuk = false;
   let isFakeDuk = false;
@@ -617,11 +648,11 @@ export function calculateHandFan(
   const seatWindNum = seatWind ? WIND_VALUE_MAP[seatWind] : undefined;
   const prevailingWindNum = prevailingWind ? WIND_VALUE_MAP[prevailingWind] : undefined;
 
-  // 26.莊家
+  /* // 26.莊家
   if (seatWindNum === 1) {
     totalFan += 1;
     breakdown.push({ rule: '莊家', fan: 1 });
-  }
+  } */
 
   // 收集所有花牌的 value
   const allFlowerTiles = flowerMelds.flatMap(meld => meld.tiles);
@@ -641,12 +672,10 @@ export function calculateHandFan(
   if (handTiles.length === 2)
   {
     if (!huIsZimo){
-      totalFan += 40;
-      breakdown.push({ rule: '全求人', fan: 40 });
+      calc.add('全求人', 40);
     }
     else{
-      totalFan += 20;
-      breakdown.push({ rule: '半求人', fan: 20 });
+      calc.add('半求人', 20);
       countZimo = false;
     }
     countDukDuk = false;
@@ -654,8 +683,7 @@ export function calculateHandFan(
 
   // 3. 自摸
   if (huIsZimo && countZimo) {
-    totalFan += 1;
-    breakdown.push({ rule: '自摸', fan: 1 });
+    calc.add('自摸', 1);
   }
 
   // 20. 無字花
@@ -663,15 +691,13 @@ export function calculateHandFan(
   {
     countNoHonor = false;
     countNoFlower = false;
-    totalFan += 5;
-    breakdown.push({ rule: `無字花`, fan: 5 });
+    calc.add('無字花', 5);
   }
 
   // 14. 無字
   if (!hasHonor && countNoHonor)
   {
-      totalFan += 1;
-      breakdown.push({ rule: `無字`, fan: 1 });
+    calc.add('無字', 1);
   }
 
   // 15. 字牌, 16. 正字
@@ -680,8 +706,7 @@ export function calculateHandFan(
   for (const meld of honorMelds) {
     const value = meld.tiles[0].value;
     const result = scoreHonorTriplet(value, seatWindNum, prevailingWindNum);
-    totalFan += result.fan;
-    breakdown.push(...result.breakdown);
+    calc.addMany(result.breakdown);
   }
 
   // 計算暗牌解構中的字牌番數
@@ -722,8 +747,7 @@ export function calculateHandFan(
     }
 
     if (bestExtraFan > 0) {
-      totalFan += bestExtraFan;
-      breakdown.push(...bestBreakdownToAdd);
+      calc.addMany(bestBreakdownToAdd);
     }
   }
 
@@ -731,8 +755,7 @@ export function calculateHandFan(
   if (meldMap) {
     const kongs = Object.values(meldMap).filter(m => m.kind === 'kong').length;
     if (kongs > 0) {
-      totalFan += kongs * 2;
-      breakdown.push({ rule: `槓 x${kongs}`, fan: kongs*2 });
+      calc.add(`槓 x${kongs}`, kongs * 2);
     }
   }
 
@@ -750,20 +773,17 @@ export function calculateHandFan(
     };
     if (isDukDuk && dukDukType) {
       const typeLabel = typeNameMap[dukDukType];
-      totalFan += 2;
-      breakdown.push({ rule: `獨獨 (${typeLabel})`, fan: 2 });
+      calc.add(`獨獨 (${typeLabel})`, 2);
     } else if (isFakeDuk && dukDukType) {
       const typeLabel = typeNameMap[dukDukType];
-      totalFan += 1;
-      breakdown.push({ rule: `假獨 (${typeLabel})`, fan: 1 });
+      calc.add(`假獨 (${typeLabel})`, 1);
     }
   }
 
   // 17. 無花, 21. 一台花, 154. 八仙過海
   if (!hasFlower) {
     if (countNoFlower){
-      totalFan += 1;
-      breakdown.push({ rule: '無花', fan: 1 });
+      calc.add('無花', 1);
     }
   }
   else {
@@ -773,19 +793,16 @@ export function calculateHandFan(
     // 處理「八仙過海」與「一台花」邏輯
     if (hasFirstGroup && hasSecondGroup) {
       // 八仙過海 (40番)：不計一台花，亦不計任何單張正花
-      totalFan += 40;
-      breakdown.push({ rule: '八仙過海', fan: 40 });
+      calc.add('八仙過海', 40);
     } else {
       // 中了第一組一台花 (1-4)
       if (hasFirstGroup) {
-        totalFan += 10;
-        breakdown.push({ rule: '一台花 (梅/蘭/竹/菊)', fan: 10 });
+        calc.add('一台花 (梅,蘭,竹,菊)', 10);
       }
 
       // 中了第二組一台花 (5-8)
       if (hasSecondGroup) {
-        totalFan += 10;
-        breakdown.push({ rule: '一台花 (春/夏/秋/冬)', fan: 10 });
+        calc.add('一台花 (春,夏,秋,冬)', 10);
       }
 
       // 處理「單張正花」：精準過濾掉已組成「一台花」的花牌
@@ -802,8 +819,7 @@ export function calculateHandFan(
           // 只有「未湊成一台花」的組別，才會計算單張正花
           const result = scoreFlower(flowerVal, seatWindNum);
           if (result.fan > 0) {
-            totalFan += result.fan;
-            breakdown.push(...result.breakdown);
+            calc.addMany(result.breakdown);
           }
         }
       }
@@ -813,14 +829,13 @@ export function calculateHandFan(
   // 2. 門清
   if (!hasNonFlowerMeld && !hasFlower && countFullyConcealedHand)
   {
-    totalFan += 1;
-    breakdown.push({ rule: '門清', fan: 1 });
+    calc.add('門清', 5);
   }
 
   return {
     isValid: true,
-    totalFan,
-    breakdown,
+    totalFan: calc.totalFan,
+    breakdown: calc.breakdown,
     possibleCombinations
   };
 }
