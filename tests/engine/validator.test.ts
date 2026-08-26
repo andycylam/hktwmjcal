@@ -553,4 +553,42 @@ describe('validator kong-adjusted total', () => {
     // 檢查是否有「無花」規則
     expectRuleScored(res, '無花', 1);
   });
+  it('將眼', () => {
+    const handTiles: Tile[] = [];
+    // 中 x3, 發 x3
+    handTiles.push(makeTile('dragon', 5, 1));
+    handTiles.push(makeTile('dragon', 5, 2));
+    handTiles.push(makeTile('dragon', 5, 3));
+    handTiles.push(makeTile('dragon', 6, 1));
+    handTiles.push(makeTile('dragon', 6, 2));
+    handTiles.push(makeTile('dragon', 6, 3));
+    // 筒 4-5-6
+    handTiles.push(makeTile('dot', 4, 3));
+    handTiles.push(makeTile('dot', 5, 3));
+    handTiles.push(makeTile('dot', 6, 3));
+    // 筒 4-5-6
+    handTiles.push(makeTile('dot', 4, 3));
+    handTiles.push(makeTile('dot', 5, 3));
+    handTiles.push(makeTile('dot', 6, 3));
+    // 萬 1-2-3
+    handTiles.push(makeTile('character', 1, 1));
+    handTiles.push(makeTile('character', 2, 1));
+    handTiles.push(makeTile('character', 3, 1));
+    // pair: 索 1x2
+    handTiles.push(makeTile('bamboo', 2, 1));
+    handTiles.push(makeTile('bamboo', 2, 2));
+
+    // 執行算番 (假設 isSelfDrawn = false 代表非自摸，即靠他人出牌食糊)
+    const isSelfDrawn = true;
+    const res = calculateHandFan(handTiles, undefined, isSelfDrawn, undefined, {
+      prevailingWind: 'south',
+      seatWind: 'east',
+    });
+
+    // 測試斷言 (Assertions)
+    expect(res.isValid).toBe(true);
+
+    // 檢查是否有「將眼」規則
+    expectRuleScored(res, '將眼', 2);
+  });
 });
