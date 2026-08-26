@@ -13,7 +13,6 @@ const WIND_VALUE_MAP: Record<'east' | 'south' | 'west' | 'north', number> = {
   north: 4
 };
 
-// 1. 定義統一的介面
 interface FanResult {
   rule: string;
   fan: number;
@@ -23,18 +22,12 @@ class FanCalculator {
   totalFan = 0;
   breakdown: FanResult[] = [];
 
-  /**
-   * 統一加番接口：保證番數與 Breakdown 永遠同步
-   */
   add(rule: string, fan: number) {
     if (fan <= 0) return;
     this.totalFan += fan;
     this.breakdown.push({ rule, fan });
   }
 
-  /**
-   * 批量加入 Breakdown (例如來自 scoreHonorTriplet 或暗牌解構)
-   */
   addMany(items: FanResult[]) {
     for (const item of items) {
       this.add(item.rule, item.fan);
@@ -42,7 +35,6 @@ class FanCalculator {
   }
 }
 
-let calc = new FanCalculator();
 function getDeclaredKongCount(meldMap?: Record<string, MeldEntry>): number {
   return meldMap ? Object.values(meldMap).filter(m => m.kind === 'kong').length : 0;
 }
@@ -258,19 +250,15 @@ function collectMeldCombinations(countMap: Map<string, number>, visited = new Se
 }
 
 function hasHonorTiles(handTiles: Tile[], meldMap?: Record<string, MeldEntry>): boolean {
-  // 1. 手牌（暗牌）：直接用 some 檢查，只要遇到第一個風/字就即刻 Stop（Short-circuit）
   const hasInHand = handTiles.some(t => t.suit === 'wind' || t.suit === 'dragon');
   if (hasInHand) return true;
 
-  // 2. 副露（碰/槓）：直接檢查 第一張牌 的 suit（因為一個 Meld 裡面的牌 suit 必定相同）
   if (meldMap) {
     for (const meld of Object.values(meldMap)) {
       if (meld.tiles.length === 0) continue;
-      
-      // 核心優化：只睇呢個 Meld 第一張牌係咪 wind / dragon
       const firstTileSuit = meld.tiles[0].suit;
       if (firstTileSuit === 'wind' || firstTileSuit === 'dragon') {
-        return true; // 只要找到一個字牌 Meld 就即刻回傳 true
+        return true;
       }
     }
   }
@@ -311,10 +299,7 @@ function scoreHonorTriplet(
 }
 
 function isMatchFlowerSeat(flowerValue: number, seatWindNum: number | undefined): boolean {
-  // 將 1-8 號花牌轉換成 1, 2, 3, 4 號座位
-  // (1,5 -> 1 | 2,6 -> 2 | 3,7 -> 3 | 4,8 -> 4)
   const normalizedFlower = ((flowerValue - 1) % 4) + 1;
-  
   return normalizedFlower === seatWindNum;
 }
 
@@ -348,7 +333,7 @@ function hasNonFlowerMelds(meldMap?: Record<string, MeldEntry>): boolean {
 
   for (const key in meldMap) {
     if (meldMap[key].kind !== 'flower') {
-      return true; // 只要有一組不是 flower，立刻 Return true
+      return true;
     }
   }
 
@@ -356,7 +341,7 @@ function hasNonFlowerMelds(meldMap?: Record<string, MeldEntry>): boolean {
 }
 
 // ----------------------------------------------------------------------
-// Wait Analysis Helper (單吊 / 卡窿 / 偏章 與 聽牌數檢測)
+// Wait Analysis Helper
 // ----------------------------------------------------------------------
 
 type DukDukType = 'danDiu' | 'kaLung' | 'pinZoeng' | null;
@@ -369,7 +354,6 @@ function detectWaitPattern(
   const [huSuit, huValStr] = huKey.split('_');
   const huVal = Number(huValStr);
 
-  // 1. 還原胡牌前 16 張牌 (countsBeforeHu)
   const countsBeforeHu = cloneCounts(remainingCounts);
   const currentHuCount = countsBeforeHu.get(huKey) || 0;
   if (currentHuCount > 0) {
@@ -377,10 +361,21 @@ function detectWaitPattern(
     else countsBeforeHu.set(huKey, currentHuCount - 1);
   }
 
-  // 2. 結構檢測 (Structural Analysis)
   let isDanDiuStructure = false;
   let isKaLungStructure = false;
   let isPinZoengStructure = false;
+
+  // 輔助函式：檢查扣除一對眼後能否成糊
+  const canFormWithPair = (counts: Map<string, number>): boolean => {
+    for (const [k, c] of counts.entries()) {
+      if (c >= 2) {
+        const temp = cloneCounts(counts);
+        temp.set(k, c - 2);
+        if (canFormMelds(temp)) return true;
+      }
+    }
+    return false;
+  };
 
   // A) 單吊
   if ((countsBeforeHu.get(huKey) || 0) === 1) {
@@ -393,7 +388,6 @@ function detectWaitPattern(
 
   // B) 卡窿 & 偏章
   if (['character', 'dot', 'bamboo'].includes(huSuit)) {
-    // 卡窿 (胡 2~8 萬/筒/索)
     if (huVal >= 2 && huVal <= 8) {
       const leftKey = `${huSuit}_${huVal - 1}`;
       const rightKey = `${huSuit}_${huVal + 1}`;
@@ -402,21 +396,10 @@ function detectWaitPattern(
         const testCopy = cloneCounts(countsBeforeHu);
         testCopy.set(leftKey, testCopy.get(leftKey)! - 1);
         testCopy.set(rightKey, testCopy.get(rightKey)! - 1);
-
-        for (const [k, c] of testCopy.entries()) {
-          if (c >= 2) {
-            const temp = cloneCounts(testCopy);
-            temp.set(k, c - 2);
-            if (canFormMelds(temp)) {
-              isKaLungStructure = true;
-              break;
-            }
-          }
-        }
+        if (canFormWithPair(testCopy)) isKaLungStructure = true;
       }
     }
 
-    // 偏章 (胡 3 聽 1-2 或 胡 7 聽 8-9)
     if (huVal === 3 || huVal === 7) {
       const keyA = `${huSuit}_${huVal === 3 ? 1 : 8}`;
       const keyB = `${huSuit}_${huVal === 3 ? 2 : 9}`;
@@ -425,22 +408,11 @@ function detectWaitPattern(
         const testCopy = cloneCounts(countsBeforeHu);
         testCopy.set(keyA, testCopy.get(keyA)! - 1);
         testCopy.set(keyB, testCopy.get(keyB)! - 1);
-
-        for (const [k, c] of testCopy.entries()) {
-          if (c >= 2) {
-            const temp = cloneCounts(testCopy);
-            temp.set(k, c - 2);
-            if (canFormMelds(temp)) {
-              isPinZoengStructure = true;
-              break;
-            }
-          }
-        }
+        if (canFormWithPair(testCopy)) isPinZoengStructure = true;
       }
     }
   }
 
-  // 確定優先次序（若多重符合，以 單吊 > 卡窿 > 偏章 順序標記類型）
   let dukDukType: DukDukType = null;
   if (isDanDiuStructure) dukDukType = 'danDiu';
   else if (isKaLungStructure) dukDukType = 'kaLung';
@@ -448,7 +420,7 @@ function detectWaitPattern(
 
   if (!dukDukType) return { isDukDuk: false, isFakeDuk: false, dukDukType: null };
 
-  // 3. 全局聽牌數檢測
+  // 聽牌數檢測
   const allPossibleTileKeys: string[] = [];
   ['character', 'dot', 'bamboo'].forEach(s => {
     for (let i = 1; i <= 9; i++) allPossibleTileKeys.push(`${s}_${i}`);
@@ -464,19 +436,7 @@ function detectWaitPattern(
     const testCounts = cloneCounts(countsBeforeHu);
     testCounts.set(candKey, (testCounts.get(candKey) || 0) + 1);
 
-    let testWinning = false;
-    for (const [k, c] of testCounts.entries()) {
-      if (c >= 2) {
-        const temp = cloneCounts(testCounts);
-        temp.set(k, c - 2);
-        if (canFormMelds(temp)) {
-          testWinning = true;
-          break;
-        }
-      }
-    }
-
-    if (testWinning) {
+    if (canFormWithPair(testCounts)) {
       winningTileKeys.push(candKey);
       if (winningTileKeys.length > 1) break;
     }
@@ -502,7 +462,8 @@ export function calculateHandFan(
   huTile?: Tile,
   gameContext?: { prevailingWind?: 'east' | 'south' | 'west' | 'north'; seatWind?: 'east' | 'south' | 'west' | 'north' }
 ): CalculationResult {
-  calc = new FanCalculator();
+  const calc = new FanCalculator(); // ✅ 區域變數 (避免併發污染)
+
   const meldTilesAll: Tile[] = [];
   const meldTilesCounted: Tile[] = [];
   if (meldMap) {
@@ -569,6 +530,7 @@ export function calculateHandFan(
       breakdown: []
     };
   }
+
   const remainingCounts = new Map<string, number>();
   let possibleCombinations: string[] | undefined;
 
@@ -638,9 +600,6 @@ export function calculateHandFan(
   // ----------------------------------------------------------------------
   // Fan Scoring Calculations
   // ----------------------------------------------------------------------
-  //const breakdown: { rule: string; fan: number }[] = [];
-  //let totalFan = 0;
-  
   let isDukDuk = false;
   let isFakeDuk = false;
   let dukDukType: DukDukType = null;
@@ -648,33 +607,24 @@ export function calculateHandFan(
   const seatWindNum = seatWind ? WIND_VALUE_MAP[seatWind] : undefined;
   const prevailingWindNum = prevailingWind ? WIND_VALUE_MAP[prevailingWind] : undefined;
 
-  /* // 26.莊家
-  if (seatWindNum === 1) {
-    totalFan += 1;
-    breakdown.push({ rule: '莊家', fan: 1 });
-  } */
-
-  // 收集所有花牌的 value
   const allFlowerTiles = flowerMelds.flatMap(meld => meld.tiles);
   const allFlowerValues = new Set(allFlowerTiles.map(tile => tile.value));
   
-  let hasNonFlowerMeld = hasNonFlowerMelds(meldMap);
-  let hasHonor = hasHonorTiles(handTiles, meldMap);
-  let hasFlower = allFlowerTiles.length === 0 ? false : true;
+  const hasNonFlowerMeld = hasNonFlowerMelds(meldMap);
+  const hasHonor = hasHonorTiles(handTiles, meldMap);
+  const hasFlower = allFlowerTiles.length > 0;
+
   let countDukDuk = true;
   let countZimo = true;
   let countNoHonor = true;
   let countNoFlower = true;
   let countFullyConcealedHand = true;
 
-
   // 151. 全求人, 152. 半求人
-  if (handTiles.length === 2)
-  {
-    if (!huIsZimo){
+  if (handTiles.length === 2) {
+    if (!huIsZimo) {
       calc.add('全求人', 40);
-    }
-    else{
+    } else {
       calc.add('半求人', 20);
       countZimo = false;
     }
@@ -687,21 +637,18 @@ export function calculateHandFan(
   }
 
   // 20. 無字花
-  if (!hasHonor && !hasFlower)
-  {
+  if (!hasHonor && !hasFlower) {
     countNoHonor = false;
     countNoFlower = false;
     calc.add('無字花', 5);
   }
 
   // 14. 無字
-  if (!hasHonor && countNoHonor)
-  {
+  if (!hasHonor && countNoHonor) {
     calc.add('無字', 1);
   }
 
   // 15. 字牌, 16. 正字
-  // 計算露牌中的字牌番數
   const honorMelds = [...windMelds, ...dragonMelds];
   for (const meld of honorMelds) {
     const value = meld.tiles[0].value;
@@ -709,7 +656,7 @@ export function calculateHandFan(
     calc.addMany(result.breakdown);
   }
 
-  // 計算暗牌解構中的字牌番數
+  // 暗牌解構字牌
   if (possibleCombinations && possibleCombinations.length > 0) {
     let bestExtraFan = 0;
     let bestBreakdownToAdd: { rule: string; fan: number }[] = [];
@@ -724,7 +671,6 @@ export function calculateHandFan(
         const windCharMatch = part.match(/[東南西北]/)?.[0];
         const dragonCharMatch = part.match(/[中發白]/)?.[0];
 
-        // 關鍵修正：只有當 matches 到風牌或三元牌字眼時，才進行字牌處理
         let val: number | null = null;
         if (windCharMatch) {
           val = charToHonorNumber(windCharMatch);
@@ -732,7 +678,6 @@ export function calculateHandFan(
           val = charToHonorNumber(dragonCharMatch);
         }
 
-        // 只有成功轉化為字牌編號 (1~7) 才計算
         if (val !== null && val >= 1 && val <= 7) {
           const result = scoreHonorTriplet(val, seatWindNum, prevailingWindNum);
           comboBreakdown.push(...result.breakdown);
@@ -782,41 +727,25 @@ export function calculateHandFan(
 
   // 17. 無花, 21. 一台花, 154. 八仙過海
   if (!hasFlower) {
-    if (countNoFlower){
+    if (countNoFlower) {
       calc.add('無花', 1);
     }
-  }
-  else {
-    const hasFirstGroup = [1, 2, 3, 4].every(val => allFlowerValues.has(val));  // 一台花 (1-4)
-    const hasSecondGroup = [5, 6, 7, 8].every(val => allFlowerValues.has(val)); // 一台花 (5-8)
+  } else {
+    const hasFirstGroup = [1, 2, 3, 4].every(val => allFlowerValues.has(val));
+    const hasSecondGroup = [5, 6, 7, 8].every(val => allFlowerValues.has(val));
 
-    // 處理「八仙過海」與「一台花」邏輯
     if (hasFirstGroup && hasSecondGroup) {
-      // 八仙過海 (40番)：不計一台花，亦不計任何單張正花
       calc.add('八仙過海', 40);
     } else {
-      // 中了第一組一台花 (1-4)
-      if (hasFirstGroup) {
-        calc.add('一台花 (梅,蘭,竹,菊)', 10);
-      }
+      if (hasFirstGroup) calc.add('一台花 (梅,蘭,竹,菊)', 10);
+      if (hasSecondGroup) calc.add('一台花 (春,夏,秋,冬)', 10);
 
-      // 中了第二組一台花 (5-8)
-      if (hasSecondGroup) {
-        calc.add('一台花 (春,夏,秋,冬)', 10);
-      }
-
-      // 處理「單張正花」：精準過濾掉已組成「一台花」的花牌
       for (const meld of flowerMelds) {
         for (const tile of meld.tiles) {
           const flowerVal = tile.value;
-
-          // 關鍵過濾邏輯：
-          // - 如果已中第一組一台花，跳過 1, 2, 3, 4 號花的單張計數
           if (hasFirstGroup && flowerVal >= 1 && flowerVal <= 4) continue;
-          // - 如果已中第二組一台花，跳過 5, 6, 7, 8 號花的單張計數
           if (hasSecondGroup && flowerVal >= 5 && flowerVal <= 8) continue;
 
-          // 只有「未湊成一台花」的組別，才會計算單張正花
           const result = scoreFlower(flowerVal, seatWindNum);
           if (result.fan > 0) {
             calc.addMany(result.breakdown);
@@ -826,9 +755,8 @@ export function calculateHandFan(
     }
   }
   
-  // 2. 門清
-  if (!hasNonFlowerMeld && !hasFlower && countFullyConcealedHand)
-  {
+  // 2. 門清 
+  if (!hasNonFlowerMeld && !hasFlower && countFullyConcealedHand) {
     calc.add('門清', 5);
   }
 
