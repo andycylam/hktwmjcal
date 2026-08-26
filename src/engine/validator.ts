@@ -340,6 +340,41 @@ function hasNonFlowerMelds(meldMap?: Record<string, MeldEntry>): boolean {
   return false;
 }
 
+/**
+ * 檢查手牌與副露是否構成「清一色」
+ */
+function isFullFlush(handTiles: Tile[], meldMap?: Record<string, MeldEntry>): boolean {
+  // 1. 收集所有需要參與牌型判斷的牌（手牌 + 數字牌副露，排除花牌）
+  const relevantTiles: Tile[] = [...handTiles];
+
+  if (meldMap) {
+    Object.values(meldMap).forEach(meld => {
+      // 花牌不影響清一色判斷
+      if (meld.kind !== 'flower') {
+        relevantTiles.push(...meld.tiles);
+      }
+    });
+  }
+
+  if (relevantTiles.length === 0) return false;
+
+  // 2. 如果包含任何字牌（風牌、元牌/番子），直接否定
+  const hasHonorTiles = relevantTiles.some(t => t.suit === 'wind' || t.suit === 'dragon');
+  if (hasHonorTiles) return false;
+
+  // 3. 檢查剩餘的數牌（character 萬 / dot 筒 / bamboo 索）
+  // 取得第一張數牌的花色作為基準
+  const firstSuit = relevantTiles[0].suit;
+
+  // 確保這張牌真的是數牌（萬/筒/索）
+  if (!['character', 'dot', 'bamboo'].includes(firstSuit)) {
+    return false;
+  }
+
+  // 4. 檢查是否所有牌的花色都跟第一張完全一致
+  return relevantTiles.every(t => t.suit === firstSuit);
+}
+
 // ----------------------------------------------------------------------
 // Wait Analysis Helper
 // ----------------------------------------------------------------------
@@ -661,6 +696,13 @@ export function calculateHandFan(
     }
     countDukDuk = false;
   }
+  
+  // 114. 清一色
+  if (isFullFlush(handTiles, meldMap))
+  {
+    calc.add('清一色', 120);
+    countNoHonor = false;
+  }
 
   // 3. 自摸
   if (huIsZimo && countZimo) {
@@ -812,6 +854,8 @@ export function calculateHandFan(
   if (!hasNonFlowerMeld && !hasFlower && countFullyConcealedHand) {
     calc.add('門清', 5);
   }
+  
+
 
   return {
     isValid: true,
