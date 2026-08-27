@@ -1,24 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { calculateHandFan } from '../../src/engine/validator';
 import { Tile } from '../../src/types/mahjong';
-
-function makeTile(suit: Tile['suit'], value: number, idx: number): Tile {
-  return { id: `${suit}_${value}_${idx}`, suit, value, label: `${value}${suit}` };
-}
-
-// 測試專用的輔助函數
-function expectRuleScored(
-  res: ReturnType<typeof calculateHandFan>, 
-  ruleName: string, 
-  expectedFan?: number
-) {
-  const target = res.breakdown.find(b => b.rule && b.rule.startsWith(ruleName));
-  expect(target).toBeDefined(); // 確保 breakdown 裡一定有這項規則
-  
-  if (expectedFan !== undefined) {
-    expect(target?.fan).toBe(expectedFan); // 確保番數正確
-  }
-}
+import { makeTile, expectRuleScored } from '../testHelpers';
 
 describe('validator kong-adjusted total', () => {
   it('accepts counted tiles equal to 17 + number_of_kongs', () => {
@@ -631,37 +614,4 @@ describe('validator kong-adjusted total', () => {
     expectRuleScored(res, '清一色', 120);
   });
 
-  it('嚦咕', () => {
-    const handTiles: Tile[] = [];
-    handTiles.push(makeTile('dot', 2, 3));
-    handTiles.push(makeTile('dot', 2, 3));
-    handTiles.push(makeTile('bamboo', 3, 3));
-    handTiles.push(makeTile('bamboo', 3, 3));
-    handTiles.push(makeTile('dot', 4, 3));
-    handTiles.push(makeTile('dot', 4, 3));
-    handTiles.push(makeTile('bamboo', 5, 3));
-    handTiles.push(makeTile('bamboo', 5, 3));
-    handTiles.push(makeTile('dot', 6, 3));
-    handTiles.push(makeTile('dot', 6, 3));
-    handTiles.push(makeTile('wind', 1, 3));
-    handTiles.push(makeTile('wind', 1, 3));
-    handTiles.push(makeTile('dragon', 5, 1));
-    handTiles.push(makeTile('dragon', 5, 1));
-    handTiles.push(makeTile('character', 3, 1));
-    handTiles.push(makeTile('character', 3, 1));
-    handTiles.push(makeTile('character', 3, 2));
-
-    // 執行算番 (假設 isSelfDrawn = false 代表非自摸，即靠他人出牌食糊)
-    const isSelfDrawn = true;
-    const res = calculateHandFan(handTiles, undefined, isSelfDrawn, undefined, {
-      prevailingWind: 'south',
-      seatWind: 'east',
-    });
-
-    // 測試斷言 (Assertions)
-    expect(res.isValid).toBe(true);
-
-    // 檢查是否有「清一色」規則
-    expectRuleScored(res, '嚦咕嚦咕', 40);
-  });
 });

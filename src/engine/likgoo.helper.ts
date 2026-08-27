@@ -37,7 +37,7 @@ function getConsecutiveFanResult(length: number): FanResult | null {
   if (length === 6) return { rule: '六連對', fan: 60 };
   if (length === 5) return { rule: '五連對', fan: 30 };
   if (length === 4) return { rule: '四連對', fan: 15 };
-  if (length === 3) return { rule: '三連對', fan: 10 };
+  if (length === 3) return { rule: '三連對', fan: 5 };
   return null;
 }
 
