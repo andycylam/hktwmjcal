@@ -937,8 +937,9 @@ function calculateSingleHandForm(
   let countNoFlower = true; //不計無花
   let countNoHonorFlower = true; //不計無字花
   let countZimo = true; //不計自摸
-  let countHonorTriplets = true; //不計字牌正字
-
+  //let countHonorTriplets = true; //不計字牌正字
+  let countWind = true;
+  let countDragon = true;
   
   const huKey = huTile? `${huTile.suit}_${huTile.value}` : undefined;
   // 123. 形態專屬主牌型 (嚦咕嚦咕)
@@ -999,22 +1000,22 @@ function calculateSingleHandForm(
     switch (windAnalysis.pattern) {
       case 'bigFourWinds':
         calc.add('大四喜', 180);
-        countHonorTriplets = false;
+        countWind = false;
         break;
 
       case 'smallFourWinds':
         calc.add('小四喜', 120);
-        countHonorTriplets = false;
+        countWind = false;
         break;
 
       case 'bigThreeWinds':
         calc.add('大三風', 60);
-        countHonorTriplets = false;
+        countWind = false;
         break;
 
       case 'smallThreeWinds':
         calc.add('小三風', 30);
-        countHonorTriplets = false;
+        countWind = false;
         break;
     }
 
@@ -1022,12 +1023,12 @@ function calculateSingleHandForm(
     switch (dragonAnalysis.pattern) {
       case 'bigThreeDragons':
         calc.add('大三元', 80);
-        countHonorTriplets = false;
+        countDragon = false;
         break;
 
       case 'smallThreeDragons':
         calc.add('小三元', 40);
-        countHonorTriplets = false;
+        countDragon = false;
         break;
     }
   }
@@ -1043,29 +1044,38 @@ function calculateSingleHandForm(
   // 3. 自摸 (共通)
   if (huIsZimo && countZimo) calc.add('自摸', 1);
 
-  // 20. 無字花 / 無字 (共通)
+  // 20. 無字花
   if (!hasHonor && !hasFlower && countNoHonorFlower) {
     countNoHonor = false;
     countNoFlower = false;
     calc.add('無字花', 5);
   }
-  if (!hasHonor && countNoHonor) calc.add('無字', 1);
+
+  // 14. 無字
+  if (!hasHonor && countNoHonor){
+    calc.add('無字', 1);
+  } 
 
   // 15. 字牌 及 16.正字
-  //
-  // 大四喜,小四喜,大三風,小三風,大三元,小三元已包含所有普通字牌及正字，
-  // 因此東、南、西、北、中、發、白全部不再另計。
-  if (formType === 'basic' && countHonorTriplets) {
+  if (formType === 'basic') {
     const windMelds = meldMap ? Object.values(meldMap).filter(meld =>  (meld.kind === 'pung' || meld.kind === 'kong') && meld.tiles.length > 0 && meld.tiles[0].suit === 'wind') : [];
     const dragonMelds = meldMap ? Object.values(meldMap).filter(meld => (meld.kind === 'pung' || meld.kind === 'kong') && meld.tiles.length > 0 && meld.tiles[0].suit === 'dragon') : [];
 
     // A. 計算副露中的風牌及三元牌
-    for (const meld of [...windMelds, ...dragonMelds]) {
-      const value = meld.tiles[0].value;
-      const result = scoreHonorTriplet(value, seatWindNum, prevailingWindNum);
-      calc.addMany(result.breakdown);
+    if (countWind){
+      for (const meld of [...windMelds]) {
+        const value = meld.tiles[0].value;
+        const result = scoreHonorTriplet(value, seatWindNum, prevailingWindNum);
+        calc.addMany(result.breakdown);
+      }
     }
-
+    if (countDragon){
+      for (const meld of [...dragonMelds]) {
+        const value = meld.tiles[0].value;
+        const result = scoreHonorTriplet(value, seatWindNum, prevailingWindNum);
+        calc.addMany(result.breakdown);
+      }
+    }
     // B. 計算暗牌拆解中的風牌及三元牌
     if (comboStr) {
       const parts = comboStr.split(', ');
@@ -1075,9 +1085,9 @@ function calculateSingleHandForm(
         const dragonCharMatch = part.match(/[中發白]/)?.[0];
         let val: number | null = null;
 
-        if (windCharMatch) {
+        if (windCharMatch && countWind) {
           val = charToHonorNumber(windCharMatch);
-        } else if (dragonCharMatch) {
+        } else if (dragonCharMatch && countDragon) {
           val = charToHonorNumber(dragonCharMatch);
         }
 
