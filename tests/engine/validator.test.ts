@@ -218,7 +218,7 @@ describe('validator kong-adjusted total', () => {
     expect(res.isValid).toBe(true);
     // kong adds +2
     //expect(res.totalFan).toBeGreaterThanOrEqual(2);
-    expectRuleScored(res, '槓', 2);
+    expectRuleScored(res, '暗槓', 2);
   });
   it('awards +1 fan for dragon triplet (中) in declared melds', () => {
     const pungTiles: Tile[] = [

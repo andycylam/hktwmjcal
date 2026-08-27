@@ -1115,8 +1115,18 @@ function calculateSingleHandForm(
 
   // 92. 槓 (僅限基本形)
   if (formType === 'basic' && meldMap) {
-    const kongs = Object.values(meldMap).filter(m => m.kind === 'kong').length;
-    if (kongs > 0) calc.add(`槓 x${kongs}`, kongs * 2);
+    const kongs = Object.values(meldMap).filter(m => m.kind === 'kong' && !m.concealed).length;
+    if (kongs > 0){
+      calc.add(`槓 x${kongs}`, kongs);
+    }
+  }
+
+  // 4. 暗槓
+  if (formType === 'basic' && meldMap) {
+    const concealedKongs = Object.values(meldMap).filter(m => m.kind === 'kong' && m.concealed).length;
+    if (concealedKongs > 0) {
+      calc.add(`暗槓 x${concealedKongs}`, concealedKongs * 2);
+    }
   }
 
   // 23. & 24. 聽牌獨獨/假獨 (基本)
