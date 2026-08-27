@@ -809,6 +809,102 @@ function analyzeDragonPattern(
   };
 }
 
+// ----------------------------------------------------------------------
+// 食糊牌與組合牌匹配 Helper for check 對碰
+// ----------------------------------------------------------------------
+
+function doesMeldPartMatchTile(
+  part: string,
+  tile: Tile
+): boolean {
+  // 萬、筒、索
+  if (
+    tile.suit === 'character' ||
+    tile.suit === 'dot' ||
+    tile.suit === 'bamboo'
+  ) {
+    const suitLabel =
+      tile.suit === 'character'
+        ? '萬'
+        : tile.suit === 'dot'
+          ? '筒'
+          : '索';
+
+    return part.includes(`${tile.value}${suitLabel}`);
+  }
+
+  // 東、南、西、北
+  if (tile.suit === 'wind') {
+    const windCharMap: Record<number, string> = {
+      1: '東',
+      2: '南',
+      3: '西',
+      4: '北'
+    };
+
+    const windChar = windCharMap[tile.value];
+
+    return !!windChar && part.includes(windChar);
+  }
+
+  // 中、發、白
+  if (tile.suit === 'dragon') {
+    const dragonCharMap: Record<number, string> = {
+      5: '中',
+      6: '發',
+      7: '白'
+    };
+
+    const dragonChar = dragonCharMap[tile.value];
+
+    return !!dragonChar && part.includes(dragonChar);
+  }
+
+  return false;
+}
+
+// ----------------------------------------------------------------------
+// 對碰 Helper
+// ----------------------------------------------------------------------
+
+/**
+ * 對碰成立條件：
+ *
+ * 1. 食糊後的基本形拆解中有一對眼
+ * 2. 食糊牌被用於一組刻子
+ * 3. 扣除食糊牌後，該刻子原本是一對
+ *
+ * 即食糊前有兩對：
+ * - 一對被食糊牌補成刻子
+ * - 另一對成為最終的眼
+ */
+function isDoiPungWait(
+  comboStr: string | undefined,
+  huTile: Tile | undefined
+): boolean {
+  if (!comboStr || !huTile) {
+    return false;
+  }
+
+  const parts = comboStr.split(', ');
+
+  // 食糊後必須仍然有一對正式的眼
+  const hasFinalPair = parts.some(part =>
+    part.includes('x2')
+  );
+
+  if (!hasFinalPair) {
+    return false;
+  }
+
+  // 食糊牌必須完成其中一組刻子
+  const winningTriplet = parts.find(part =>
+    part.includes('x3') &&
+    doesMeldPartMatchTile(part, huTile)
+  );
+
+  return winningTriplet !== undefined;
+}
 
 
 // ----------------------------------------------------------------------
@@ -898,9 +994,8 @@ function calculateSingleHandForm(
       meldMap
     );
 
-    // --------------------------------------------------
+
     // 93. 大四喜、94. 小四喜、95.大三風、96.小三風
-    // --------------------------------------------------
     switch (windAnalysis.pattern) {
       case 'bigFourWinds':
         calc.add('大四喜', 180);
@@ -923,9 +1018,7 @@ function calculateSingleHandForm(
         break;
     }
 
-    // --------------------------------------------------
     // 97.大三元、98.小三元
-    // --------------------------------------------------
     switch (dragonAnalysis.pattern) {
       case 'bigThreeDragons':
         calc.add('大三元', 80);
@@ -1001,6 +1094,14 @@ function calculateSingleHandForm(
     const jeungNgaan = getJeungNgaanFromCombination(comboStr);
     if (jeungNgaan) calc.add(jeungNgaan.rule, jeungNgaan.fan);
   }
+
+
+  // 22.對碰（僅限基本形）
+  // 食糊前有兩對，食糊牌令其中一對組成刻子
+  if (formType === 'basic' && isDoiPungWait(comboStr, huTile)) {
+    calc.add('對碰', 1);
+  }
+
 
   // 92. 槓 (僅限基本形)
   if (formType === 'basic' && meldMap) {
