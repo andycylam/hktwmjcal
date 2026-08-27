@@ -571,26 +571,31 @@ function getJeungNgaanFromCombination(
 
 
 // ----------------------------------------------------------------------
-// 大四喜／小四喜 Helper
+// 風牌牌型 Helper
+// 大四喜、小四喜、大三風、小三風
 // ----------------------------------------------------------------------
-type FourWindsPattern = 'bigFourWinds' | 'smallFourWinds' | null;
 
-interface FourWindsAnalysis {
-  pattern: FourWindsPattern;
-  tripletWindValues: Set<number>;
-  pairWindValue?: number;
+type WindPattern =
+  | 'bigFourWinds'
+  | 'smallFourWinds'
+  | 'bigThreeWinds'
+  | 'smallThreeWinds'
+  | null;
+
+interface WindPatternAnalysis {
+  pattern: WindPattern;
+  tripletValues: Set<number>;
+  pairValue?: number;
 }
 
-function analyzeFourWindsPattern(
+function analyzeWindPattern(
   comboStr?: string,
   meldMap?: Record<string, MeldEntry>
-): FourWindsAnalysis {
-  const tripletWindValues = new Set<number>();
-  let pairWindValue: number | undefined;
+): WindPatternAnalysis {
+  const tripletValues = new Set<number>();
+  let pairValue: number | undefined;
 
-  // --------------------------------------------------
-  // 1. 檢查副露中的風牌碰／槓
-  // --------------------------------------------------
+  // 1. 副露中的風牌碰／槓
   if (meldMap) {
     for (const meld of Object.values(meldMap)) {
       if (
@@ -598,18 +603,16 @@ function analyzeFourWindsPattern(
         meld.tiles.length > 0 &&
         meld.tiles[0].suit === 'wind'
       ) {
-        const windValue = meld.tiles[0].value;
+        const value = meld.tiles[0].value;
 
-        if (windValue >= 1 && windValue <= 4) {
-          tripletWindValues.add(windValue);
+        if (value >= 1 && value <= 4) {
+          tripletValues.add(value);
         }
       }
     }
   }
 
-  // --------------------------------------------------
-  // 2. 檢查暗牌拆解中的風牌刻子及風牌眼
-  // --------------------------------------------------
+  // 2. 暗牌拆解中的風牌刻子及風牌眼
   if (comboStr) {
     const parts = comboStr.split(', ');
 
@@ -618,69 +621,191 @@ function analyzeFourWindsPattern(
 
       if (!windChar) continue;
 
-      const windValue = charToHonorNumber(windChar);
+      const value = charToHonorNumber(windChar);
 
       if (
-        windValue === null ||
-        windValue < 1 ||
-        windValue > 4
+        value === null ||
+        value < 1 ||
+        value > 4
       ) {
         continue;
       }
 
-      // 暗牌風刻
       if (part.includes('x3')) {
-        tripletWindValues.add(windValue);
+        tripletValues.add(value);
       }
 
-      // 風牌做眼
       if (part.includes('x2')) {
-        pairWindValue = windValue;
+        pairValue = value;
       }
     }
   }
 
-  // --------------------------------------------------
   // 93. 大四喜
-  // 東南西北全部為刻子／碰／槓
-  // --------------------------------------------------
-  const hasBigFourWinds = [1, 2, 3, 4].every(
-    windValue => tripletWindValues.has(windValue)
-  );
-
-  if (hasBigFourWinds) {
+  // 東、南、西、北全部為刻子／碰／槓
+  if ([1, 2, 3, 4].every(value => tripletValues.has(value))) {
     return {
       pattern: 'bigFourWinds',
-      tripletWindValues
+      tripletValues
     };
   }
 
-  // --------------------------------------------------
   // 94. 小四喜
-  // 三種風牌為刻子／碰／槓，餘下一種風牌做眼
-  // --------------------------------------------------
-  const hasSmallFourWinds =
-    tripletWindValues.size === 3 &&
-    pairWindValue !== undefined &&
-    !tripletWindValues.has(pairWindValue) &&
+  // 三款風牌為刻子／碰／槓，餘下一款風牌做眼
+  const isSmallFourWinds =
+    tripletValues.size === 3 &&
+    pairValue !== undefined &&
+    !tripletValues.has(pairValue) &&
     [1, 2, 3, 4].every(
-      windValue =>
-        tripletWindValues.has(windValue) ||
-        windValue === pairWindValue
+      value =>
+        tripletValues.has(value) ||
+        value === pairValue
     );
 
-  if (hasSmallFourWinds) {
+  if (isSmallFourWinds) {
     return {
       pattern: 'smallFourWinds',
-      tripletWindValues,
-      pairWindValue
+      tripletValues,
+      pairValue
+    };
+  }
+
+  // 95.大三風
+  // 任意三款不同風牌為刻子／碰／槓
+  if (tripletValues.size === 3) {
+    return {
+      pattern: 'bigThreeWinds',
+      tripletValues,
+      pairValue
+    };
+  }
+
+  // 96.小三風
+  // 任意兩款不同風牌為刻子／碰／槓，
+  // 另一款不同風牌做眼
+  const isSmallThreeWinds =
+    tripletValues.size === 2 &&
+    pairValue !== undefined &&
+    !tripletValues.has(pairValue);
+
+  if (isSmallThreeWinds) {
+    return {
+      pattern: 'smallThreeWinds',
+      tripletValues,
+      pairValue
     };
   }
 
   return {
     pattern: null,
-    tripletWindValues,
-    pairWindValue
+    tripletValues,
+    pairValue
+  };
+}
+
+// ----------------------------------------------------------------------
+// 三元牌牌型 Helper
+// 97.大三元、98.小三元
+// ----------------------------------------------------------------------
+
+type DragonPattern =
+  | 'bigThreeDragons'
+  | 'smallThreeDragons'
+  | null;
+
+interface DragonPatternAnalysis {
+  pattern: DragonPattern;
+  tripletValues: Set<number>;
+  pairValue?: number;
+}
+
+function analyzeDragonPattern(
+  comboStr?: string,
+  meldMap?: Record<string, MeldEntry>
+): DragonPatternAnalysis {
+  const tripletValues = new Set<number>();
+  let pairValue: number | undefined;
+
+  // 1. 副露中的三元牌碰／槓
+  if (meldMap) {
+    for (const meld of Object.values(meldMap)) {
+      if (
+        (meld.kind === 'pung' || meld.kind === 'kong') &&
+        meld.tiles.length > 0 &&
+        meld.tiles[0].suit === 'dragon'
+      ) {
+        const value = meld.tiles[0].value;
+
+        if (value >= 5 && value <= 7) {
+          tripletValues.add(value);
+        }
+      }
+    }
+  }
+
+  // 2. 暗牌拆解中的三元牌刻子及三元牌眼
+  if (comboStr) {
+    const parts = comboStr.split(', ');
+
+    for (const part of parts) {
+      const dragonChar = part.match(/[中發白]/)?.[0];
+
+      if (!dragonChar) continue;
+
+      const value = charToHonorNumber(dragonChar);
+
+      if (
+        value === null ||
+        value < 5 ||
+        value > 7
+      ) {
+        continue;
+      }
+
+      if (part.includes('x3')) {
+        tripletValues.add(value);
+      }
+
+      if (part.includes('x2')) {
+        pairValue = value;
+      }
+    }
+  }
+
+  // 97.大三元
+  // 中、發、白全部為刻子／碰／槓
+  if ([5, 6, 7].every(value => tripletValues.has(value))) {
+    return {
+      pattern: 'bigThreeDragons',
+      tripletValues
+    };
+  }
+
+  // 98.小三元
+  // 中、發、白其中兩款為刻子／碰／槓，
+  // 餘下一款做眼
+  const isSmallThreeDragons =
+    tripletValues.size === 2 &&
+    pairValue !== undefined &&
+    !tripletValues.has(pairValue) &&
+    [5, 6, 7].every(
+      value =>
+        tripletValues.has(value) ||
+        value === pairValue
+    );
+
+  if (isSmallThreeDragons) {
+    return {
+      pattern: 'smallThreeDragons',
+      tripletValues,
+      pairValue
+    };
+  }
+
+  return {
+    pattern: null,
+    tripletValues,
+    pairValue
   };
 }
 
@@ -753,34 +878,65 @@ function calculateSingleHandForm(
     else { calc.add('半求人', 20); countZimo = false; }
   }
 
-  // 93. 大四喜、94. 小四喜
+  // ------------------------------------------------------------------
+  // 風牌及三元牌大型牌型
   //
-  // 大四喜：東南西北全部為刻子／碰／槓，180番
-  // 小四喜：三組風刻／碰／槓，加餘下一風做眼，120番
-  //
-  // 兩者成立後均不再計算任何普通字牌及正字番。
+  // 以下牌型成立後，全部不再另計：
+  // - 字牌（東、南、西、北、中、發、白）
+  // - 正字（座位）
+  // - 正字（場風）
+  // ------------------------------------------------------------------
 
-  const fourWindsAnalysis =
-    formType === 'basic'
-      ? analyzeFourWindsPattern(comboStr, meldMap)
-      : null;
+  if (formType === 'basic') {
+    const windAnalysis = analyzeWindPattern(
+      comboStr,
+      meldMap
+    );
 
-  if (fourWindsAnalysis?.pattern === 'bigFourWinds') {
-    calc.add('大四喜', 180);
+    const dragonAnalysis = analyzeDragonPattern(
+      comboStr,
+      meldMap
+    );
 
-    // 不再另計：
-    // - 字牌（東南西北）
-    // - 字牌（中發白）
-    // - 正字（座位）
-    // - 正字（場風）
-    countHonorTriplets = false;
-  } else if (
-    fourWindsAnalysis?.pattern === 'smallFourWinds'
-  ) {
-    calc.add('小四喜', 120);
+    // --------------------------------------------------
+    // 93. 大四喜、94. 小四喜、95.大三風、96.小三風
+    // --------------------------------------------------
+    switch (windAnalysis.pattern) {
+      case 'bigFourWinds':
+        calc.add('大四喜', 180);
+        countHonorTriplets = false;
+        break;
 
-    // 小四喜同樣不再計任何字牌及正字番
-    countHonorTriplets = false;
+      case 'smallFourWinds':
+        calc.add('小四喜', 120);
+        countHonorTriplets = false;
+        break;
+
+      case 'bigThreeWinds':
+        calc.add('大三風', 60);
+        countHonorTriplets = false;
+        break;
+
+      case 'smallThreeWinds':
+        calc.add('小三風', 30);
+        countHonorTriplets = false;
+        break;
+    }
+
+    // --------------------------------------------------
+    // 97.大三元、98.小三元
+    // --------------------------------------------------
+    switch (dragonAnalysis.pattern) {
+      case 'bigThreeDragons':
+        calc.add('大三元', 80);
+        countHonorTriplets = false;
+        break;
+
+      case 'smallThreeDragons':
+        calc.add('小三元', 40);
+        countHonorTriplets = false;
+        break;
+    }
   }
 
 
