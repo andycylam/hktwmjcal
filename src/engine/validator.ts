@@ -569,6 +569,58 @@ function getJeungNgaanFromCombination(
   return null;
 }
 
+
+// ----------------------------------------------------------------------
+// 大四喜 Helper
+// ----------------------------------------------------------------------
+function isBigFourWinds(
+  comboStr?: string,
+  meldMap?: Record<string, MeldEntry>
+): boolean {
+  const windValues = new Set<number>();
+
+  // 副露中的風牌碰／槓
+  if (meldMap) {
+    for (const meld of Object.values(meldMap)) {
+      if (
+        (meld.kind === 'pung' || meld.kind === 'kong') &&
+        meld.tiles.length > 0 &&
+        meld.tiles[0].suit === 'wind'
+      ) {
+        const value = meld.tiles[0].value;
+
+        if (value >= 1 && value <= 4) {
+          windValues.add(value);
+        }
+      }
+    }
+  }
+
+  // 暗牌拆解中的風牌刻子
+  if (comboStr) {
+    const parts = comboStr.split(', ');
+
+    for (const part of parts) {
+      if (!part.includes('x3')) continue;
+
+      const windChar = part.match(/[東南西北]/)?.[0];
+      if (!windChar) continue;
+
+      const value = charToHonorNumber(windChar);
+
+      if (value !== null && value >= 1 && value <= 4) {
+        windValues.add(value);
+      }
+    }
+  }
+
+  return [1, 2, 3, 4].every(value =>
+    windValues.has(value)
+  );
+}
+
+
+
 // ----------------------------------------------------------------------
 // 通用單一形牌型番數計算器 (Unified Single Form Engine)
 // ----------------------------------------------------------------------
@@ -595,16 +647,18 @@ function calculateSingleHandForm(
   const hasFlower = allFlowerTiles.length > 0;
   const hasNonFlowerMeld = hasNonFlowerMelds(meldMap);
 
-  let countNoHonor = true;
-  let countNoFlower = true;
-  let countNoHonorFlower = true;
-  let countZimo = true;
+  let countNoHonor = true;  //不計無字
+  let countNoFlower = true; //不計無花
+  let countNoHonorFlower = true; //不計無字花
+  let countZimo = true; //不計自摸
+  let countHonorTriplets = true; //不計字牌正字
+
   
   const huKey = huTile? `${huTile.suit}_${huTile.value}` : undefined;
-  // 1. 形態專屬主牌型 (嚦咕嚦咕)
+  // 123. 形態專屬主牌型 (嚦咕嚦咕)
   if (formType === 'likGoo') {
     calc.add('嚦咕嚦咕', 40);
-    // 八對嚦咕
+    // 124. 八對嚦咕
     if (huKey){
       // 1. 統計包含胡牌在內嘅所有手牌數量
       const counts = new Map<string, number>();
@@ -628,23 +682,40 @@ function calculateSingleHandForm(
     }
   }
 
-  // 2. 特殊求人牌型 (僅限基本形)
+  // 151. & 152. 特殊求人牌型 (僅限基本形)
   if (formType === 'basic' && handTiles.length === 2) {
     if (!huIsZimo) calc.add('全求人', 40);
     else { calc.add('半求人', 20); countZimo = false; }
   }
 
-  // 3. 清一色 (共通)
+  // 93. 大四喜
+  const hasBigFourWinds =
+    formType === 'basic' &&
+    isBigFourWinds(comboStr, meldMap);
+
+  if (hasBigFourWinds) {
+    calc.add('大四喜', 180);
+
+    // 大四喜不再另計以下番種：
+    // - 字牌（東、南、西、北）
+    // - 字牌（中、發、白）
+    // - 正字（座位）
+    // - 正字（場風）
+    countHonorTriplets = false;
+  }
+
+
+  // 114. 清一色 (共通)
   if (isFullFlush(handTiles, meldMap)) {
     calc.add('清一色', 120);
     countNoHonor = false;
     countNoHonorFlower = false;
   }
 
-  // 4. 自摸 (共通)
+  // 3. 自摸 (共通)
   if (huIsZimo && countZimo) calc.add('自摸', 1);
 
-  // 5. 無字花 / 無字 (共通)
+  // 20. 無字花 / 無字 (共通)
   if (!hasHonor && !hasFlower && countNoHonorFlower) {
     countNoHonor = false;
     countNoFlower = false;
@@ -652,17 +723,22 @@ function calculateSingleHandForm(
   }
   if (!hasHonor && countNoHonor) calc.add('無字', 1);
 
-  // 6. 字牌刻子
-  if (formType === 'basic') {
-    // 基本形：副露 + 組合解構
-    const windMelds = meldMap ? Object.values(meldMap).filter(m => m.kind !== 'flower' && m.tiles[0]?.suit === 'wind') : [];
-    const dragonMelds = meldMap ? Object.values(meldMap).filter(m => m.kind !== 'flower' && m.tiles[0]?.suit === 'dragon') : [];
-    
+  // 15. 字牌 及 16.正字
+  //
+  // 大四喜,小四喜,大三風,小三風,大三元,小三元已包含所有普通字牌及正字，
+  // 因此東、南、西、北、中、發、白全部不再另計。
+  if (formType === 'basic' && countHonorTriplets) {
+    const windMelds = meldMap ? Object.values(meldMap).filter(meld =>  (meld.kind === 'pung' || meld.kind === 'kong') && meld.tiles.length > 0 && meld.tiles[0].suit === 'wind') : [];
+    const dragonMelds = meldMap ? Object.values(meldMap).filter(meld => (meld.kind === 'pung' || meld.kind === 'kong') && meld.tiles.length > 0 && meld.tiles[0].suit === 'dragon') : [];
+
+    // A. 計算副露中的風牌及三元牌
     for (const meld of [...windMelds, ...dragonMelds]) {
       const value = meld.tiles[0].value;
-      calc.addMany(scoreHonorTriplet(value, seatWindNum, prevailingWindNum).breakdown);
+      const result = scoreHonorTriplet(value, seatWindNum, prevailingWindNum);
+      calc.addMany(result.breakdown);
     }
 
+    // B. 計算暗牌拆解中的風牌及三元牌
     if (comboStr) {
       const parts = comboStr.split(', ');
       for (const part of parts) {
@@ -670,29 +746,34 @@ function calculateSingleHandForm(
         const windCharMatch = part.match(/[東南西北]/)?.[0];
         const dragonCharMatch = part.match(/[中發白]/)?.[0];
         let val: number | null = null;
-        if (windCharMatch) val = charToHonorNumber(windCharMatch);
-        else if (dragonCharMatch) val = charToHonorNumber(dragonCharMatch);
+
+        if (windCharMatch) {
+          val = charToHonorNumber(windCharMatch);
+        } else if (dragonCharMatch) {
+          val = charToHonorNumber(dragonCharMatch);
+        }
 
         if (val !== null && val >= 1 && val <= 7) {
-          calc.addMany(scoreHonorTriplet(val, seatWindNum, prevailingWindNum).breakdown);
+          const result = scoreHonorTriplet(val, seatWindNum, prevailingWindNum);
+          calc.addMany(result.breakdown);
         }
       }
     }
-  }
+}
 
-  // 7. 將眼 (僅限基本形)
+  // 25. 將眼 (僅限基本形)
   if (formType === 'basic' && comboStr) {
     const jeungNgaan = getJeungNgaanFromCombination(comboStr);
     if (jeungNgaan) calc.add(jeungNgaan.rule, jeungNgaan.fan);
   }
 
-  // 8. 槓 (僅限基本形)
+  // 92. 槓 (僅限基本形)
   if (formType === 'basic' && meldMap) {
     const kongs = Object.values(meldMap).filter(m => m.kind === 'kong').length;
     if (kongs > 0) calc.add(`槓 x${kongs}`, kongs * 2);
   }
 
-  // 9. 聽牌獨獨/假獨 (基本)
+  // 23. & 24. 聽牌獨獨/假獨 (基本)
   if (formType === 'basic' && huTile && handTiles.length !== 2 && remainingCounts) {
     const waitResult = detectWaitPattern(remainingCounts, huTile);
     const typeNameMap: Record<string, string> = { danDiu: '單吊', kaLung: '卡窿', pinZoeng: '偏章' };
@@ -720,7 +801,7 @@ function calculateSingleHandForm(
     }
   }
 
-  // 10. 花牌 (共通)
+  // 18. & 21. 花牌 (共通)
   if (!hasFlower) {
     if (countNoFlower) calc.add('無花', 1);
   } else {
@@ -743,7 +824,7 @@ function calculateSingleHandForm(
     }
   }
 
-  // 11. 門清 (僅基本形成立)
+  // 2. 門清 (僅基本形成立)
   if (formType === 'basic' && !hasNonFlowerMeld && !hasFlower) {
     calc.add('門清', 5);
   }
