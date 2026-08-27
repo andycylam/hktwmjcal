@@ -225,4 +225,116 @@ describe('validator wind scoring', () => {
     expect(res.isValid).toBe(true);
     expectRuleScored(res, '字牌 (東)', 1);
   });
+  it('大四喜', () => {
+    const handTiles: Tile[] = [];
+    handTiles.push(makeTile('wind', 1, 1));
+    handTiles.push(makeTile('wind', 1, 2));
+    handTiles.push(makeTile('wind', 1, 3));
+    handTiles.push(makeTile('wind', 2, 1));
+    handTiles.push(makeTile('wind', 2, 1));
+    handTiles.push(makeTile('wind', 2, 1));
+    handTiles.push(makeTile('wind', 3, 1));
+    handTiles.push(makeTile('wind', 3, 1));
+    handTiles.push(makeTile('wind', 3, 1));
+    handTiles.push(makeTile('wind', 4, 1));
+    handTiles.push(makeTile('wind', 4, 1));
+    handTiles.push(makeTile('wind', 4, 1));
+    handTiles.push(makeTile('dot', 4, 1));
+    handTiles.push(makeTile('dot', 5, 1));
+    handTiles.push(makeTile('dot', 6, 1));
+    handTiles.push(makeTile('bamboo', 1, 1));
+    handTiles.push(makeTile('bamboo', 1, 2));
+
+    const res = calculateHandFan(handTiles, undefined, false, undefined, {
+      prevailingWind: 'south',
+      seatWind: 'south',
+    });
+
+    expect(res.isValid).toBe(true);
+    expectRuleScored(res, '大四喜', 180);
+  });
+  it('小四喜', () => {
+    const handTiles: Tile[] = [];
+    handTiles.push(makeTile('wind', 1, 1));
+    handTiles.push(makeTile('wind', 1, 2));
+    handTiles.push(makeTile('wind', 1, 3));
+    handTiles.push(makeTile('wind', 2, 1));
+    handTiles.push(makeTile('wind', 2, 1));
+    handTiles.push(makeTile('wind', 2, 1));
+    handTiles.push(makeTile('wind', 3, 1));
+    handTiles.push(makeTile('wind', 3, 1));
+    handTiles.push(makeTile('wind', 3, 1));
+    handTiles.push(makeTile('wind', 4, 1));
+    handTiles.push(makeTile('wind', 4, 1));
+    handTiles.push(makeTile('bamboo', 1, 1));
+    handTiles.push(makeTile('dot', 4, 1));
+    handTiles.push(makeTile('dot', 5, 1));
+    handTiles.push(makeTile('dot', 6, 1));
+    handTiles.push(makeTile('bamboo', 1, 1));
+    handTiles.push(makeTile('bamboo', 1, 2));
+
+    const res = calculateHandFan(handTiles, undefined, false, undefined, {
+      prevailingWind: 'south',
+      seatWind: 'south',
+    });
+
+    expect(res.isValid).toBe(true);
+    expectRuleScored(res, '小四喜', 120);
+  });
+  it('大三風', () => {
+    const handTiles: Tile[] = [];
+    handTiles.push(makeTile('wind', 1, 1));
+    handTiles.push(makeTile('wind', 1, 2));
+    handTiles.push(makeTile('wind', 1, 3));
+    handTiles.push(makeTile('wind', 2, 1));
+    handTiles.push(makeTile('wind', 2, 1));
+    handTiles.push(makeTile('wind', 2, 1));
+    handTiles.push(makeTile('wind', 3, 1));
+    handTiles.push(makeTile('wind', 3, 1));
+    handTiles.push(makeTile('wind', 3, 1));
+    handTiles.push(makeTile('dot', 4, 1));
+    handTiles.push(makeTile('dot', 4, 1));
+    handTiles.push(makeTile('bamboo', 1, 1));
+    handTiles.push(makeTile('dot', 4, 1));
+    handTiles.push(makeTile('dot', 5, 1));
+    handTiles.push(makeTile('dot', 6, 1));
+    handTiles.push(makeTile('bamboo', 1, 1));
+    handTiles.push(makeTile('bamboo', 1, 2));
+
+    const res = calculateHandFan(handTiles, undefined, false, undefined, {
+      prevailingWind: 'south',
+      seatWind: 'south',
+    });
+
+    expect(res.isValid).toBe(true);
+    expectRuleScored(res, '大三風', 60);
+  });
+  it('小三風', () => {
+    const handTiles: Tile[] = [];
+    handTiles.push(makeTile('wind', 1, 1));
+    handTiles.push(makeTile('wind', 1, 2));
+    handTiles.push(makeTile('wind', 1, 3));
+    handTiles.push(makeTile('wind', 2, 1));
+    handTiles.push(makeTile('wind', 2, 1));
+    handTiles.push(makeTile('wind', 2, 1));
+    handTiles.push(makeTile('wind', 3, 1));
+    handTiles.push(makeTile('wind', 3, 1));
+    handTiles.push(makeTile('dot', 4, 1));
+    handTiles.push(makeTile('dot', 4, 1));
+    handTiles.push(makeTile('dot', 4, 1));
+    handTiles.push(makeTile('bamboo', 1, 1));
+    handTiles.push(makeTile('dot', 4, 1));
+    handTiles.push(makeTile('dot', 5, 1));
+    handTiles.push(makeTile('dot', 6, 1));
+    handTiles.push(makeTile('bamboo', 1, 1));
+    handTiles.push(makeTile('bamboo', 1, 2));
+
+    const res = calculateHandFan(handTiles, undefined, false, undefined, {
+      prevailingWind: 'south',
+      seatWind: 'south',
+    });
+
+    expect(res.isValid).toBe(true);
+    expectRuleScored(res, '小三風', 30);
+  });
 });

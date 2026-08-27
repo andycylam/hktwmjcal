@@ -31,8 +31,11 @@ function getConsecutiveSegments(nums: number[]): number[] {
 /**
  * 將單一連續長度轉化為最高階的連對番數 (同一組片段內高階覆蓋低階)
  */
-function getConsecutiveFanResult(length: number): FanResult | null {
-  if (length >= 8) return { rule: '八連對', fan: 420 };
+function getConsecutiveFanResult(length: number,flags?: { countFullFlush?: boolean }): FanResult | null {
+  if (length >= 8 && flags){
+    flags.countFullFlush = false;
+    return { rule: '八連對', fan: 420 };
+  }
   if (length === 7) return { rule: '七連對', fan: 120 };
   if (length === 6) return { rule: '六連對', fan: 60 };
   if (length === 5) return { rule: '五連對', fan: 30 };
@@ -44,7 +47,7 @@ function getConsecutiveFanResult(length: number): FanResult | null {
 /**
  * 嚦咕嚦咕特殊牌型完整番數計算器
  */
-export function evaluateLikGooSpecialPatterns(handTiles: Tile[]): FanResult[] {
+export function evaluateLikGooSpecialPatterns(handTiles: Tile[],flags?: { countFullFlush?: boolean }): FanResult[] {
   const results: FanResult[] = [];
   
   // 1. 統計所有牌的張數，並提取所有「有對子或以上 (count >= 2)」的 key
@@ -126,7 +129,7 @@ export function evaluateLikGooSpecialPatterns(handTiles: Tile[]): FanResult[] {
 
   // 逐一計算每個獨立片段（例如：5連對 + 3連對 會各自獨立加總）
   for (const segLen of allSegments) {
-    const fanRes = getConsecutiveFanResult(segLen);
+    const fanRes = getConsecutiveFanResult(segLen,flags);
     if (fanRes) {
       results.push(fanRes);
     }

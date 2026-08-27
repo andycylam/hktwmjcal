@@ -938,9 +938,12 @@ function calculateSingleHandForm(
   let countNoHonorFlower = true; //不計無字花
   let countZimo = true; //不計自摸
   //let countHonorTriplets = true; //不計字牌正字
-  let countWind = true;
-  let countDragon = true;
-  
+  let countWind = true; //不計風牌正字
+  let countDragon = true; //不計三元
+  const flags = {
+    countFullFlush: true //不計清一色
+  };
+
   const huKey = huTile? `${huTile.suit}_${huTile.value}` : undefined;
   // 123. 形態專屬主牌型 (嚦咕嚦咕)
   if (formType === 'likGoo') {
@@ -963,7 +966,7 @@ function calculateSingleHandForm(
       }
     }
     // 評估嚦咕嚦咕的特殊牌型組合（三元、四喜、三色同對、連對系列）
-    const specialLikGooFans = evaluateLikGooSpecialPatterns(handTiles);
+    const specialLikGooFans = evaluateLikGooSpecialPatterns(handTiles, flags);
     for (const item of specialLikGooFans) {
       calc.add(item.rule, item.fan);
     }
@@ -977,11 +980,6 @@ function calculateSingleHandForm(
 
   // ------------------------------------------------------------------
   // 風牌及三元牌大型牌型
-  //
-  // 以下牌型成立後，全部不再另計：
-  // - 字牌（東、南、西、北、中、發、白）
-  // - 正字（座位）
-  // - 正字（場風）
   // ------------------------------------------------------------------
 
   if (formType === 'basic') {
@@ -1035,7 +1033,7 @@ function calculateSingleHandForm(
 
 
   // 114. 清一色 (共通)
-  if (isFullFlush(handTiles, meldMap)) {
+  if (flags.countFullFlush && isFullFlush(handTiles, meldMap)) {
     calc.add('清一色', 120);
     countNoHonor = false;
     countNoHonorFlower = false;
