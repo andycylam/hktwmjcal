@@ -571,15 +571,26 @@ function getJeungNgaanFromCombination(
 
 
 // ----------------------------------------------------------------------
-// 大四喜 Helper
+// 大四喜／小四喜 Helper
 // ----------------------------------------------------------------------
-function isBigFourWinds(
+type FourWindsPattern = 'bigFourWinds' | 'smallFourWinds' | null;
+
+interface FourWindsAnalysis {
+  pattern: FourWindsPattern;
+  tripletWindValues: Set<number>;
+  pairWindValue?: number;
+}
+
+function analyzeFourWindsPattern(
   comboStr?: string,
   meldMap?: Record<string, MeldEntry>
-): boolean {
-  const windValues = new Set<number>();
+): FourWindsAnalysis {
+  const tripletWindValues = new Set<number>();
+  let pairWindValue: number | undefined;
 
-  // 副露中的風牌碰／槓
+  // --------------------------------------------------
+  // 1. 檢查副露中的風牌碰／槓
+  // --------------------------------------------------
   if (meldMap) {
     for (const meld of Object.values(meldMap)) {
       if (
@@ -587,36 +598,90 @@ function isBigFourWinds(
         meld.tiles.length > 0 &&
         meld.tiles[0].suit === 'wind'
       ) {
-        const value = meld.tiles[0].value;
+        const windValue = meld.tiles[0].value;
 
-        if (value >= 1 && value <= 4) {
-          windValues.add(value);
+        if (windValue >= 1 && windValue <= 4) {
+          tripletWindValues.add(windValue);
         }
       }
     }
   }
 
-  // 暗牌拆解中的風牌刻子
+  // --------------------------------------------------
+  // 2. 檢查暗牌拆解中的風牌刻子及風牌眼
+  // --------------------------------------------------
   if (comboStr) {
     const parts = comboStr.split(', ');
 
     for (const part of parts) {
-      if (!part.includes('x3')) continue;
-
       const windChar = part.match(/[東南西北]/)?.[0];
+
       if (!windChar) continue;
 
-      const value = charToHonorNumber(windChar);
+      const windValue = charToHonorNumber(windChar);
 
-      if (value !== null && value >= 1 && value <= 4) {
-        windValues.add(value);
+      if (
+        windValue === null ||
+        windValue < 1 ||
+        windValue > 4
+      ) {
+        continue;
+      }
+
+      // 暗牌風刻
+      if (part.includes('x3')) {
+        tripletWindValues.add(windValue);
+      }
+
+      // 風牌做眼
+      if (part.includes('x2')) {
+        pairWindValue = windValue;
       }
     }
   }
 
-  return [1, 2, 3, 4].every(value =>
-    windValues.has(value)
+  // --------------------------------------------------
+  // 93. 大四喜
+  // 東南西北全部為刻子／碰／槓
+  // --------------------------------------------------
+  const hasBigFourWinds = [1, 2, 3, 4].every(
+    windValue => tripletWindValues.has(windValue)
   );
+
+  if (hasBigFourWinds) {
+    return {
+      pattern: 'bigFourWinds',
+      tripletWindValues
+    };
+  }
+
+  // --------------------------------------------------
+  // 94. 小四喜
+  // 三種風牌為刻子／碰／槓，餘下一種風牌做眼
+  // --------------------------------------------------
+  const hasSmallFourWinds =
+    tripletWindValues.size === 3 &&
+    pairWindValue !== undefined &&
+    !tripletWindValues.has(pairWindValue) &&
+    [1, 2, 3, 4].every(
+      windValue =>
+        tripletWindValues.has(windValue) ||
+        windValue === pairWindValue
+    );
+
+  if (hasSmallFourWinds) {
+    return {
+      pattern: 'smallFourWinds',
+      tripletWindValues,
+      pairWindValue
+    };
+  }
+
+  return {
+    pattern: null,
+    tripletWindValues,
+    pairWindValue
+  };
 }
 
 
@@ -688,19 +753,33 @@ function calculateSingleHandForm(
     else { calc.add('半求人', 20); countZimo = false; }
   }
 
-  // 93. 大四喜
-  const hasBigFourWinds =
-    formType === 'basic' &&
-    isBigFourWinds(comboStr, meldMap);
+  // 93. 大四喜、94. 小四喜
+  //
+  // 大四喜：東南西北全部為刻子／碰／槓，180番
+  // 小四喜：三組風刻／碰／槓，加餘下一風做眼，120番
+  //
+  // 兩者成立後均不再計算任何普通字牌及正字番。
 
-  if (hasBigFourWinds) {
+  const fourWindsAnalysis =
+    formType === 'basic'
+      ? analyzeFourWindsPattern(comboStr, meldMap)
+      : null;
+
+  if (fourWindsAnalysis?.pattern === 'bigFourWinds') {
     calc.add('大四喜', 180);
 
-    // 大四喜不再另計以下番種：
-    // - 字牌（東、南、西、北）
-    // - 字牌（中、發、白）
+    // 不再另計：
+    // - 字牌（東南西北）
+    // - 字牌（中發白）
     // - 正字（座位）
     // - 正字（場風）
+    countHonorTriplets = false;
+  } else if (
+    fourWindsAnalysis?.pattern === 'smallFourWinds'
+  ) {
+    calc.add('小四喜', 120);
+
+    // 小四喜同樣不再計任何字牌及正字番
     countHonorTriplets = false;
   }
 
