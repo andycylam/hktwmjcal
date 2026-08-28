@@ -1,8 +1,67 @@
 import { Tile } from '../types/mahjong';
+import {
+  MeldEntry,
+  FanResult,
+  countTileOccurrences,
+  tileLabel,
+  hasNonFlowerMelds,
+} from './validator.helpers';
 
-interface FanResult {
-  rule: string;
-  fan: number;
+// ----------------------------------------------------------------------
+// 嚦咕嚦咕 (Lik Goo Lik Goo) 檢測 Helper
+// ----------------------------------------------------------------------
+
+interface LikGooAnalysis {
+  isLikGoo: boolean;
+  combinationLabel?: string;
+  tripletTileKey?: string;
+}
+
+export function checkLikGoo(
+  handTiles: Tile[],
+  meldMap?: Record<string, MeldEntry>
+): LikGooAnalysis {
+  if (hasNonFlowerMelds(meldMap)) {
+    return { isLikGoo: false };
+  }
+
+  if (handTiles.length !== 17) {
+    return { isLikGoo: false };
+  }
+
+  const handCounts = countTileOccurrences(handTiles);
+
+  let pairCount = 0;
+  let tripletCount = 0;
+  let tripletTileKey = '';
+  const partsLabel: string[] = [];
+
+  for (const [key, count] of handCounts.entries()) {
+    if (count === 2) {
+      pairCount++;
+      partsLabel.push(`${tileLabel(key)}x2`);
+    } else if (count === 3) {
+      tripletCount++;
+      tripletTileKey = key;
+      partsLabel.push(`${tileLabel(key)}x3`);
+    } else if (count === 4) {
+      pairCount += 2;
+      partsLabel.push(`${tileLabel(key)}x2`, `${tileLabel(key)}x2`);
+    } else {
+      return { isLikGoo: false };
+    }
+  }
+
+  if (pairCount === 7 && tripletCount === 1) {
+    const combinationLabel = partsLabel.sort().join(', ');
+    return {
+      isLikGoo: true,
+      combinationLabel,
+      tripletTileKey
+    };
+  }
+
+  return { isLikGoo: false };
 }
 
 /**

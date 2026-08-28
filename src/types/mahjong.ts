@@ -14,3 +14,10 @@ export interface CalculationResult {
   breakdown: { rule: string; fan: number }[];
   possibleCombinations?: string[];
 }
+
+export type Wind = 'east' | 'south' | 'west' | 'north';
+
+export interface GameContext {
+  prevailingWind?: Wind;
+  seatWind?: Wind;
+}
