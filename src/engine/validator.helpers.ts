@@ -415,4 +415,27 @@ export function isFullFlush(handTiles: Tile[], meldMap?: Record<string, MeldEntr
   return relevantTiles.every(t => t.suit === firstSuit);
 }
 
+// 缺一門：無花牌，且萬筒索三門中至少缺其一門
+export function isVoidInOneSuit(handTiles: Tile[], meldMap?: Record<string, MeldEntry>): boolean {
+  const hasFlower = meldMap
+    ? Object.values(meldMap).some(m => m.kind === 'flower')
+    : false;
+  if (hasFlower) return false;
+
+  const relevantTiles: Tile[] = [...handTiles];
+  if (meldMap) {
+    Object.values(meldMap).forEach(meld => {
+      if (meld.kind !== 'flower') relevantTiles.push(...meld.tiles);
+    });
+  }
+
+  if (relevantTiles.length === 0) return false;
+
+  const hasChar = relevantTiles.some(t => t.suit === 'character');
+  const hasDot  = relevantTiles.some(t => t.suit === 'dot');
+  const hasBamboo = relevantTiles.some(t => t.suit === 'bamboo');
+
+  return !hasChar || !hasDot || !hasBamboo;
+}
+
 

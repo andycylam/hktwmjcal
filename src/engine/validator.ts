@@ -14,6 +14,7 @@ import {
   scoreFlower,
   hasExposedNonKongMeld,
   isFullFlush,
+  isVoidInOneSuit,
   WIND_VALUE_MAP,
   cloneCounts,
   canFormMelds,
@@ -63,6 +64,7 @@ function calculateSingleHandForm(
   const flags = {
     countFullFlush: true //不計清一色
   };
+  let countVoidInOneSuit = true; //不計缺一門
 
   const huKey = huTile? `${huTile.suit}_${huTile.value}` : undefined;
   // 123. 形態專屬主牌型 (嚦咕嚦咕)
@@ -148,6 +150,7 @@ function calculateSingleHandForm(
     calc.add('清一色', 120);
     countNoHonor = false;
     countNoHonorFlower = false;
+    countVoidInOneSuit = false;
   }
 
   // 3. 自摸 (共通)
@@ -160,10 +163,17 @@ function calculateSingleHandForm(
     calc.add('無字花', 5);
   }
 
+  // 108. 缺一門
+  if (countVoidInOneSuit && isVoidInOneSuit(handTiles, meldMap)) {
+    countNoHonor = false;
+    calc.add('缺一門', 10);
+  } 
+
   // 14. 無字
   if (!hasHonor && countNoHonor){
     calc.add('無字', 1);
-  } 
+  }
+
 
   // 15. 字牌 及 16.正字
   if (formType === 'basic') {
