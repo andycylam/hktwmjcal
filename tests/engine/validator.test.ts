@@ -116,7 +116,7 @@ describe('validator kong-adjusted total', () => {
     expect(res.isValid).toBe(true);
     expect(res.possibleCombinations).toBeDefined();
     expect(res.possibleCombinations?.length).toBe(1);
-    expect(res.possibleCombinations?.[0]).toBe('1萬x3, 3萬x3, 3萬-4萬-5萬, 4萬-5萬-6萬, 7萬-8萬-9萬, 7萬x2');
+    expect(res.possibleCombinations?.[0]).toBe('一萬x3, 三萬x3, 三萬-四萬-五萬, 四萬-五萬-六萬, 七萬-八萬-九萬, 七萬x2');
   });
 
   it('shows multiple valid decompositions when the same hand can pair on different tiles', () => {
@@ -132,8 +132,8 @@ describe('validator kong-adjusted total', () => {
     expect(res.possibleCombinations).toBeDefined();
     expect(res.possibleCombinations?.length).toBeGreaterThan(1);
     expect(res.possibleCombinations).toEqual(expect.arrayContaining([
-      expect.stringContaining('5萬x2'),
-      expect.stringContaining('8萬x2')
+      expect.stringContaining('五萬x2'),
+      expect.stringContaining('八萬x2')
     ]));
   });
 

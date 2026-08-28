@@ -27,6 +27,17 @@ const HONOR_CHAR_TO_NUMBER: Record<string, number> = Object.fromEntries(
 // 完整版字牌名稱（用於顯示）
 const FULL_DRAGON_NAMES: Record<number, string> = { 5: '紅中', 6: '發財', 7: '白板' };
 
+// 數字中文（用於牌面顯示）
+const CHINESE_NUM: Record<number, string> = {
+  1: '一', 2: '二', 3: '三', 4: '四', 5: '五',
+  6: '六', 7: '七', 8: '八', 9: '九'
+};
+
+// 反向映射：中文數字 → 整數（供 normalizeMeldPart 解析牌面字符串用）
+const CHINESE_NUM_TO_INT: Record<string, number> = Object.fromEntries(
+  Object.entries(CHINESE_NUM).map(([k, v]) => [v, Number(k)])
+);
+
 export interface FanResult {
   rule: string;
   fan: number;
@@ -112,7 +123,7 @@ export function tileLabel(tile: string): string {
   const [suit, valueStr] = tile.split('_');
   const value = Number(valueStr);
   const suitLabel = suit === 'character' ? '萬' : suit === 'dot' ? '筒' : suit === 'bamboo' ? '索' : suit === 'wind' ? '風' : suit === 'dragon' ? '字' : '';
-  return `${value}${suitLabel}`;
+  return `${CHINESE_NUM[value] || value}${suitLabel}`;
 }
 
 export function meldLabel(tiles: string[]): string {
@@ -127,29 +138,41 @@ export function meldLabel(tiles: string[]): string {
   return labels.join('-');
 }
 
+function suitNumberLabel(n: number): string {
+  return CHINESE_NUM[n] || String(n);
+}
+
+function parseSuitNumber(s: string): number {
+  // Try Arabic digit first
+  const num = Number(s);
+  if (!isNaN(num) && num >= 1 && num <= 9) return num;
+  // Fall back to Chinese numeral lookup
+  return CHINESE_NUM_TO_INT[s] ?? 0;
+}
+
 function normalizeMeldPart(part: string): { sortKey: number; pair: boolean; token: string } {
   const suitMatch = part.match(/[萬筒索風字]/)?.[0] ?? '';
-  const numbers = [...part.matchAll(/\d+/g)].map(Number);
+  const numbers = [...part.matchAll(/[\d一二三四五六七八九]/g)].map(m => parseSuitNumber(m[0]));
   const firstNumber = numbers[0] ?? 0;
 
   const dragonChars = ['紅中', '發財', '白板'];
   const isDragon = (ch: string) => dragonChars.includes(ch);
 
   if (part.includes('x3')) {
-    const displayNum = (suitMatch === '風' || suitMatch === '字') ? honorNumberToChar(suitMatch, firstNumber) : String(firstNumber);
+    const displayNum = (suitMatch === '風' || suitMatch === '字') ? honorNumberToChar(suitMatch, firstNumber) : suitNumberLabel(firstNumber);
     const suffix = isDragon(displayNum) ? '' : suitMatch;
     return { sortKey: firstNumber, pair: false, token: `${displayNum}${suffix}x3` };
   }
 
   if (part.includes('x2')) {
-    const displayNum = (suitMatch === '風' || suitMatch === '字') ? honorNumberToChar(suitMatch, firstNumber) : String(firstNumber);
+    const displayNum = (suitMatch === '風' || suitMatch === '字') ? honorNumberToChar(suitMatch, firstNumber) : suitNumberLabel(firstNumber);
     const suffix = isDragon(displayNum) ? '' : suitMatch;
     return { sortKey: firstNumber, pair: true, token: `${displayNum}${suffix}x2` };
   }
 
   const normalizedNumbers = [...numbers].sort((a, b) => a - b);
   const displayParts = normalizedNumbers.map(value => {
-    const ch = (suitMatch === '風' || suitMatch === '字') ? honorNumberToChar(suitMatch, value) : String(value);
+    const ch = (suitMatch === '風' || suitMatch === '字') ? honorNumberToChar(suitMatch, value) : suitNumberLabel(value);
     return isDragon(ch) ? ch : `${ch}${suitMatch}`;
   });
 
