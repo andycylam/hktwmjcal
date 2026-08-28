@@ -13,6 +13,16 @@ const WIND_VALUE_MAP: Record<'east' | 'south' | 'west' | 'north', number> = {
   north: 4
 };
 
+// 字牌嘅統一映射表（避免喺各函數內重複定義）
+const WIND_CHARS: Record<number, string> = { 1: '東', 2: '南', 3: '西', 4: '北' };
+const DRAGON_CHARS: Record<number, string> = { 5: '中', 6: '發', 7: '白' };
+const HONOR_CHARS: Record<number, string> = { ...WIND_CHARS, ...DRAGON_CHARS };
+const HONOR_CHAR_TO_NUMBER: Record<string, number> = Object.fromEntries(
+  Object.entries(HONOR_CHARS).map(([num, ch]) => [ch, Number(num)])
+);
+// 完整版字牌名稱（用於顯示）
+const FULL_DRAGON_NAMES: Record<number, string> = { 5: '紅中', 6: '發財', 7: '白板' };
+
 interface FanResult {
   rule: string;
   fan: number;
@@ -46,28 +56,29 @@ function getDeclaredKongCount(meldMap?: Record<string, MeldEntry>): number {
   return meldMap ? Object.values(meldMap).filter(m => m.kind === 'kong').length : 0;
 }
 
+// 統計手牌中每種牌（suit_value）出現嘅次數
+function countTileOccurrences(tiles: Tile[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const t of tiles) {
+    const key = `${t.suit}_${t.value}`;
+    counts.set(key, (counts.get(key) || 0) + 1);
+  }
+  return counts;
+}
+
 function honorNumberToChar(suitChar: string, num: number): string {
   if (suitChar === '風') {
-    const map = ['東', '南', '西', '北'];
-    if (num >= 5) {
-      const dragonMap: Record<number, string> = { 5: '紅中', 6: '發財', 7: '白板' };
-      return dragonMap[num] || String(num);
-    }
-    return map[num - 1] || String(num);
+    if (num >= 5) return FULL_DRAGON_NAMES[num] || String(num);
+    return WIND_CHARS[num] || String(num);
   }
   if (suitChar === '字') {
-    const map: Record<number, string> = { 5: '紅中', 6: '發財', 7: '白板' };
-    return map[num] || String(num);
+    return FULL_DRAGON_NAMES[num] || String(num);
   }
   return String(num);
 }
 
 function charToHonorNumber(ch: string): number | null {
-  const map: Record<string, number> = {
-    '東': 1, '南': 2, '西': 3, '北': 4,
-    '中': 5, '發': 6, '白': 7
-  };
-  return map[ch] ?? null;
+  return HONOR_CHAR_TO_NUMBER[ch] ?? null;
 }
 
 function getPrimaryNumberFromString(s: string): number {
@@ -160,64 +171,26 @@ function canonicalizeCombination(combo: string): string {
   return parts.map(part => part.token).join(', ');
 }
 
-function canFormMelds(countMap: Map<string, number>, visited = new Set<string>()): boolean {
-  const stateKey = [...countMap.entries()]
+function makeStateKey(countMap: Map<string, number>): string {
+  return [...countMap.entries()]
     .filter(([, v]) => v > 0)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([tile, count]) => `${tile}:${count}`)
     .join('|');
-
-  if (visited.has(stateKey)) return false;
-  visited.add(stateKey);
-
-  if (![...countMap.values()].some(value => value > 0)) return true;
-
-  for (const [tile, count] of countMap.entries()) {
-    if ((count || 0) <= 0) continue;
-
-    const [suit, valStr] = tile.split('_');
-    const value = Number(valStr);
-
-    if (count >= 3) {
-      const tripletNext = removeTiles(countMap, [tile, tile, tile]);
-      if (tripletNext && canFormMelds(tripletNext, new Set(visited))) return true;
-    }
-
-    if (['character', 'dot', 'bamboo'].includes(suit)) {
-      const seqPatterns = [
-        [value, value + 1, value + 2],
-        [value - 2, value - 1, value]
-      ];
-
-      for (const [a, b, c] of seqPatterns) {
-        if (a < 1 || b > 9 || c < 1 || c > 9) continue;
-        const sequenceTiles = [`${suit}_${a}`, `${suit}_${b}`, `${suit}_${c}`];
-        if (sequenceTiles.every(key => (countMap.get(key) || 0) > 0)) {
-          const sequenceNext = removeTiles(countMap, sequenceTiles);
-          if (sequenceNext && canFormMelds(sequenceNext, new Set(visited))) return true;
-        }
-      }
-    }
-  }
-
-  return false;
 }
 
-function collectMeldCombinations(countMap: Map<string, number>, visited = new Set<string>(), current: string[] = []): string[][] {
-  const stateKey = [...countMap.entries()]
-    .filter(([, v]) => v > 0)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([tile, count]) => `${tile}:${count}`)
-    .join('|');
+function hasRemainingTiles(countMap: Map<string, number>): boolean {
+  return [...countMap.values()].some(value => value > 0);
+}
 
-  if (visited.has(stateKey)) return [];
-  visited.add(stateKey);
+interface MeldSuccessor {
+  next: Map<string, number>;
+  label: string;
+}
 
-  if (![...countMap.values()].some(value => value > 0)) {
-    return [current.slice()];
-  }
-
-  const results: string[][] = [];
+// 列出移除一組面子（刻子／順子）後嘅所有延續狀態
+function getMeldSuccessors(countMap: Map<string, number>): MeldSuccessor[] {
+  const successors: MeldSuccessor[] = [];
 
   for (const [tile, count] of countMap.entries()) {
     if ((count || 0) <= 0) continue;
@@ -228,8 +201,7 @@ function collectMeldCombinations(countMap: Map<string, number>, visited = new Se
     if (count >= 3) {
       const tripletNext = removeTiles(countMap, [tile, tile, tile]);
       if (tripletNext) {
-        const grouped = collectMeldCombinations(tripletNext, new Set(visited), [...current, meldLabel([tile, tile, tile])]);
-        results.push(...grouped);
+        successors.push({ next: tripletNext, label: meldLabel([tile, tile, tile]) });
       }
     }
 
@@ -245,15 +217,46 @@ function collectMeldCombinations(countMap: Map<string, number>, visited = new Se
         if (sequenceTiles.every(key => (countMap.get(key) || 0) > 0)) {
           const sequenceNext = removeTiles(countMap, sequenceTiles);
           if (sequenceNext) {
-            const grouped = collectMeldCombinations(sequenceNext, new Set(visited), [...current, meldLabel(sequenceTiles)]);
-            results.push(...grouped);
+            successors.push({ next: sequenceNext, label: meldLabel(sequenceTiles) });
           }
         }
       }
     }
   }
 
-  return results.length > 0 ? results : [];
+  return successors;
+}
+
+function canFormMelds(countMap: Map<string, number>, visited = new Set<string>()): boolean {
+  const stateKey = makeStateKey(countMap);
+  if (visited.has(stateKey)) return false;
+  visited.add(stateKey);
+
+  if (!hasRemainingTiles(countMap)) return true;
+
+  for (const { next } of getMeldSuccessors(countMap)) {
+    if (canFormMelds(next, new Set(visited))) return true;
+  }
+
+  return false;
+}
+
+function collectMeldCombinations(countMap: Map<string, number>, visited = new Set<string>(), current: string[] = []): string[][] {
+  const stateKey = makeStateKey(countMap);
+  if (visited.has(stateKey)) return [];
+  visited.add(stateKey);
+
+  if (!hasRemainingTiles(countMap)) {
+    return [current.slice()];
+  }
+
+  const results: string[][] = [];
+
+  for (const { next, label } of getMeldSuccessors(countMap)) {
+    results.push(...collectMeldCombinations(next, new Set(visited), [...current, label]));
+  }
+
+  return results;
 }
 
 function hasHonorTiles(handTiles: Tile[], meldMap?: Record<string, MeldEntry>): boolean {
@@ -278,15 +281,11 @@ function scoreHonorTriplet(
   seatWindNum: number | undefined,
   prevailingWindNum: number | undefined
 ): { fan: number; breakdown: { rule: string; fan: number }[] } {
-  const honorNames: Record<number, string> = {
-    1: '東', 2: '南', 3: '西', 4: '北',
-    5: '中', 6: '發', 7: '白'
-  };
+  const name = HONOR_CHARS[value];
   if (value < 1 || value > 7) return { fan: 0, breakdown: [] };
 
   const breakdown: { rule: string; fan: number }[] = [];
   let fan = 0;
-  const name = honorNames[value];
 
   if (value <= 4) {
     if (value === seatWindNum) {
@@ -500,11 +499,7 @@ function checkLikGoo(
     return { isLikGoo: false };
   }
 
-  const handCounts = new Map<string, number>();
-  handTiles.forEach(t => {
-    const key = `${t.suit}_${t.value}`;
-    handCounts.set(key, (handCounts.get(key) || 0) + 1);
-  });
+  const handCounts = countTileOccurrences(handTiles);
 
   let pairCount = 0;
   let tripletCount = 0;
@@ -835,28 +830,13 @@ function doesMeldPartMatchTile(
 
   // 東、南、西、北
   if (tile.suit === 'wind') {
-    const windCharMap: Record<number, string> = {
-      1: '東',
-      2: '南',
-      3: '西',
-      4: '北'
-    };
-
-    const windChar = windCharMap[tile.value];
-
+    const windChar = WIND_CHARS[tile.value];
     return !!windChar && part.includes(windChar);
   }
 
   // 中、發、白
   if (tile.suit === 'dragon') {
-    const dragonCharMap: Record<number, string> = {
-      5: '中',
-      6: '發',
-      7: '白'
-    };
-
-    const dragonChar = dragonCharMap[tile.value];
-
+    const dragonChar = DRAGON_CHARS[tile.value];
     return !!dragonChar && part.includes(dragonChar);
   }
 
@@ -950,18 +930,9 @@ function calculateSingleHandForm(
     calc.add('嚦咕嚦咕', 40);
     // 124. 八對嚦咕
     if (huKey){
-      // 1. 統計包含胡牌在內嘅所有手牌數量
-      const counts = new Map<string, number>();
-      for (const t of handTiles) {
-        const key = `${t.suit}_${t.value}`;
-        counts.set(key, (counts.get(key) || 0) + 1);
-      }
-
-      // 2. 扣除胡牌嗰 1 張，計算「食糊前」嘅數量
+      const counts = countTileOccurrences(handTiles);
       const countBeforeHu = (counts.get(huKey) || 0) - 1;
-
-      // 3. 檢查食糊前是否剛好兩隻
-      if(countBeforeHu === 2) {
+      if (countBeforeHu === 2) {
         calc.add('八對嚦咕', 10);
       }
     }
@@ -1139,18 +1110,9 @@ function calculateSingleHandForm(
   }
   // 獨獨 (嚦咕)
   if (formType === 'likGoo' && huKey) {
-    // 1. 統計包含胡牌在內嘅所有手牌數量
-    const counts = new Map<string, number>();
-    for (const t of handTiles) {
-      const key = `${t.suit}_${t.value}`;
-      counts.set(key, (counts.get(key) || 0) + 1);
-    }
-
-    // 2. 扣除胡牌嗰 1 張，計算「食糊前」嘅數量
+    const counts = countTileOccurrences(handTiles);
     const countBeforeHu = (counts.get(huKey) || 0) - 1;
-
-    // 3. 檢查食糊前是否剛好得一隻
-    if(countBeforeHu === 1) {
+    if (countBeforeHu === 1) {
       calc.add('獨獨 (單吊)', 2);
     }
   }
