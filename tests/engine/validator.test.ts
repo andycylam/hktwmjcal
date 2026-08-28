@@ -643,6 +643,12 @@ describe('validator kong-adjusted total', () => {
       handTiles.push(makeTile('wind', 1, 2));
 
       expect(isAllChows(handTiles, undefined)).toBe(true);
+      const isSelfDrawn = true;
+      const res = calculateHandFan(handTiles, undefined, isSelfDrawn, undefined, {
+        prevailingWind: 'south',
+        seatWind: 'east',
+      });
+      expectRuleScored(res, '平糊', 5);
     });
 
     it('returns true when 1 chow is declared and hand is 4 chows + pair (14 tiles)', () => {
