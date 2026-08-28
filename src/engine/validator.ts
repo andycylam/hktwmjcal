@@ -8,10 +8,11 @@ import {
   canonicalizeCombination,
   getPrimaryNumberFromString,
   getDeclaredKongCount,
+  hasConcealedKong,
   hasHonorTiles,
   scoreHonorTriplet,
   scoreFlower,
-  hasNonFlowerMelds,
+  hasExposedNonKongMeld,
   isFullFlush,
   WIND_VALUE_MAP,
   cloneCounts,
@@ -50,7 +51,7 @@ function calculateSingleHandForm(
 
   const hasHonor = hasHonorTiles(handTiles, meldMap);
   const hasFlower = allFlowerTiles.length > 0;
-  const hasNonFlowerMeld = hasNonFlowerMelds(meldMap);
+  const hasExposedNonKong = hasExposedNonKongMeld(meldMap);
 
   let countNoHonor = true;  //不計無字
   let countNoFlower = true; //不計無花
@@ -83,7 +84,7 @@ function calculateSingleHandForm(
   }
 
   // 151. & 152. 特殊求人牌型 (僅限基本形)
-  if (formType === 'basic' && handTiles.length === 2) {
+  if (formType === 'basic' && handTiles.length === 2 && !hasConcealedKong(meldMap)) {
     if (!huIsZimo) calc.add('全求人', 40);
     else { calc.add('半求人', 20); countZimo = false; }
   }
@@ -256,7 +257,7 @@ function calculateSingleHandForm(
     }
   }
 
-  // 18. & 21. 花牌 (共通)
+  // 17. 無花 & 18. 花牌 & 21. 一台花 & 154. 八仙過海 (共通)
   if (!hasFlower) {
     if (countNoFlower) calc.add('無花', 1);
   } else {
@@ -279,8 +280,8 @@ function calculateSingleHandForm(
     }
   }
 
-  // 2. 門清 (僅基本形成立)
-  if (formType === 'basic' && !hasNonFlowerMeld && !hasFlower) {
+  // 2. 門清 (僅基本形成立) — 槓子不影響門清
+  if (formType === 'basic' && !hasExposedNonKong && !hasFlower) {
     calc.add('門清', 5);
   }
 

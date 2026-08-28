@@ -71,6 +71,13 @@ export function getDeclaredKongCount(meldMap?: Record<string, MeldEntry>): numbe
   return meldMap ? Object.values(meldMap).filter(m => m.kind === 'kong').length : 0;
 }
 
+
+// True if any meld is a concealed kong (暗槓)
+export function hasConcealedKong(meldMap?: Record<string, MeldEntry>): boolean {
+  if (!meldMap) return false;
+  return Object.values(meldMap).some(m => m.kind === 'kong' && m.concealed === true);
+}
+
 // 統計手牌中每種牌（suit_value）出現嘅次數
 export function countTileOccurrences(tiles: Tile[]): Map<string, number> {
   const counts = new Map<string, number>();
@@ -370,6 +377,17 @@ export function hasNonFlowerMelds(meldMap?: Record<string, MeldEntry>): boolean 
     }
   }
 
+  return false;
+}
+
+// True if there's any exposed meld that isn't a kong (pung or shang)
+// Kong — even exposed — does not break 門清
+export function hasExposedNonKongMeld(meldMap?: Record<string, MeldEntry>): boolean {
+  if (!meldMap) return false;
+  for (const key in meldMap) {
+    const kind = meldMap[key].kind;
+    if (kind !== 'flower' && kind !== 'kong') return true;
+  }
   return false;
 }
 
