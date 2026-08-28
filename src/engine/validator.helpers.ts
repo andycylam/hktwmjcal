@@ -438,4 +438,42 @@ export function isVoidInOneSuit(handTiles: Tile[], meldMap?: Record<string, Meld
   return !hasChar || !hasDot || !hasBamboo;
 }
 
+// 平糊：5 個順子（shang）+ 1 對，無刻子/槓子
+export function isAllChows(handTiles: Tile[], meldMap?: Record<string, MeldEntry>): boolean {
+  const nonFlowerMelds = meldMap ? Object.values(meldMap).filter(m => m.kind !== 'flower') : [];
+  const existingMeldCount = nonFlowerMelds.length;
+  const neededMelds = 5 - existingMeldCount;
+
+  if (neededMelds < 0) return false;
+
+  const relevantTiles = [...handTiles];
+  const relevantMelds = nonFlowerMelds.filter(m => m.kind !== 'flower');
+  for (const m of relevantMelds) {
+    relevantTiles.push(...m.tiles);
+  }
+
+  const expectedRemaining = neededMelds * 3 + 2;
+  if (handTiles.length !== expectedRemaining) return false;
+
+  const remainingCounts = new Map<string, number>();
+  for (const t of handTiles) {
+    const key = `${t.suit}_${t.value}`;
+    remainingCounts.set(key, (remainingCounts.get(key) || 0) + 1);
+  }
+
+  for (const [k, c] of remainingCounts.entries()) {
+    if (c >= 2) {
+      const copy = cloneCounts(remainingCounts);
+      copy.set(k, c - 2);
+      const combos = collectMeldCombinations(copy);
+      for (const combo of combos) {
+        if (combo.length === neededMelds && combo.every(m => !m.includes('x3'))) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
 

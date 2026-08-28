@@ -15,6 +15,7 @@ import {
   hasExposedNonKongMeld,
   isFullFlush,
   isVoidInOneSuit,
+  isAllChows,
   WIND_VALUE_MAP,
   cloneCounts,
   canFormMelds,
@@ -167,6 +168,11 @@ function calculateSingleHandForm(
   if (countVoidInOneSuit && isVoidInOneSuit(handTiles, meldMap)) {
     countNoHonor = false;
     calc.add('缺一門', 10);
+  }
+
+  // 28. 平糊（5個順子 + 1對，無刻子）
+  if (formType === 'basic' && isAllChows(handTiles, meldMap)) {
+    calc.add('平糊', 5);
   } 
 
   // 14. 無字

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { calculateHandFan } from '../../src/engine/validator';
 import { Tile } from '../../src/types/mahjong';
 import { makeTile, expectRuleScored } from '../testHelpers';
+import { isAllChows } from '../../src/engine/validator.helpers';
 
 describe('validator kong-adjusted total', () => {
   it('accepts counted tiles equal to 17 + number_of_kongs', () => {
@@ -614,4 +615,169 @@ describe('validator kong-adjusted total', () => {
     expectRuleScored(res, '清一色', 120);
   });
 
+  describe('isAllChows (平糊)', () => {
+    it('returns true for 5 chows + pair with no declared melds (17 tiles)', () => {
+      const handTiles: Tile[] = [];
+      // chow 1: 萬 1-2-3
+      handTiles.push(makeTile('character', 1, 1));
+      handTiles.push(makeTile('character', 2, 1));
+      handTiles.push(makeTile('character', 3, 1));
+      // chow 2: 萬 4-5-6
+      handTiles.push(makeTile('character', 4, 2));
+      handTiles.push(makeTile('character', 5, 2));
+      handTiles.push(makeTile('character', 6, 2));
+      // chow 3: 筒 1-2-3
+      handTiles.push(makeTile('dot', 1, 1));
+      handTiles.push(makeTile('dot', 2, 1));
+      handTiles.push(makeTile('dot', 3, 1));
+      // chow 4: 筒 4-5-6
+      handTiles.push(makeTile('dot', 4, 2));
+      handTiles.push(makeTile('dot', 5, 2));
+      handTiles.push(makeTile('dot', 6, 2));
+      // chow 5: 索 7-8-9
+      handTiles.push(makeTile('bamboo', 7, 1));
+      handTiles.push(makeTile('bamboo', 8, 1));
+      handTiles.push(makeTile('bamboo', 9, 1));
+      // pair: 東 x2
+      handTiles.push(makeTile('wind', 1, 1));
+      handTiles.push(makeTile('wind', 1, 2));
+
+      expect(isAllChows(handTiles, undefined)).toBe(true);
+    });
+
+    it('returns true when 1 chow is declared and hand is 4 chows + pair (14 tiles)', () => {
+      const handTiles: Tile[] = [];
+      // chow 1: 萬 1-2-3
+      handTiles.push(makeTile('character', 1, 1));
+      handTiles.push(makeTile('character', 2, 1));
+      handTiles.push(makeTile('character', 3, 1));
+      // chow 2: 筒 1-2-3
+      handTiles.push(makeTile('dot', 1, 1));
+      handTiles.push(makeTile('dot', 2, 1));
+      handTiles.push(makeTile('dot', 3, 1));
+      // chow 3: 索 4-5-6
+      handTiles.push(makeTile('bamboo', 4, 1));
+      handTiles.push(makeTile('bamboo', 5, 1));
+      handTiles.push(makeTile('bamboo', 6, 1));
+      // chow 4: 萬 7-8-9
+      handTiles.push(makeTile('character', 7, 2));
+      handTiles.push(makeTile('character', 8, 2));
+      handTiles.push(makeTile('character', 9, 2));
+      // pair: 中 x2
+      handTiles.push(makeTile('dragon', 5, 1));
+      handTiles.push(makeTile('dragon', 5, 2));
+
+      const meldMap: Record<string, any> = {
+        'dot_4@chow': { kind: 'chow', tiles: [makeTile('dot', 4, 1), makeTile('dot', 5, 1), makeTile('dot', 6, 1)] }
+      };
+
+      expect(isAllChows(handTiles, meldMap)).toBe(true);
+    });
+
+    it('returns true when all 5 chows are declared and hand holds only the pair (2 tiles)', () => {
+      const handTiles: Tile[] = [
+        makeTile('dot', 3, 1),
+        makeTile('dot', 3, 2),
+      ];
+
+      const meldMap: Record<string, any> = {
+        'm1': { kind: 'chow', tiles: [makeTile('character', 1, 1), makeTile('character', 2, 1), makeTile('character', 3, 1)] },
+        'm2': { kind: 'chow', tiles: [makeTile('dot', 1, 1), makeTile('dot', 2, 1), makeTile('dot', 3, 1)] },
+        'm3': { kind: 'chow', tiles: [makeTile('bamboo', 4, 1), makeTile('bamboo', 5, 1), makeTile('bamboo', 6, 1)] },
+        'm4': { kind: 'chow', tiles: [makeTile('character', 5, 2), makeTile('character', 6, 2), makeTile('character', 7, 2)] },
+        'm5': { kind: 'chow', tiles: [makeTile('bamboo', 7, 2), makeTile('bamboo', 8, 2), makeTile('bamboo', 9, 2)] },
+      };
+
+      expect(isAllChows(handTiles, meldMap)).toBe(true);
+    });
+
+    it('returns false when the hand contains a triplet (not all chows)', () => {
+      const handTiles: Tile[] = [];
+      // triplet: 萬 1-1-1
+      handTiles.push(makeTile('character', 1, 1));
+      handTiles.push(makeTile('character', 1, 2));
+      handTiles.push(makeTile('character', 1, 3));
+      // chow 2: 萬 4-5-6
+      handTiles.push(makeTile('character', 4, 2));
+      handTiles.push(makeTile('character', 5, 2));
+      handTiles.push(makeTile('character', 6, 2));
+      // chow 3: 筒 1-2-3
+      handTiles.push(makeTile('dot', 1, 1));
+      handTiles.push(makeTile('dot', 2, 1));
+      handTiles.push(makeTile('dot', 3, 1));
+      // chow 4: 筒 4-5-6
+      handTiles.push(makeTile('dot', 4, 2));
+      handTiles.push(makeTile('dot', 5, 2));
+      handTiles.push(makeTile('dot', 6, 2));
+      // chow 5: 索 7-8-9
+      handTiles.push(makeTile('bamboo', 7, 1));
+      handTiles.push(makeTile('bamboo', 8, 1));
+      handTiles.push(makeTile('bamboo', 9, 1));
+      // pair: 東 x2
+      handTiles.push(makeTile('wind', 1, 1));
+      handTiles.push(makeTile('wind', 1, 2));
+
+      expect(isAllChows(handTiles, undefined)).toBe(false);
+    });
+
+    it('returns true even when declared meld is a triplet, since only hand tiles are checked', () => {
+      const handTiles: Tile[] = [];
+      // chow 1: 萬 1-2-3
+      handTiles.push(makeTile('character', 1, 1));
+      handTiles.push(makeTile('character', 2, 1));
+      handTiles.push(makeTile('character', 3, 1));
+      // chow 2: 筒 4-5-6
+      handTiles.push(makeTile('dot', 4, 1));
+      handTiles.push(makeTile('dot', 5, 1));
+      handTiles.push(makeTile('dot', 6, 1));
+      // chow 3: 索 7-8-9
+      handTiles.push(makeTile('bamboo', 7, 1));
+      handTiles.push(makeTile('bamboo', 8, 1));
+      handTiles.push(makeTile('bamboo', 9, 1));
+      // chow 4: 萬 1-2-3
+      handTiles.push(makeTile('character', 1, 2));
+      handTiles.push(makeTile('character', 2, 2));
+      handTiles.push(makeTile('character', 3, 2));
+      // pair: 中 x2
+      handTiles.push(makeTile('dragon', 5, 1));
+      handTiles.push(makeTile('dragon', 5, 2));
+
+      const meldMap: Record<string, any> = {
+        'character_5@pung': { kind: 'pung', tiles: [makeTile('character', 5, 1), makeTile('character', 6, 1), makeTile('character', 7, 1)] }
+      };
+
+      // Function checks only hand tiles, not declared meld types
+      expect(isAllChows(handTiles, meldMap)).toBe(true);
+    });
+
+    it('returns true even when declared meld is a kong, since only hand tiles are checked', () => {
+      const handTiles: Tile[] = [];
+      // chow 1: 萬 1-2-3
+      handTiles.push(makeTile('character', 1, 1));
+      handTiles.push(makeTile('character', 2, 1));
+      handTiles.push(makeTile('character', 3, 1));
+      // chow 2: 筒 4-5-6
+      handTiles.push(makeTile('dot', 4, 1));
+      handTiles.push(makeTile('dot', 5, 1));
+      handTiles.push(makeTile('dot', 6, 1));
+      // chow 3: 索 7-8-9
+      handTiles.push(makeTile('bamboo', 7, 1));
+      handTiles.push(makeTile('bamboo', 8, 1));
+      handTiles.push(makeTile('bamboo', 9, 1));
+      // chow 4: 萬 1-2-3
+      handTiles.push(makeTile('character', 1, 2));
+      handTiles.push(makeTile('character', 2, 2));
+      handTiles.push(makeTile('character', 3, 2));
+      // pair: 東 x2
+      handTiles.push(makeTile('wind', 1, 1));
+      handTiles.push(makeTile('wind', 1, 2));
+
+      const meldMap: Record<string, any> = {
+        'bamboo_1@kong': { kind: 'kong', tiles: [makeTile('bamboo', 1, 1), makeTile('bamboo', 1, 2), makeTile('bamboo', 1, 3), makeTile('bamboo', 1, 4)] }
+      };
+
+      // Function checks only hand tiles, not declared meld types
+      expect(isAllChows(handTiles, meldMap)).toBe(true);
+    });
+  });
 });
