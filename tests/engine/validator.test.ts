@@ -786,4 +786,590 @@ describe('validator kong-adjusted total', () => {
       expect(isAllChows(handTiles, meldMap)).toBe(true);
     });
   });
+
+  // ----------------------------------------------------------------------
+  // 將眼 (Jeung Ngaan) Tests
+  // ----------------------------------------------------------------------
+  describe('將眼', () => {
+    it('scores 2 fan when pair is value 5 suited (五萬)', () => {
+      const handTiles: Tile[] = [];
+      // 4 chows
+      handTiles.push(makeTile('dot', 1, 1), makeTile('dot', 2, 1), makeTile('dot', 3, 1));
+      handTiles.push(makeTile('dot', 4, 1), makeTile('dot', 5, 1), makeTile('dot', 6, 1));
+      handTiles.push(makeTile('bamboo', 1, 1), makeTile('bamboo', 2, 1), makeTile('bamboo', 3, 1));
+      handTiles.push(makeTile('bamboo', 7, 1), makeTile('bamboo', 8, 1), makeTile('bamboo', 9, 1));
+      // triplet
+      handTiles.push(makeTile('dragon', 5, 1), makeTile('dragon', 5, 2), makeTile('dragon', 5, 3));
+      // pair: 五萬 x2
+      handTiles.push(makeTile('character', 5, 1), makeTile('character', 5, 2));
+
+      const isSelfDrawn = true;
+      const res = calculateHandFan(handTiles, undefined, isSelfDrawn, undefined, {
+        prevailingWind: 'south',
+        seatWind: 'east',
+      });
+
+      expect(res.isValid).toBe(true);
+      expectRuleScored(res, '將眼', 2);
+    });
+
+    it('scores 2 fan when pair is value 2 suited (二萬)', () => {
+      const handTiles: Tile[] = [];
+      handTiles.push(makeTile('dot', 1, 1), makeTile('dot', 2, 1), makeTile('dot', 3, 1));
+      handTiles.push(makeTile('dot', 4, 1), makeTile('dot', 5, 1), makeTile('dot', 6, 1));
+      handTiles.push(makeTile('bamboo', 1, 1), makeTile('bamboo', 2, 1), makeTile('bamboo', 3, 1));
+      handTiles.push(makeTile('bamboo', 7, 1), makeTile('bamboo', 8, 1), makeTile('bamboo', 9, 1));
+      handTiles.push(makeTile('dragon', 5, 1), makeTile('dragon', 5, 2), makeTile('dragon', 5, 3));
+      // pair: 二萬 x2
+      handTiles.push(makeTile('character', 2, 1), makeTile('character', 2, 2));
+
+      const res = calculateHandFan(handTiles, undefined, true, undefined, {
+        prevailingWind: 'south',
+        seatWind: 'east',
+      });
+
+      expect(res.isValid).toBe(true);
+      expectRuleScored(res, '將眼', 2);
+    });
+
+    it('scores 2 fan when pair is value 8 suited (八索)', () => {
+      const handTiles: Tile[] = [];
+      handTiles.push(makeTile('dot', 1, 1), makeTile('dot', 2, 1), makeTile('dot', 3, 1));
+      handTiles.push(makeTile('dot', 4, 1), makeTile('dot', 5, 1), makeTile('dot', 6, 1));
+      handTiles.push(makeTile('character', 1, 1), makeTile('character', 2, 1), makeTile('character', 3, 1));
+      handTiles.push(makeTile('character', 7, 1), makeTile('character', 8, 1), makeTile('character', 9, 1));
+      handTiles.push(makeTile('dragon', 5, 1), makeTile('dragon', 5, 2), makeTile('dragon', 5, 3));
+      // pair: 八索 x2
+      handTiles.push(makeTile('bamboo', 8, 1), makeTile('bamboo', 8, 2));
+
+      const res = calculateHandFan(handTiles, undefined, true, undefined, {
+        prevailingWind: 'south',
+        seatWind: 'east',
+      });
+
+      expect(res.isValid).toBe(true);
+      expectRuleScored(res, '將眼', 2);
+    });
+
+    it('does NOT score 將眼 when pair value is 1 (not in 2,5,8)', () => {
+      const handTiles: Tile[] = [];
+      handTiles.push(makeTile('dot', 1, 1), makeTile('dot', 2, 1), makeTile('dot', 3, 1));
+      handTiles.push(makeTile('dot', 4, 1), makeTile('dot', 5, 1), makeTile('dot', 6, 1));
+      handTiles.push(makeTile('bamboo', 1, 1), makeTile('bamboo', 2, 1), makeTile('bamboo', 3, 1));
+      handTiles.push(makeTile('bamboo', 7, 1), makeTile('bamboo', 8, 1), makeTile('bamboo', 9, 1));
+      handTiles.push(makeTile('dragon', 5, 1), makeTile('dragon', 5, 2), makeTile('dragon', 5, 3));
+      // pair: 一萬 x2 (value 1, NOT in [2,5,8])
+      handTiles.push(makeTile('character', 1, 1), makeTile('character', 1, 2));
+
+      const res = calculateHandFan(handTiles, undefined, true, undefined, {
+        prevailingWind: 'south',
+        seatWind: 'east',
+      });
+
+      expect(res.isValid).toBe(true);
+      const jeungNgaan = res.breakdown.find(b => b.rule?.startsWith('將眼'));
+      expect(jeungNgaan).toBeUndefined();
+    });
+
+    it('does NOT score 將眼 when pair value is 3 (not in 2,5,8)', () => {
+      const handTiles: Tile[] = [];
+      handTiles.push(makeTile('dot', 1, 1), makeTile('dot', 2, 1), makeTile('dot', 3, 1));
+      handTiles.push(makeTile('dot', 4, 1), makeTile('dot', 5, 1), makeTile('dot', 6, 1));
+      handTiles.push(makeTile('bamboo', 1, 1), makeTile('bamboo', 2, 1), makeTile('bamboo', 3, 1));
+      handTiles.push(makeTile('bamboo', 7, 1), makeTile('bamboo', 8, 1), makeTile('bamboo', 9, 1));
+      handTiles.push(makeTile('dragon', 5, 1), makeTile('dragon', 5, 2), makeTile('dragon', 5, 3));
+      // pair: 三萬 x2
+      handTiles.push(makeTile('character', 3, 1), makeTile('character', 3, 2));
+
+      const res = calculateHandFan(handTiles, undefined, true, undefined, {
+        prevailingWind: 'south',
+        seatWind: 'east',
+      });
+
+      expect(res.isValid).toBe(true);
+      const jeungNgaan = res.breakdown.find(b => b.rule?.startsWith('將眼'));
+      expect(jeungNgaan).toBeUndefined();
+    });
+
+    it('does NOT score 將眼 when pair is a wind tile', () => {
+      const handTiles: Tile[] = [];
+      handTiles.push(makeTile('dot', 1, 1), makeTile('dot', 2, 1), makeTile('dot', 3, 1));
+      handTiles.push(makeTile('dot', 4, 1), makeTile('dot', 5, 1), makeTile('dot', 6, 1));
+      handTiles.push(makeTile('bamboo', 1, 1), makeTile('bamboo', 2, 1), makeTile('bamboo', 3, 1));
+      handTiles.push(makeTile('bamboo', 7, 1), makeTile('bamboo', 8, 1), makeTile('bamboo', 9, 1));
+      handTiles.push(makeTile('dragon', 5, 1), makeTile('dragon', 5, 2), makeTile('dragon', 5, 3));
+      // pair: 東 x2 (wind, no 萬/筒/索 suit)
+      handTiles.push(makeTile('wind', 1, 1), makeTile('wind', 1, 2));
+
+      const res = calculateHandFan(handTiles, undefined, true, undefined, {
+        prevailingWind: 'south',
+        seatWind: 'east',
+      });
+
+      expect(res.isValid).toBe(true);
+      const jeungNgaan = res.breakdown.find(b => b.rule?.startsWith('將眼'));
+      expect(jeungNgaan).toBeUndefined();
+    });
+
+    it('does NOT score 將眼 when pair is a dragon tile', () => {
+      const handTiles: Tile[] = [];
+      handTiles.push(makeTile('dot', 1, 1), makeTile('dot', 2, 1), makeTile('dot', 3, 1));
+      handTiles.push(makeTile('dot', 4, 1), makeTile('dot', 5, 1), makeTile('dot', 6, 1));
+      handTiles.push(makeTile('bamboo', 1, 1), makeTile('bamboo', 2, 1), makeTile('bamboo', 3, 1));
+      handTiles.push(makeTile('bamboo', 7, 1), makeTile('bamboo', 8, 1), makeTile('bamboo', 9, 1));
+      handTiles.push(makeTile('character', 1, 1), makeTile('character', 2, 1), makeTile('character', 3, 1));
+      // pair: 中 x2 (dragon, no 萬/筒/索 suit)
+      handTiles.push(makeTile('dragon', 5, 1), makeTile('dragon', 5, 2));
+
+      const res = calculateHandFan(handTiles, undefined, true, undefined, {
+        prevailingWind: 'south',
+        seatWind: 'east',
+      });
+
+      expect(res.isValid).toBe(true);
+      const jeungNgaan = res.breakdown.find(b => b.rule?.startsWith('將眼'));
+      expect(jeungNgaan).toBeUndefined();
+    });
+  });
+
+  // ----------------------------------------------------------------------
+  // 對碰 (Dui Pung) Tests
+  // ----------------------------------------------------------------------
+  describe('對碰', () => {
+    it('scores 1 fan when suited pair is completed by hu tile (basic form)', () => {
+      // 1 declared chow + handTiles (14 tiles) including huTile
+      // Hand: 索4-5-6, 索7-8-9, 筒1-2-3, 萬5x3 (triplet), 萬2x2 (pair)
+      // huTile = 萬5 (completes 萬2 pair into 萬5 triplet)
+      const meldMap: Record<string, any> = {
+        'bamboo_1@chow': {
+          kind: 'chow',
+          tiles: [makeTile('bamboo', 1, 1), makeTile('bamboo', 2, 2), makeTile('bamboo', 3, 3)],
+        },
+      };
+      const handTiles: Tile[] = [
+        makeTile('dot', 4, 1), makeTile('dot', 5, 1), makeTile('dot', 6, 1),
+        makeTile('bamboo', 4, 1), makeTile('bamboo', 5, 1), makeTile('bamboo', 6, 1),
+        makeTile('bamboo', 7, 1), makeTile('bamboo', 8, 1), makeTile('bamboo', 9, 1),
+        makeTile('character', 5, 1), makeTile('character', 5, 2), makeTile('character', 5, 3),
+        makeTile('character', 2, 1), makeTile('character', 2, 2),
+      ];
+      const huTile = makeTile('character', 5, 99);
+
+      const res = calculateHandFan(handTiles, meldMap, false, huTile, {
+        prevailingWind: 'south',
+        seatWind: 'east',
+      });
+
+      expect(res.isValid).toBe(true);
+      expectRuleScored(res, '對碰', 1);
+    });
+
+    it('scores 1 fan when dot pair is completed by hu tile', () => {
+      const meldMap: Record<string, any> = {
+        'character_1@chow': {
+          kind: 'chow',
+          tiles: [makeTile('character', 1, 1), makeTile('character', 2, 2), makeTile('character', 3, 3)],
+        },
+      };
+      const handTiles: Tile[] = [
+        makeTile('dot', 4, 1), makeTile('dot', 5, 1), makeTile('dot', 6, 1),
+        makeTile('dot', 7, 1), makeTile('dot', 8, 1), makeTile('dot', 9, 1),
+        makeTile('bamboo', 1, 1), makeTile('bamboo', 2, 1), makeTile('bamboo', 3, 1),
+        makeTile('bamboo', 5, 1), makeTile('bamboo', 5, 2), makeTile('bamboo', 5, 3),
+        makeTile('bamboo', 2, 1), makeTile('bamboo', 2, 2),
+      ];
+      const huTile = makeTile('bamboo', 5, 99);
+
+      const res = calculateHandFan(handTiles, meldMap, false, huTile, {
+        prevailingWind: 'south',
+        seatWind: 'east',
+      });
+
+      expect(res.isValid).toBe(true);
+      expectRuleScored(res, '對碰', 1);
+    });
+
+    it('scores 1 fan when wind pair is completed by hu tile', () => {
+      const meldMap: Record<string, any> = {
+        'dot_1@chow': {
+          kind: 'chow',
+          tiles: [makeTile('dot', 1, 1), makeTile('dot', 2, 2), makeTile('dot', 3, 3)],
+        },
+      };
+      const handTiles: Tile[] = [
+        makeTile('dot', 4, 1), makeTile('dot', 5, 1), makeTile('dot', 6, 1),
+        makeTile('bamboo', 1, 1), makeTile('bamboo', 2, 1), makeTile('bamboo', 3, 1),
+        makeTile('bamboo', 4, 1), makeTile('bamboo', 5, 1), makeTile('bamboo', 6, 1),
+        makeTile('wind', 1, 1), makeTile('wind', 1, 2), makeTile('wind', 1, 3),
+        makeTile('wind', 2, 1), makeTile('wind', 2, 2),
+      ];
+      const huTile = makeTile('wind', 1, 99);
+
+      const res = calculateHandFan(handTiles, meldMap, false, huTile, {
+        prevailingWind: 'south',
+        seatWind: 'east',
+      });
+
+      expect(res.isValid).toBe(true);
+      expectRuleScored(res, '對碰', 1);
+    });
+
+    it('scores 1 fan when dragon pair is completed by hu tile', () => {
+      const meldMap: Record<string, any> = {
+        'dot_1@chow': {
+          kind: 'chow',
+          tiles: [makeTile('dot', 1, 1), makeTile('dot', 2, 2), makeTile('dot', 3, 3)],
+        },
+      };
+      const handTiles: Tile[] = [
+        makeTile('dot', 4, 1), makeTile('dot', 5, 1), makeTile('dot', 6, 1),
+        makeTile('bamboo', 1, 1), makeTile('bamboo', 2, 1), makeTile('bamboo', 3, 1),
+        makeTile('bamboo', 4, 1), makeTile('bamboo', 5, 1), makeTile('bamboo', 6, 1),
+        makeTile('dragon', 5, 1), makeTile('dragon', 5, 2), makeTile('dragon', 5, 3),
+        makeTile('dragon', 6, 1), makeTile('dragon', 6, 2),
+      ];
+      const huTile = makeTile('dragon', 5, 99);
+
+      const res = calculateHandFan(handTiles, meldMap, false, huTile, {
+        prevailingWind: 'south',
+        seatWind: 'east',
+      });
+
+      expect(res.isValid).toBe(true);
+      expectRuleScored(res, '對碰', 1);
+    });
+
+    it('does NOT score 對碰 when hu tile does not complete a pair into a triplet', () => {
+      // Hand has a triplet and a pair, but huTile does not match the triplet
+      const meldMap: Record<string, any> = {
+        'bamboo_1@chow': {
+          kind: 'chow',
+          tiles: [makeTile('bamboo', 1, 1), makeTile('bamboo', 2, 2), makeTile('bamboo', 3, 3)],
+        },
+      };
+      const handTiles: Tile[] = [
+        makeTile('dot', 4, 1), makeTile('dot', 5, 1), makeTile('dot', 6, 1),
+        makeTile('dot', 7, 1), makeTile('dot', 8, 1), makeTile('dot', 9, 1),
+        makeTile('bamboo', 1, 1), makeTile('bamboo', 2, 1), makeTile('bamboo', 3, 1),
+        makeTile('character', 5, 1), makeTile('character', 5, 2), makeTile('character', 5, 3),
+        makeTile('character', 2, 1), makeTile('character', 2, 2),
+      ];
+      // huTile is 筒1, which does NOT match the existing triplet (萬5) or the pair (萬2)
+      const huTile = makeTile('dot', 1, 99);
+
+      const res = calculateHandFan(handTiles, meldMap, false, huTile, {
+        prevailingWind: 'south',
+        seatWind: 'east',
+      });
+
+      expect(res.isValid).toBe(true);
+      const duiPung = res.breakdown.find(b => b.rule === '對碰');
+      expect(duiPung).toBeUndefined();
+    });
+
+    it('does NOT score 對碰 when hand has no triplet (only sequences and a pair)', () => {
+      const meldMap: Record<string, any> = {
+        'bamboo_1@chow': {
+          kind: 'chow',
+          tiles: [makeTile('bamboo', 1, 1), makeTile('bamboo', 2, 2), makeTile('bamboo', 3, 3)],
+        },
+      };
+      const handTiles: Tile[] = [
+        makeTile('dot', 4, 1), makeTile('dot', 5, 1), makeTile('dot', 6, 1),
+        makeTile('dot', 7, 1), makeTile('dot', 8, 1), makeTile('dot', 9, 1),
+        makeTile('character', 1, 1), makeTile('character', 2, 1), makeTile('character', 3, 1),
+        makeTile('character', 4, 1), makeTile('character', 5, 1), makeTile('character', 6, 1),
+        makeTile('character', 2, 1), makeTile('character', 2, 2),
+      ];
+      const huTile = makeTile('character', 2, 99);
+
+      const res = calculateHandFan(handTiles, meldMap, false, huTile, {
+        prevailingWind: 'south',
+        seatWind: 'east',
+      });
+
+      expect(res.isValid).toBe(true);
+      const duiPung = res.breakdown.find(b => b.rule === '對碰');
+      expect(duiPung).toBeUndefined();
+    });
+  });
+
+  // ----------------------------------------------------------------------
+  // 將眼 Additional Edge Case Tests
+  // ----------------------------------------------------------------------
+  describe('將眼 additional edge cases', () => {
+    it('scores 2 fan for 將眼 with pair 八萬 (character suit, value 8)', () => {
+      const handTiles: Tile[] = [];
+      handTiles.push(makeTile('dot', 1, 1), makeTile('dot', 2, 1), makeTile('dot', 3, 1));
+      handTiles.push(makeTile('dot', 4, 1), makeTile('dot', 5, 1), makeTile('dot', 6, 1));
+      handTiles.push(makeTile('bamboo', 1, 1), makeTile('bamboo', 2, 1), makeTile('bamboo', 3, 1));
+      handTiles.push(makeTile('bamboo', 7, 1), makeTile('bamboo', 8, 1), makeTile('bamboo', 9, 1));
+      handTiles.push(makeTile('dragon', 5, 1), makeTile('dragon', 5, 2), makeTile('dragon', 5, 3));
+      handTiles.push(makeTile('character', 8, 1), makeTile('character', 8, 2));
+      const res = calculateHandFan(handTiles, undefined, true, undefined, {
+        prevailingWind: 'south', seatWind: 'east',
+      });
+      expect(res.isValid).toBe(true);
+      expectRuleScored(res, '將眼', 2);
+    });
+
+    it('scores 2 fan for 將眼 with pair 二筒 (dot suit, value 2)', () => {
+      const handTiles: Tile[] = [];
+      handTiles.push(makeTile('dot', 1, 1), makeTile('dot', 2, 1), makeTile('dot', 3, 1));
+      handTiles.push(makeTile('dot', 4, 1), makeTile('dot', 5, 1), makeTile('dot', 6, 1));
+      handTiles.push(makeTile('bamboo', 1, 1), makeTile('bamboo', 2, 1), makeTile('bamboo', 3, 1));
+      handTiles.push(makeTile('bamboo', 7, 1), makeTile('bamboo', 8, 1), makeTile('bamboo', 9, 1));
+      handTiles.push(makeTile('dragon', 5, 1), makeTile('dragon', 5, 2), makeTile('dragon', 5, 3));
+      handTiles.push(makeTile('dot', 2, 1), makeTile('dot', 2, 2));
+      const res = calculateHandFan(handTiles, undefined, true, undefined, {
+        prevailingWind: 'south', seatWind: 'east',
+      });
+      expect(res.isValid).toBe(true);
+      expectRuleScored(res, '將眼', 2);
+    });
+
+    it('scores 2 fan for 將眼 in non-self-drawn hand with meldMap', () => {
+      const meldMap: Record<string, any> = {
+        'dot_1@chow': { kind: 'chow', tiles: [makeTile('dot', 1, 1), makeTile('dot', 2, 2), makeTile('dot', 3, 3)] },
+      };
+      const handTiles: Tile[] = [
+        makeTile('dot', 4, 1), makeTile('dot', 5, 1), makeTile('dot', 6, 1),
+        makeTile('bamboo', 1, 1), makeTile('bamboo', 2, 1), makeTile('bamboo', 3, 1),
+        makeTile('bamboo', 7, 1), makeTile('bamboo', 8, 1), makeTile('bamboo', 9, 1),
+        makeTile('dragon', 5, 1), makeTile('dragon', 5, 2), makeTile('dragon', 5, 3),
+        makeTile('character', 5, 1), makeTile('character', 5, 2),
+      ];
+      const huTile = makeTile('character', 5, 99);
+      const res = calculateHandFan(handTiles, meldMap, false, huTile, {
+        prevailingWind: 'south', seatWind: 'east',
+      });
+      expect(res.isValid).toBe(true);
+      expectRuleScored(res, '將眼', 2);
+    });
+
+    it('does NOT score 將眼 when pair value is 4 (not in 2,5,8)', () => {
+      const handTiles: Tile[] = [];
+      handTiles.push(makeTile('dot', 1, 1), makeTile('dot', 2, 1), makeTile('dot', 3, 1));
+      handTiles.push(makeTile('dot', 4, 1), makeTile('dot', 5, 1), makeTile('dot', 6, 1));
+      handTiles.push(makeTile('bamboo', 1, 1), makeTile('bamboo', 2, 1), makeTile('bamboo', 3, 1));
+      handTiles.push(makeTile('bamboo', 7, 1), makeTile('bamboo', 8, 1), makeTile('bamboo', 9, 1));
+      handTiles.push(makeTile('dragon', 5, 1), makeTile('dragon', 5, 2), makeTile('dragon', 5, 3));
+      handTiles.push(makeTile('character', 4, 1), makeTile('character', 4, 2));
+      const res = calculateHandFan(handTiles, undefined, true, undefined, {
+        prevailingWind: 'south', seatWind: 'east',
+      });
+      expect(res.isValid).toBe(true);
+      const jeungNgaan = res.breakdown.find(b => b.rule?.startsWith('將眼'));
+      expect(jeungNgaan).toBeUndefined();
+    });
+
+    it('does NOT score 將眼 when pair value is 9 (not in 2,5,8)', () => {
+      const handTiles: Tile[] = [];
+      handTiles.push(makeTile('dot', 1, 1), makeTile('dot', 2, 1), makeTile('dot', 3, 1));
+      handTiles.push(makeTile('dot', 4, 1), makeTile('dot', 5, 1), makeTile('dot', 6, 1));
+      handTiles.push(makeTile('bamboo', 1, 1), makeTile('bamboo', 2, 1), makeTile('bamboo', 3, 1));
+      handTiles.push(makeTile('bamboo', 7, 1), makeTile('bamboo', 8, 1), makeTile('bamboo', 9, 1));
+      handTiles.push(makeTile('dragon', 5, 1), makeTile('dragon', 5, 2), makeTile('dragon', 5, 3));
+      handTiles.push(makeTile('character', 9, 1), makeTile('character', 9, 2));
+      const res = calculateHandFan(handTiles, undefined, true, undefined, {
+        prevailingWind: 'south', seatWind: 'east',
+      });
+      expect(res.isValid).toBe(true);
+      const jeungNgaan = res.breakdown.find(b => b.rule?.startsWith('將眼'));
+      expect(jeungNgaan).toBeUndefined();
+    });
+  });
+
+  // ----------------------------------------------------------------------
+  // 對碰 Additional Edge Case Tests
+  // ----------------------------------------------------------------------
+  describe('對碰 additional edge cases', () => {
+    it('scores 1 fan when huTile completes a pair and also scores 將眼', () => {
+      // Self-drawn: 17 tiles with triplet 萬5 + pair 萬5 + pair 萬2
+      // huTile = 萬5 completes the pair into triplet → 對碰
+      // pair value is 5 → 將眼 also scores
+      const handTiles: Tile[] = [
+        makeTile('dot', 1, 1), makeTile('dot', 2, 1), makeTile('dot', 3, 1),
+        makeTile('dot', 4, 1), makeTile('dot', 5, 1), makeTile('dot', 6, 1),
+        makeTile('bamboo', 1, 1), makeTile('bamboo', 2, 1), makeTile('bamboo', 3, 1),
+        makeTile('bamboo', 7, 1), makeTile('bamboo', 8, 1), makeTile('bamboo', 9, 1),
+        makeTile('character', 5, 1), makeTile('character', 5, 2), makeTile('character', 5, 3),
+        makeTile('character', 2, 1), makeTile('character', 2, 2),
+      ];
+      const huTile = makeTile('character', 5, 99);
+      const res = calculateHandFan(handTiles, undefined, true, huTile, {
+        prevailingWind: 'south', seatWind: 'east',
+      });
+      expect(res.isValid).toBe(true);
+      expectRuleScored(res, '對碰', 1);
+      expectRuleScored(res, '將眼', 2);
+    });
+
+    it('does NOT score 對碰 when huTile matches neither pair nor triplet', () => {
+      const meldMap: Record<string, any> = {
+        'dot_1@chow': { kind: 'chow', tiles: [makeTile('dot', 1, 1), makeTile('dot', 2, 2), makeTile('dot', 3, 3)] },
+      };
+      const handTiles: Tile[] = [
+        makeTile('dot', 4, 1), makeTile('dot', 5, 1), makeTile('dot', 6, 1),
+        makeTile('bamboo', 1, 1), makeTile('bamboo', 2, 1), makeTile('bamboo', 3, 1),
+        makeTile('bamboo', 4, 1), makeTile('bamboo', 5, 1), makeTile('bamboo', 6, 1),
+        makeTile('character', 5, 1), makeTile('character', 5, 2), makeTile('character', 5, 3),
+        makeTile('character', 2, 1), makeTile('character', 2, 2),
+      ];
+      const huTile = makeTile('bamboo', 9, 99);
+      const res = calculateHandFan(handTiles, meldMap, false, huTile, {
+        prevailingWind: 'south', seatWind: 'east',
+      });
+      expect(res.isValid).toBe(true);
+      const duiPung = res.breakdown.find(b => b.rule === '對碰');
+      expect(duiPung).toBeUndefined();
+    });
+
+    it('scores 1 fan when declared chow exists and huTile completes a pair', () => {
+      const meldMap: Record<string, any> = {
+        'dot_1@chow': { kind: 'chow', tiles: [makeTile('dot', 1, 1), makeTile('dot', 2, 2), makeTile('dot', 3, 3)] },
+      };
+      const handTiles: Tile[] = [
+        makeTile('dot', 4, 1), makeTile('dot', 5, 1), makeTile('dot', 6, 1),
+        makeTile('bamboo', 1, 1), makeTile('bamboo', 2, 1), makeTile('bamboo', 3, 1),
+        makeTile('bamboo', 7, 1), makeTile('bamboo', 8, 1), makeTile('bamboo', 9, 1),
+        makeTile('character', 5, 1), makeTile('character', 5, 2), makeTile('character', 5, 3),
+        makeTile('character', 2, 1), makeTile('character', 2, 2),
+      ];
+      const huTile = makeTile('character', 5, 99);
+      const res = calculateHandFan(handTiles, meldMap, false, huTile, {
+        prevailingWind: 'south', seatWind: 'east',
+      });
+      expect(res.isValid).toBe(true);
+      expectRuleScored(res, '對碰', 1);
+    });
+
+    it('scores 80 fan for 大三元 (all 3 dragon triplets concealed)', () => {
+      const handTiles: Tile[] = [
+        // 中×3 triplet
+        makeTile('dragon', 5, 1), makeTile('dragon', 5, 2), makeTile('dragon', 5, 3),
+        // 發×3 triplet
+        makeTile('dragon', 6, 1), makeTile('dragon', 6, 2), makeTile('dragon', 6, 3),
+        // 白×3 triplet
+        makeTile('dragon', 7, 1), makeTile('dragon', 7, 2), makeTile('dragon', 7, 3),
+        // 萬 1-2-3 chow
+        makeTile('character', 1, 1), makeTile('character', 2, 1), makeTile('character', 3, 1),
+        // 索 4-5-6 chow
+        makeTile('bamboo', 4, 1), makeTile('bamboo', 5, 1), makeTile('bamboo', 6, 1),
+        // pair 萬 7-7
+        makeTile('character', 7, 1), makeTile('character', 7, 2),
+      ];
+      const res = calculateHandFan(handTiles, undefined, true, undefined, {
+        prevailingWind: 'south', seatWind: 'east',
+      });
+      expect(res.isValid).toBe(true);
+      expectRuleScored(res, '大三元', 80);
+    });
+    it('scores 40 fan for 小三元 (2 dragon triplets + 1 dragon pair, self-drawn)', () => {
+      const handTiles: Tile[] = [
+        // 中×3 triplet
+        makeTile('dragon', 5, 1), makeTile('dragon', 5, 2), makeTile('dragon', 5, 3),
+        // 發×3 triplet
+        makeTile('dragon', 6, 1), makeTile('dragon', 6, 2), makeTile('dragon', 6, 3),
+        // 白×2 pair
+        makeTile('dragon', 7, 1), makeTile('dragon', 7, 2),
+        // 索 1-2-3 chow
+        makeTile('bamboo', 1, 1), makeTile('bamboo', 2, 1), makeTile('bamboo', 3, 1),
+        // 萬 4-5-6 chow
+        makeTile('character', 4, 1), makeTile('character', 5, 1), makeTile('character', 6, 1),
+        // 筒 7-8-9 chow
+        makeTile('dot', 7, 1), makeTile('dot', 8, 1), makeTile('dot', 9, 1),
+      ];
+      const res = calculateHandFan(handTiles, undefined, true, undefined, {
+        prevailingWind: 'south', seatWind: 'east',
+      });
+      expect(res.isValid).toBe(true);
+      expectRuleScored(res, '小三元', 40);
+    });
+
+    it('scores 40 fan for 小三元 with declared concealed kong (non-self-drawn)', () => {
+      const meldMap: Record<string, any> = {
+        'dragon_5@kong': {
+          kind: 'kong',
+          concealed: true,
+          tiles: [makeTile('dragon', 5, 1), makeTile('dragon', 5, 2), makeTile('dragon', 5, 3), makeTile('dragon', 5, 4)],
+        },
+      };
+      const handTiles: Tile[] = [
+        // 發×3 triplet
+        makeTile('dragon', 6, 1), makeTile('dragon', 6, 2), makeTile('dragon', 6, 3),
+        // 白×2 pair
+        makeTile('dragon', 7, 1), makeTile('dragon', 7, 2),
+        // 索 1-2-3 chow
+        makeTile('bamboo', 1, 1), makeTile('bamboo', 2, 1), makeTile('bamboo', 3, 1),
+        // 萬 4-5-6 chow
+        makeTile('character', 4, 1), makeTile('character', 5, 1), makeTile('character', 6, 1),
+        // 筒 7-8-9 chow
+        makeTile('dot', 7, 1), makeTile('dot', 8, 1), makeTile('dot', 9, 1),
+      ];
+      // handTiles = 14, meldTiles = 4 (kong), counted = 18, kongCount = 1, totalTilesNeeded = 18 ✓
+      // neededMelds = 5 - 1 = 4, expectedRemaining = 14 = handTiles.length ✓
+      const res = calculateHandFan(handTiles, meldMap, false, undefined, {
+        prevailingWind: 'south', seatWind: 'east',
+      });
+      expect(res.isValid).toBe(true);
+      expectRuleScored(res, '小三元', 40);
+    });
+
+    it('scores 80 fan for 大三元 with declared melds (exposed kongs)', () => {
+      const meldMap: Record<string, any> = {
+        'dragon_5@kong': {
+          kind: 'kong',
+          concealed: false,
+          tiles: [makeTile('dragon', 5, 1), makeTile('dragon', 5, 2), makeTile('dragon', 5, 3), makeTile('dragon', 5, 4)],
+        },
+        'dragon_6@kong': {
+          kind: 'kong',
+          concealed: false,
+          tiles: [makeTile('dragon', 6, 1), makeTile('dragon', 6, 2), makeTile('dragon', 6, 3), makeTile('dragon', 6, 4)],
+        },
+      };
+      const handTiles: Tile[] = [
+        // 白×3 triplet
+        makeTile('dragon', 7, 1), makeTile('dragon', 7, 2), makeTile('dragon', 7, 3),
+        // pair 索 1-1
+        makeTile('bamboo', 1, 1), makeTile('bamboo', 1, 2),
+        // 萬 2-3-4 chow
+        makeTile('character', 2, 1), makeTile('character', 3, 1), makeTile('character', 4, 1),
+        // 萬 5-6-7 chow
+        makeTile('character', 5, 1), makeTile('character', 6, 1), makeTile('character', 7, 1),
+      ];
+      // handTiles = 11, meldTiles = 8 (2 kongs), counted = 19, kongCount = 2, totalTilesNeeded = 19 ✓
+      // neededMelds = 5 - 2 = 3, expectedRemaining = 11 = handTiles.length ✓
+      const res = calculateHandFan(handTiles, meldMap, false, undefined, {
+        prevailingWind: 'south', seatWind: 'east',
+      });
+      expect(res.isValid).toBe(true);
+      expectRuleScored(res, '大三元', 80);
+    });
+
+    it('does NOT score 小三元 when all 3 dragons form triplets (scores 大三元 instead)', () => {
+      const handTiles: Tile[] = [
+        // 中×3, 發×3, 白×3 — all three dragon triplets → 大三元, not 小三元
+        makeTile('dragon', 5, 1), makeTile('dragon', 5, 2), makeTile('dragon', 5, 3),
+        makeTile('dragon', 6, 1), makeTile('dragon', 6, 2), makeTile('dragon', 6, 3),
+        makeTile('dragon', 7, 1), makeTile('dragon', 7, 2), makeTile('dragon', 7, 3),
+        // pair 萬 7-7
+        makeTile('character', 7, 1), makeTile('character', 7, 2),
+        // 萬 1-2-3 chow
+        makeTile('character', 1, 1), makeTile('character', 2, 1), makeTile('character', 3, 1),
+        // 索 4-5-6 chow
+        makeTile('bamboo', 4, 1), makeTile('bamboo', 5, 1), makeTile('bamboo', 6, 1),
+      ];
+      // 17 tiles, self-drawn. Should score 大三元, NOT 小三元.
+      const res = calculateHandFan(handTiles, undefined, true, undefined, {
+        prevailingWind: 'south', seatWind: 'east',
+      });
+      expect(res.isValid).toBe(true);
+      expectRuleScored(res, '大三元', 80);
+      // Verify 小三元 is NOT scored
+      const xiaoSanYuan = res.breakdown.find(b => b.rule === '小三元');
+      expect(xiaoSanYuan).toBeUndefined();
+    });
+  });
 });
