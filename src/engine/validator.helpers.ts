@@ -104,8 +104,8 @@ export function charToHonorNumber(ch: string): number | null {
 }
 
 export function getPrimaryNumberFromString(s: string): number {
-  const numMatch = s.match(/\d+/);
-  if (numMatch) return Number(numMatch[0]);
+  const numMatch = s.match(/[\d一二三四五六七八九]+/);
+  if (numMatch) return parseSuitNumber(numMatch[0]);
   const charMatch = s.match(/[東南西北中發白]/)?.[0];
   if (charMatch) return charToHonorNumber(charMatch) ?? 0;
   return 0;
