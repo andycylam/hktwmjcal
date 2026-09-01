@@ -7,6 +7,8 @@ import {
   canFormMelds,
   WIND_CHARS,
   DRAGON_CHARS,
+  parseSuitNumber,
+  suitNumberLabel,
 } from './validator.helpers';
 
 type DukDukType = 'danDiu' | 'kaLung' | 'pinZoeng' | null;
@@ -123,10 +125,10 @@ export function getJeungNgaanFromCombination(
   const pairPart = parts.find(part => part.includes('x2'));
 
   if (!pairPart) return null;
-
   const suit = pairPart.match(/[萬筒索]/)?.[0];
-  const valueMatch = pairPart.match(/\d+/);
-  const value = valueMatch ? Number(valueMatch[0]) : null;
+  // Extract the numeric prefix before the suit character, support both Arabic and Chinese numerals
+  const numStr = pairPart.match(/[一二三四五六七八九]?(?=[萬筒索])/)?.[0] ?? '';
+  const value = numStr ? parseSuitNumber(numStr) : null;
 
   if (
     suit &&
@@ -403,7 +405,7 @@ function doesMeldPartMatchTile(
           ? '筒'
           : '索';
 
-    return part.includes(`${tile.value}${suitLabel}`);
+    return part.includes(`${suitNumberLabel(tile.value)}${suitLabel}`);
   }
 
   // 東、南、西、北

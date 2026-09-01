@@ -145,11 +145,12 @@ export function meldLabel(tiles: string[]): string {
   return labels.join('-');
 }
 
-function suitNumberLabel(n: number): string {
+// Exported for tile-combo matching
+export function suitNumberLabel(n: number): string {
   return CHINESE_NUM[n] || String(n);
 }
 
-function parseSuitNumber(s: string): number {
+export function parseSuitNumber(s: string): number {
   // Try Arabic digit first
   const num = Number(s);
   if (!isNaN(num) && num >= 1 && num <= 9) return num;
