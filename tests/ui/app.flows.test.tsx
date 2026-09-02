@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 import App from '../../src/App';
 
 describe('App flows (melds, flowers, hu)', () => {
-  it('can create and cancel a shang (sequence) via selection', async () => {
+  it('can create and cancel a chow (sequence) via selection', async () => {
     const user = userEvent.setup();
     render(<App />);
 
@@ -28,7 +28,7 @@ describe('App flows (melds, flowers, hu)', () => {
     const createBtn = screen.getByText('成組');
     await user.click(createBtn);
 
-    // expect a shang label '上' to appear
+    // expect a chow label '上' to appear
     expect(screen.getByText('上')).toBeTruthy();
 
     // cancel the meld

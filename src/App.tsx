@@ -23,7 +23,7 @@ export default function App() {
   const [huIsZimo, setHuIsZimo] = useState<boolean>(false);
   const huTile = hand.find(t => t.id === huTileId) || null;
   // declared melds tracked in meldMap
-  const [meldMap, setMeldMap] = useState<Record<string, { kind: 'kong' | 'pung' | 'shang' | 'flower'; tiles: Tile[]; concealed?: boolean }>>({});
+  const [meldMap, setMeldMap] = useState<Record<string, { kind: 'kong' | 'pung' | 'chow' | 'flower'; tiles: Tile[]; concealed?: boolean }>>({});
   const [selection, setSelection] = useState<string[]>([]);
 
   const toggleSelect = (id: string) => {
@@ -31,14 +31,14 @@ export default function App() {
   };
 
   const createMeldFromSelection = () => {
-    // auto-detect kind from selection: kong > pung > shang
+    // auto-detect kind from selection: kong > pung > chow
     setErrorMessage(null);
     const tiles = hand.filter(t => selection.includes(t.id));
 
     // If nothing selected, attempt to find any valid group in the hand automatically
     if (tiles.length === 0) {
       // New rule: prefer forming groups from the first matching window in hand order.
-      // Iterate hand positions in order and at each position prefer kong > pung > shang for that window.
+      // Iterate hand positions in order and at each position prefer kong > pung > chow for that window.
       for (let i = 0; i < hand.length; i++) {
         // try kong at this position
         if (i <= hand.length - 4) {
@@ -74,7 +74,7 @@ export default function App() {
           }
         }
 
-        // try shang (sequence) at this position
+        // try chow (sequence) at this position
         if (i <= hand.length - 3) {
           const slice = hand.slice(i, i + 3);
           if (slice.length >= 3) {
@@ -83,13 +83,13 @@ export default function App() {
               const vals = slice.map(t => t.value).slice().sort((a, b) => a - b);
               if (vals[1] === vals[0] + 1 && vals[2] === vals[1] + 1) {
                 const seqKey = `${suit}_${vals[0]}`;
-                const seqStorage = `${seqKey}@shang`;
+                const seqStorage = `${seqKey}@chow`;
                 setHand(prev => {
                   const copy = [...prev];
                   copy.splice(i, 3);
                   return copy;
                 });
-                setMeldMap(prev => { let key = seqStorage; let i = 1; while (prev[key]) { key = `${seqStorage}.${i++}`; } return { ...prev, [key]: { kind: 'shang', tiles: slice } }; });
+                setMeldMap(prev => { let key = seqStorage; let i = 1; while (prev[key]) { key = `${seqStorage}.${i++}`; } return { ...prev, [key]: { kind: 'chow', tiles: slice } }; });
                 setResult(null);
                 return;
               }
@@ -146,9 +146,9 @@ export default function App() {
           }
           if (taken.length === 3) {
             const seqKey = `${suit}_${start}`;
-            const seqStorage = `${seqKey}@shang`;
+            const seqStorage = `${seqKey}@chow`;
             setHand(remaining);
-            setMeldMap(prev => { let key = seqStorage; let i = 1; while (prev[key]) { key = `${seqStorage}.${i++}`; } return { ...prev, [key]: { kind: 'shang', tiles: taken } }; });
+            setMeldMap(prev => { let key = seqStorage; let i = 1; while (prev[key]) { key = `${seqStorage}.${i++}`; } return { ...prev, [key]: { kind: 'chow', tiles: taken } }; });
             setResult(null);
             return;
           }
@@ -160,7 +160,7 @@ export default function App() {
 
     }
 
-    // If selection exists, fall back to previous behaviour (detect kong/pung/shang from selection)
+    // If selection exists, fall back to previous behaviour (detect kong/pung/chow from selection)
 
     // detect kong
     const first = tiles[0];
@@ -188,16 +188,16 @@ export default function App() {
       return;
     }
 
-    // detect shang (sequence)
+    // detect chow (sequence)
     if (tiles.length === 3) {
       const suit = tiles[0].suit;
       const vals = tiles.map(t => t.value).sort((a, b) => a - b);
       if (tiles.every(t => t.suit === suit) && vals[1] === vals[0] + 1 && vals[2] === vals[1] + 1) {
         const seqKey = `${suit}_${vals[0]}`;
-        const storageKey = `${seqKey}@shang`;
+        const storageKey = `${seqKey}@chow`;
         const remaining = hand.filter(t => !selection.includes(t.id));
         setHand(remaining);
-        setMeldMap(prev => ({ ...prev, [storageKey]: { kind: 'shang', tiles } }));
+        setMeldMap(prev => ({ ...prev, [storageKey]: { kind: 'chow', tiles } }));
         setSelection([]);
         setResult(null);
         return;
@@ -273,18 +273,18 @@ export default function App() {
     setHuTileId(null);
   };
 
-  function createOrToggleMeld(key: string, kind: 'kong' | 'pung' | 'shang') {
+  function createOrToggleMeld(key: string, kind: 'kong' | 'pung' | 'chow') {
     // Normalize key and decide whether caller passed a full storage key (with @kind)
     const baseKey = key.includes('@') ? key.split('@')[0] : key;
     const storageKey = key.includes('@') ? key : `${baseKey}@${kind}`;
 
-    // Special handling for 'shang' (sequence)
-    if (kind === 'shang') {
+    // Special handling for 'chow' (sequence)
+    if (kind === 'chow') {
       const [suit, valStr] = baseKey.split('_');
       const value = parseInt(valStr, 10);
 
       // If caller passed an exact meld key, remove that exact meld
-      if (key.includes('@') && meldMap[key] && meldMap[key].kind === 'shang') {
+      if (key.includes('@') && meldMap[key] && meldMap[key].kind === 'chow') {
         const tiles = meldMap[key].tiles;
         setHand(prev => [...prev, ...tiles]);
         setMeldMap(prev => {
@@ -296,8 +296,8 @@ export default function App() {
         return;
       }
 
-      // If any existing shang meld contains this tile, remove that meld
-      const existingKey = Object.keys(meldMap).find(k => meldMap[k].kind === 'shang' && meldMap[k].tiles.some(t => `${t.suit}_${t.value}` === baseKey));
+      // If any existing chow meld contains this tile, remove that meld
+      const existingKey = Object.keys(meldMap).find(k => meldMap[k].kind === 'chow' && meldMap[k].tiles.some(t => `${t.suit}_${t.value}` === baseKey));
       if (existingKey) {
         const tiles = meldMap[existingKey].tiles;
         setHand(prev => [...prev, ...tiles]);
@@ -327,9 +327,9 @@ export default function App() {
 
         if (taken.length === 3) {
           const seqKey = `${suit}_${start}`;
-          const seqStorage = `${seqKey}@shang`;
+          const seqStorage = `${seqKey}@chow`;
           setHand(remaining);
-          setMeldMap(prev => { let key = seqStorage; let i = 1; while (prev[key]) { key = `${seqStorage}.${i++}`; } return { ...prev, [key]: { kind: 'shang', tiles: taken } }; });
+          setMeldMap(prev => { let key = seqStorage; let i = 1; while (prev[key]) { key = `${seqStorage}.${i++}`; } return { ...prev, [key]: { kind: 'chow', tiles: taken } }; });
           setResult(null);
           return;
         }
@@ -493,7 +493,7 @@ export default function App() {
                   setResult(null);
                   return;
                 }
-                createOrToggleMeld(k, kind as 'kong' | 'pung' | 'shang');
+                createOrToggleMeld(k, kind as 'kong' | 'pung' | 'chow');
               }}
               onUpgradePung={(k: string) => upgradePungToKong(k)}
               onToggleConcealed={(mk: string) => setMeldMap(prev => {

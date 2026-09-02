@@ -407,7 +407,7 @@ describe('validator kong-adjusted total', () => {
     expectRuleScored(res, '門清', 5);
   });
   it('八仙過海', () => {
-    const meldMap: Record<string, { kind: 'kong'|'pung'|'shang'|'flower'; tiles: Tile[]; concealed?: boolean }> = {};
+    const meldMap: Record<string, { kind: 'kong'|'pung'|'chow'|'flower'; tiles: Tile[]; concealed?: boolean }> = {};
     meldMap['flower_1@flower'] = { kind: 'flower', tiles: [makeTile('flower', 1, 1)] };
     meldMap['flower_2@flower'] = { kind: 'flower', tiles: [makeTile('flower', 2, 2)] };
     meldMap['flower_3@flower'] = { kind: 'flower', tiles: [makeTile('flower', 3, 3)] };
@@ -454,7 +454,7 @@ describe('validator kong-adjusted total', () => {
     expectRuleScored(res, '八仙過海', 40);
   });
   it('一台花', () => {
-    const meldMap: Record<string, { kind: 'kong'|'pung'|'shang'|'flower'; tiles: Tile[]; concealed?: boolean }> = {};
+    const meldMap: Record<string, { kind: 'kong'|'pung'|'chow'|'flower'; tiles: Tile[]; concealed?: boolean }> = {};
     meldMap['flower_1@flower'] = { kind: 'flower', tiles: [makeTile('flower', 1, 1)] };
     meldMap['flower_2@flower'] = { kind: 'flower', tiles: [makeTile('flower', 2, 2)] };
     meldMap['flower_3@flower'] = { kind: 'flower', tiles: [makeTile('flower', 3, 3)] };
@@ -726,7 +726,7 @@ describe('validator kong-adjusted total', () => {
       expect(isAllChows(handTiles, undefined)).toBe(false);
     });
 
-    it('returns true even when declared meld is a triplet, since only hand tiles are checked', () => {
+    it('returns false when declared meld is a triplet', () => {
       const handTiles: Tile[] = [];
       // chow 1: 萬 1-2-3
       handTiles.push(makeTile('character', 1, 1));
@@ -749,14 +749,13 @@ describe('validator kong-adjusted total', () => {
       handTiles.push(makeTile('dragon', 5, 2));
 
       const meldMap: Record<string, any> = {
-        'character_5@pung': { kind: 'pung', tiles: [makeTile('character', 5, 1), makeTile('character', 6, 1), makeTile('character', 7, 1)] }
+        'character_5@pung': { kind: 'pung', tiles: [makeTile('character', 5, 1), makeTile('character', 5, 1), makeTile('character', 5, 1)] }
       };
 
-      // Function checks only hand tiles, not declared meld types
-      expect(isAllChows(handTiles, meldMap)).toBe(true);
+      expect(isAllChows(handTiles, meldMap)).toBe(false);
     });
 
-    it('returns true even when declared meld is a kong, since only hand tiles are checked', () => {
+    it('returns false when declared meld is a kong', () => {
       const handTiles: Tile[] = [];
       // chow 1: 萬 1-2-3
       handTiles.push(makeTile('character', 1, 1));
@@ -782,8 +781,7 @@ describe('validator kong-adjusted total', () => {
         'bamboo_1@kong': { kind: 'kong', tiles: [makeTile('bamboo', 1, 1), makeTile('bamboo', 1, 2), makeTile('bamboo', 1, 3), makeTile('bamboo', 1, 4)] }
       };
 
-      // Function checks only hand tiles, not declared meld types
-      expect(isAllChows(handTiles, meldMap)).toBe(true);
+      expect(isAllChows(handTiles, meldMap)).toBe(false);
     });
   });
 

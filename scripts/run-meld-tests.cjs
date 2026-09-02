@@ -30,12 +30,12 @@ function simulate() {
     // If caller passed a full storage key (contains @), use it for removal; otherwise construct base storage key
     const storageKey = key.includes('@') ? key : `${baseKey}@${kind}`;
 
-    if (kind === 'shang') {
+    if (kind === 'chow') {
       const [suit, valStr] = baseKey.split('_');
       const value = parseInt(valStr, 10);
 
       // If an exact meld key was passed and exists, remove that exact meld
-      if (key.includes('@') && meldMap[key] && meldMap[key].kind === 'shang') {
+      if (key.includes('@') && meldMap[key] && meldMap[key].kind === 'chow') {
         const tiles = meldMap[key].tiles;
         setHand(prev => [...prev, ...tiles]);
         setMeldMap(prev => { const copy = { ...prev }; delete copy[key]; return copy; });
@@ -58,22 +58,22 @@ function simulate() {
         }
         if (taken.length === 3) {
           const seqKey = `${suit}_${start}`;
-          const seqStorage = `${seqKey}@shang`;
+          const seqStorage = `${seqKey}@chow`;
           // debug
-          // console.log('creating shang', seqStorage, taken.map(t=>t.id));
+          // console.log('creating chow', seqStorage, taken.map(t=>t.id));
           setHand(remaining);
           setMeldMap(prev => {
             let keyToUse = seqStorage;
             let i = 1;
             while (prev[keyToUse]) keyToUse = `${seqStorage}.${i++}`;
-            const out = { ...prev, [keyToUse]: { kind: 'shang', tiles: taken } };
+            const out = { ...prev, [keyToUse]: { kind: 'chow', tiles: taken } };
             // console.log('meldMap after set', Object.keys(out));
             return out;
           });
           return;
         }
       }
-      throw new Error('cannot shang');
+      throw new Error('cannot chow');
     }
 
     if (meldMap[storageKey]) {
@@ -101,7 +101,7 @@ function simulate() {
     });
   }
 
-  // create meld from current selection (auto-detect kong > pung > shang)
+  // create meld from current selection (auto-detect kong > pung > chow)
   function createMeldFromSelection() {
     const tiles = hand.filter(t => selection.includes(t.id));
     if (tiles.length === 0) throw new Error('no selection');
@@ -130,10 +130,10 @@ function simulate() {
       const vals = tiles.map(t => t.value).sort((a,b) => a-b);
       if (tiles.every(t => t.suit === suit) && vals[1] === vals[0]+1 && vals[2] === vals[1]+1) {
         const seqKey = `${suit}_${vals[0]}`;
-        const storageKey = `${seqKey}@shang`;
+        const storageKey = `${seqKey}@chow`;
         const remaining = hand.filter(t => !selection.includes(t.id));
         setHand(remaining);
-        setMeldMap(prev => ({ ...prev, [storageKey]: { kind: 'shang', tiles } }));
+        setMeldMap(prev => ({ ...prev, [storageKey]: { kind: 'chow', tiles } }));
         setSelection([]);
         return;
       }
@@ -176,7 +176,7 @@ function simulate() {
       if (tile) setHand(prev => [...prev, tile]);
       return;
     }
-    if (entry.kind === 'pung' || entry.kind === 'shang') {
+    if (entry.kind === 'pung' || entry.kind === 'chow') {
       const remainingTiles = entry.tiles.filter(t => t.id !== tileId);
       setMeldMap(prev => { const copy = { ...prev }; delete copy[meldKey]; return copy; });
       if (remainingTiles.length > 0) setHand(prev => [...prev, ...remainingTiles]);
@@ -243,7 +243,7 @@ function calculateHandFanLike(handTiles, meldMap, huIsZimo) {
   console.log('All meld tests passed');
 })();
 
-// Additional tests: pung, shang, upgrade, concealed toggle
+// Additional tests: pung, chow, upgrade, concealed toggle
 (function more() {
   const s = simulate();
 
@@ -254,11 +254,11 @@ function calculateHandFanLike(handTiles, meldMap, huIsZimo) {
   if (!m1['character_2@pung']) throw new Error('pung creation failed');
   if (s.getHand().length !== 0) throw new Error('hand should be empty after pung');
 
-  // shang test (1-2-3 bamboo)
+  // chow test (1-2-3 bamboo)
   s.setHand([makeTile('bamboo', 1, 1), makeTile('bamboo', 2, 2), makeTile('bamboo', 3, 3)]);
-  s.createOrToggleMeld('bamboo_2', 'shang');
+  s.createOrToggleMeld('bamboo_2', 'chow');
   const m2 = s.getMeldMap();
-  if (!Object.keys(m2).some(k => k.endsWith('@shang'))) throw new Error('shang creation failed');
+  if (!Object.keys(m2).some(k => k.endsWith('@chow'))) throw new Error('chow creation failed');
 
   // upgrade pung -> kong
   s.setHand([makeTile('character', 3, 1), makeTile('character', 3, 2), makeTile('character', 3, 3), makeTile('character', 3, 4)]);
@@ -292,24 +292,24 @@ function calculateHandFanLike(handTiles, meldMap, huIsZimo) {
     makeTile('character',1,4), makeTile('character',2,5), makeTile('character',3,6)
   ]);
   // create first sequence (uses window scan)
-  s.createOrToggleMeld('character_1', 'shang');
+  s.createOrToggleMeld('character_1', 'chow');
   // create second sequence
-  s.createOrToggleMeld('character_1', 'shang');
+  s.createOrToggleMeld('character_1', 'chow');
 
   const mm = s.getMeldMap();
   console.log('meldMap after creates', mm);
-  const shangKeys = Object.keys(mm).filter(k => mm[k].kind === 'shang');
-  if (shangKeys.length !== 2) throw new Error(`expected 2 shang melds, got ${shangKeys.length}`);
+  const chowKeys = Object.keys(mm).filter(k => mm[k].kind === 'chow');
+  if (chowKeys.length !== 2) throw new Error(`expected 2 chow melds, got ${chowKeys.length}`);
 
-  // Cancel the first shang explicitly by its exact key
-  const keyToRemove = shangKeys[0];
+  // Cancel the first chow explicitly by its exact key
+  const keyToRemove = chowKeys[0];
   console.log('removing key', keyToRemove);
-  s.createOrToggleMeld(keyToRemove, 'shang');
+  s.createOrToggleMeld(keyToRemove, 'chow');
   const mm2 = s.getMeldMap();
   console.log('meldMap after remove', mm2);
-  const remainingShangs = Object.keys(mm2).filter(k => mm2[k].kind === 'shang');
-  if (remainingShangs.length !== 1) throw new Error(`expected 1 shang remaining after cancel, got ${remainingShangs.length}`);
-  if (remainingShangs[0] === keyToRemove) throw new Error('removed wrong shang');
+  const remainingShangs = Object.keys(mm2).filter(k => mm2[k].kind === 'chow');
+  if (remainingShangs.length !== 1) throw new Error(`expected 1 chow remaining after cancel, got ${remainingShangs.length}`);
+  if (remainingShangs[0] === keyToRemove) throw new Error('removed wrong chow');
 
   console.log('Cancellation tests passed');
 })();
@@ -333,12 +333,12 @@ function calculateHandFanLike(handTiles, meldMap, huIsZimo) {
   mm = s.getMeldMap();
   if (mm['character_1@pung']) throw new Error('pung should be removed');
 
-  // 2) shang creation via selection
+  // 2) chow creation via selection
   s.setHand([makeTile('bamboo', 4, 1), makeTile('bamboo', 5, 2), makeTile('bamboo', 6, 3)]);
   s.setSelection([s.getHand()[0].id, s.getHand()[1].id, s.getHand()[2].id]);
   s.createMeldFromSelection();
   mm = s.getMeldMap();
-  if (!Object.keys(mm).some(k => k.endsWith('@shang'))) throw new Error('selection shang failed');
+  if (!Object.keys(mm).some(k => k.endsWith('@chow'))) throw new Error('selection chow failed');
 
   // 3) create hu and zimo scoring
   s.setHand([makeTile('character', 9, 1)]); // hu tile

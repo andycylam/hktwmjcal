@@ -2,7 +2,7 @@ import React from 'react';
 import { Tile } from '../types/mahjong';
 
 interface MeldEntry {
-  kind: 'kong' | 'pung' | 'shang' | 'flower';
+  kind: 'kong' | 'pung' | 'chow' | 'flower';
   tiles: Tile[];
   concealed?: boolean;
 }

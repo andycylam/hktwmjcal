@@ -7,7 +7,7 @@ function makeTile(suit: string, value: number, idSuffix: number): Tile {
 
 // Recreate minimal parts of App behaviour needed for auto-create meld
 function autoCreateMeldFromHand(hand: Tile[]) {
-  // New behaviour: scan hand positions in order and at each position try kong > pung > shang
+  // New behaviour: scan hand positions in order and at each position try kong > pung > chow
   for (let i = 0; i < hand.length; i++) {
     // try kong at this position
     if (i <= hand.length - 4) {
@@ -27,7 +27,7 @@ function autoCreateMeldFromHand(hand: Tile[]) {
       }
     }
 
-    // try shang at this position
+    // try chow at this position
     if (i <= hand.length - 3) {
       const slice = hand.slice(i, i + 3);
       if (slice.length >= 3) {
@@ -36,7 +36,7 @@ function autoCreateMeldFromHand(hand: Tile[]) {
           const vals = slice.map(t => t.value).slice().sort((a, b) => a - b);
           if (vals[1] === vals[0] + 1 && vals[2] === vals[1] + 1) {
             const seqKey = `${suit}_${vals[0]}`;
-            return { kind: 'shang', key: `${seqKey}@shang`, tiles: slice, remaining: hand.filter(t => !slice.some(x => x.id === t.id)) };
+            return { kind: 'chow', key: `${seqKey}@chow`, tiles: slice, remaining: hand.filter(t => !slice.some(x => x.id === t.id)) };
           }
         }
       }
@@ -81,11 +81,11 @@ describe('auto-create 成組 from hand', () => {
     expect(result!.tiles.length).toBe(3);
   });
 
-  it('creates shang when a sequence exists', () => {
+  it('creates chow when a sequence exists', () => {
     const hand = [makeTile('bamboo',4,1), makeTile('bamboo',5,2), makeTile('bamboo',6,3), makeTile('character',2,4)];
     const result = autoCreateMeldFromHand(hand);
     expect(result).not.toBeNull();
-    expect(result!.kind).toBe('shang');
+    expect(result!.kind).toBe('chow');
     expect(result!.tiles.map(t => t.value).sort((a,b)=>a-b)).toEqual([4,5,6]);
   });
 
@@ -94,8 +94,8 @@ describe('auto-create 成組 from hand', () => {
     const hand = [makeTile('character',1,1), makeTile('character',2,2), makeTile('character',3,3), makeTile('character',3,4), makeTile('character',3,5), makeTile('character',3,6)];
     const result = autoCreateMeldFromHand(hand);
     expect(result).not.toBeNull();
-    // Should pick the early shang (1-2-3) rather than the later kong of 3s
-    expect(result!.kind).toBe('shang');
+    // Should pick the early chow (1-2-3) rather than the later kong of 3s
+    expect(result!.kind).toBe('chow');
     expect(result!.tiles.map(t => t.value).sort((a,b)=>a-b)).toEqual([1,2,3]);
   });
 
@@ -113,10 +113,10 @@ describe('auto-create 成組 from hand', () => {
     ];
     const first = autoCreateMeldFromHand(hand);
     expect(first).not.toBeNull();
-    expect(first!.kind).toBe('shang');
+    expect(first!.kind).toBe('chow');
     const second = autoCreateMeldFromHand(first!.remaining);
     expect(second).not.toBeNull();
-    expect(second!.kind).toBe('shang');
+    expect(second!.kind).toBe('chow');
     expect(second!.remaining.length).toBe(0);
   });
 });

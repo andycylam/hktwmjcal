@@ -8,7 +8,7 @@ interface Props {
   onClear: () => void;
   onToggleSelect?: (id: string) => void;
   selection?: string[];
-  meldMap?: Record<string, { kind: 'kong' | 'pung' | 'shang' | 'flower'; tiles: Tile[] }>;
+  meldMap?: Record<string, { kind: 'kong' | 'pung' | 'chow' | 'flower'; tiles: Tile[] }>;
   totalTiles?: number;
   totalLimit?: number;
 }

@@ -4,7 +4,7 @@ import { Tile } from '../types/mahjong';
 // Types
 // ----------------------------------------------------------------------
 
-export type MeldEntry = { kind: 'kong' | 'pung' | 'shang' | 'flower'; tiles: Tile[]; concealed?: boolean };
+export type MeldEntry = { kind: 'kong' | 'pung' | 'chow' | 'flower'; tiles: Tile[]; concealed?: boolean };
 
 // ----------------------------------------------------------------------
 // Helper Functions & Maps
@@ -381,7 +381,7 @@ export function hasNonFlowerMelds(meldMap?: Record<string, MeldEntry>): boolean 
   return false;
 }
 
-// True if there's any exposed meld that isn't a kong (pung or shang)
+// True if there's any exposed meld that isn't a kong (pung or chow)
 // Kong — even exposed — does not break 門清
 export function hasExposedNonKongMeld(meldMap?: Record<string, MeldEntry>): boolean {
   if (!meldMap) return false;
@@ -439,7 +439,7 @@ export function isVoidInOneSuit(handTiles: Tile[], meldMap?: Record<string, Meld
   return !hasChar || !hasDot || !hasBamboo;
 }
 
-// 平糊：5 個順子（shang）+ 1 對，無刻子/槓子
+// 平糊：5 個順子（chow）+ 1 對，無刻子/槓子
 export function isAllChows(  handTiles: Tile[],  meldMap?: Record<string, MeldEntry>): boolean {
   const nonFlowerMelds = meldMap
     ? Object.values(meldMap).filter(
@@ -450,7 +450,7 @@ export function isAllChows(  handTiles: Tile[],  meldMap?: Record<string, MeldEn
   // 平糊所有已完成面子都必須係順子
   if (
     nonFlowerMelds.some(
-      meld => meld.kind !== 'shang'
+      meld => meld.kind !== 'chow'
     )
   ) {
     return false;

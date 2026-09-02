@@ -8,7 +8,7 @@ function makeTile(suit: string, value: number, idSuffix: number): Tile {
 
 describe('meld behaviors', () => {
   let hand: Tile[] = [];
-  let meldMap: Record<string, { kind: 'kong'|'pung'|'shang'|'flower'; tiles: Tile[]; concealed?: boolean }> = {};
+  let meldMap: Record<string, { kind: 'kong'|'pung'|'chow'|'flower'; tiles: Tile[]; concealed?: boolean }> = {};
 
   beforeEach(() => {
     hand = [];
@@ -40,12 +40,12 @@ describe('meld behaviors', () => {
     expect(hand.length).toBe(3);
   });
 
-  it('shang detection works', () => {
+  it('chow detection works', () => {
     hand = [makeTile('bamboo',4,1), makeTile('bamboo',5,2), makeTile('bamboo',6,3)];
-    // create shang
-    meldMap['bamboo_4@shang'] = { kind: 'shang', tiles: [...hand] };
+    // create chow
+    meldMap['bamboo_4@chow'] = { kind: 'chow', tiles: [...hand] };
     hand = [];
-    expect(Object.keys(meldMap).some(k => k.endsWith('@shang'))).toBe(true);
+    expect(Object.keys(meldMap).some(k => k.endsWith('@chow'))).toBe(true);
   });
 
   it('zimo and concealed scoring reflected in validator', () => {

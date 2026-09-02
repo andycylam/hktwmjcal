@@ -21,10 +21,10 @@ function simulate() {
     const baseKey = key.includes('@') ? key.split('@')[0] : key;
     const storageKey = `${baseKey}@${kind}`;
 
-    if (kind === 'shang') {
+    if (kind === 'chow') {
       const [suit, valStr] = baseKey.split('_');
       const value = parseInt(valStr, 10);
-      const existingKey = Object.keys(meldMap).find(k => meldMap[k].kind === 'shang' && meldMap[k].tiles.some(t => `${t.suit}_${t.value}` === baseKey));
+      const existingKey = Object.keys(meldMap).find(k => meldMap[k].kind === 'chow' && meldMap[k].tiles.some(t => `${t.suit}_${t.value}` === baseKey));
       if (existingKey) {
         const tiles = meldMap[existingKey].tiles;
         setHand(prev => [...prev, ...tiles]);
@@ -47,13 +47,13 @@ function simulate() {
         }
         if (taken.length === 3) {
           const seqKey = `${suit}_${start}`;
-          const seqStorage = `${seqKey}@shang`;
+          const seqStorage = `${seqKey}@chow`;
           setHand(remaining);
-          setMeldMap(prev => ({ ...prev, [seqStorage]: { kind: 'shang', tiles: taken } }));
+          setMeldMap(prev => ({ ...prev, [seqStorage]: { kind: 'chow', tiles: taken } }));
           return;
         }
       }
-      throw new Error('cannot shang');
+      throw new Error('cannot chow');
     }
 
     if (meldMap[storageKey]) {
@@ -105,7 +105,7 @@ function simulate() {
       if (tile) setHand(prev => [...prev, tile]);
       return;
     }
-    if (entry.kind === 'pung' || entry.kind === 'shang') {
+    if (entry.kind === 'pung' || entry.kind === 'chow') {
       const remainingTiles = entry.tiles.filter(t => t.id !== tileId);
       setMeldMap(prev => { const copy = { ...prev }; delete copy[meldKey]; return copy; });
       if (remainingTiles.length > 0) setHand(prev => [...prev, ...remainingTiles]);
