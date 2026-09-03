@@ -1,8 +1,9 @@
 import React from 'react';
-import { Tile } from '../types/mahjong';
+import { Tile, MELD } from '../types/mahjong';
+import type { MeldKind } from '../types/mahjong';
 
 interface MeldEntry {
-  kind: 'kong' | 'pung' | 'chow' | 'flower';
+  kind: MeldKind;
   tiles: Tile[];
   concealed?: boolean;
 }
@@ -25,8 +26,8 @@ export const MeldArea: React.FC<Props> = ({ meldMap, onToggleMeld, onUpgradePung
     );
   }
 
-  const flowerKeys = keys.filter(k => meldMap[k].kind === 'flower');
-  const regularKeys = keys.filter(k => meldMap[k].kind !== 'flower');
+  const flowerKeys = keys.filter(k => meldMap[k].kind === MELD.FLOWER);
+  const regularKeys = keys.filter(k => meldMap[k].kind !== MELD.FLOWER);
 
   return (
     <div className="bg-slate-800 border border-slate-700 rounded-xl p-4 space-y-3">
@@ -70,8 +71,8 @@ export const MeldArea: React.FC<Props> = ({ meldMap, onToggleMeld, onUpgradePung
                   </div>
                 ))}
               </div>
-              <div className="text-sm text-slate-300">{m.kind === 'kong' ? '槓' : m.kind === 'pung' ? '碰' : '上'}</div>
-              {m.kind === 'kong' && (
+              <div className="text-sm text-slate-300">{m.kind === MELD.KONG ? '槓' : m.kind === MELD.PUNG ? '碰' : '上'}</div>
+              {m.kind === MELD.KONG && (
                 <div className="ml-2 text-sm text-slate-300 flex items-center gap-3">
                   <span className="text-xs">暗槓</span>
                   <button
@@ -85,7 +86,7 @@ export const MeldArea: React.FC<Props> = ({ meldMap, onToggleMeld, onUpgradePung
                   </button>
                 </div>
               )}
-              {m.kind === 'pung' && (
+              {m.kind === MELD.PUNG && (
                 <button
                   onClick={() => onUpgradePung && onUpgradePung(k)}
                   className="ml-auto px-3 py-1 bg-yellow-500 text-slate-900 rounded hover:bg-yellow-400 mr-2"

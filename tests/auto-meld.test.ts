@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { Tile } from '../src/types/mahjong';
+import { Tile, MELD } from '../src/types/mahjong';
 
 function makeTile(suit: string, value: number, idSuffix: number): Tile {
   return { id: `${suit}_${value}_${idSuffix}`, suit: suit as any, value, label: `${value}${suit}` };
@@ -14,7 +14,7 @@ function autoCreateMeldFromHand(hand: Tile[]) {
       const slice4 = hand.slice(i, i + 4);
       if (slice4.length === 4 && slice4.every(t => t.suit === slice4[0].suit && t.value === slice4[0].value)) {
         const k = `${slice4[0].suit}_${slice4[0].value}`;
-        return { kind: 'kong', key: `${k}@kong`, tiles: slice4, remaining: hand.filter(t => !slice4.some(x => x.id === t.id)) };
+        return { kind: MELD.KONG, key: `${k}@kong`, tiles: slice4, remaining: hand.filter(t => !slice4.some(x => x.id === t.id)) };
       }
     }
 
@@ -23,7 +23,7 @@ function autoCreateMeldFromHand(hand: Tile[]) {
       const slice3 = hand.slice(i, i + 3);
       if (slice3.length === 3 && slice3.every(t => t.suit === slice3[0].suit && t.value === slice3[0].value)) {
         const k = `${slice3[0].suit}_${slice3[0].value}`;
-        return { kind: 'pung', key: `${k}@pung`, tiles: slice3, remaining: hand.filter(t => !slice3.some(x => x.id === t.id)) };
+        return { kind: MELD.PUNG, key: `${k}@pung`, tiles: slice3, remaining: hand.filter(t => !slice3.some(x => x.id === t.id)) };
       }
     }
 
@@ -36,7 +36,7 @@ function autoCreateMeldFromHand(hand: Tile[]) {
           const vals = slice.map(t => t.value).slice().sort((a, b) => a - b);
           if (vals[1] === vals[0] + 1 && vals[2] === vals[1] + 1) {
             const seqKey = `${suit}_${vals[0]}`;
-            return { kind: 'chow', key: `${seqKey}@chow`, tiles: slice, remaining: hand.filter(t => !slice.some(x => x.id === t.id)) };
+            return { kind: MELD.CHOW, key: `${seqKey}@chow`, tiles: slice, remaining: hand.filter(t => !slice.some(x => x.id === t.id)) };
           }
         }
       }
@@ -53,11 +53,11 @@ function autoCreateMeldFromHand(hand: Tile[]) {
   }
 
   for (const [k, arr] of Object.entries(countMap)) {
-    if (arr.length >= 4) return { kind: 'kong', key: `${k}@kong`, tiles: arr.slice(0, 4), remaining: hand.filter(t => !arr.slice(0,4).some(x => x.id === t.id)) };
+    if (arr.length >= 4) return { kind: MELD.KONG, key: `${k}@kong`, tiles: arr.slice(0, 4), remaining: hand.filter(t => !arr.slice(0,4).some(x => x.id === t.id)) };
   }
 
   for (const [k, arr] of Object.entries(countMap)) {
-    if (arr.length >= 3) return { kind: 'pung', key: `${k}@pung`, tiles: arr.slice(0, 3), remaining: hand.filter(t => !arr.slice(0,3).some(x => x.id === t.id)) };
+    if (arr.length >= 3) return { kind: MELD.PUNG, key: `${k}@pung`, tiles: arr.slice(0, 3), remaining: hand.filter(t => !arr.slice(0,3).some(x => x.id === t.id)) };
   }
 
   return null;
@@ -68,7 +68,7 @@ describe('auto-create 成組 from hand', () => {
     const hand = [makeTile('character',1,1), makeTile('character',1,2), makeTile('character',1,3), makeTile('character',1,4), makeTile('character',2,5)];
     const result = autoCreateMeldFromHand(hand);
     expect(result).not.toBeNull();
-    expect(result!.kind).toBe('kong');
+    expect(result!.kind).toBe(MELD.KONG);
     expect(result!.tiles.length).toBe(4);
     expect(result!.remaining.length).toBe(1);
   });
@@ -77,7 +77,7 @@ describe('auto-create 成組 from hand', () => {
     const hand = [makeTile('character',3,1), makeTile('character',3,2), makeTile('character',3,3), makeTile('character',4,4)];
     const result = autoCreateMeldFromHand(hand);
     expect(result).not.toBeNull();
-    expect(result!.kind).toBe('pung');
+    expect(result!.kind).toBe(MELD.PUNG);
     expect(result!.tiles.length).toBe(3);
   });
 
@@ -85,7 +85,7 @@ describe('auto-create 成組 from hand', () => {
     const hand = [makeTile('bamboo',4,1), makeTile('bamboo',5,2), makeTile('bamboo',6,3), makeTile('character',2,4)];
     const result = autoCreateMeldFromHand(hand);
     expect(result).not.toBeNull();
-    expect(result!.kind).toBe('chow');
+    expect(result!.kind).toBe(MELD.CHOW);
     expect(result!.tiles.map(t => t.value).sort((a,b)=>a-b)).toEqual([4,5,6]);
   });
 
@@ -95,7 +95,7 @@ describe('auto-create 成組 from hand', () => {
     const result = autoCreateMeldFromHand(hand);
     expect(result).not.toBeNull();
     // Should pick the early chow (1-2-3) rather than the later kong of 3s
-    expect(result!.kind).toBe('chow');
+    expect(result!.kind).toBe(MELD.CHOW);
     expect(result!.tiles.map(t => t.value).sort((a,b)=>a-b)).toEqual([1,2,3]);
   });
 
@@ -113,10 +113,10 @@ describe('auto-create 成組 from hand', () => {
     ];
     const first = autoCreateMeldFromHand(hand);
     expect(first).not.toBeNull();
-    expect(first!.kind).toBe('chow');
+    expect(first!.kind).toBe(MELD.CHOW);
     const second = autoCreateMeldFromHand(first!.remaining);
     expect(second).not.toBeNull();
-    expect(second!.kind).toBe('chow');
+    expect(second!.kind).toBe(MELD.CHOW);
     expect(second!.remaining.length).toBe(0);
   });
 });

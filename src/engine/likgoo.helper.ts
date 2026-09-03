@@ -1,4 +1,4 @@
-import { Tile } from '../types/mahjong';
+import { Tile, Suit, SUIT } from '../types/mahjong';
 import {
   MeldEntry,
   FanResult,
@@ -124,9 +124,9 @@ export function evaluateLikGooSpecialPatterns(handTiles: Tile[],flags?: { countF
   // ----------------------------------------------------------------------
   // 1. 三元嚦咕 (中、發、白 各有一對)
   // ----------------------------------------------------------------------
-  const hasDragon5 = pairKeys.has('dragon_5'); // 中
-  const hasDragon6 = pairKeys.has('dragon_6'); // 發
-  const hasDragon7 = pairKeys.has('dragon_7'); // 白
+  const hasDragon5 = pairKeys.has(`${SUIT.DRAGON}_5`); // 中
+  const hasDragon6 = pairKeys.has(`${SUIT.DRAGON}_6`); // 發
+  const hasDragon7 = pairKeys.has(`${SUIT.DRAGON}_7`); // 白
 
   if (hasDragon5 && hasDragon6 && hasDragon7) {
     results.push({ rule: '三元嚦咕', fan: 20 });
@@ -135,10 +135,10 @@ export function evaluateLikGooSpecialPatterns(handTiles: Tile[],flags?: { countF
   // ----------------------------------------------------------------------
   // 2. 四喜嚦咕 (東、南、西、北 各有一對)
   // ----------------------------------------------------------------------
-  const hasWind1 = pairKeys.has('wind_1'); // 東
-  const hasWind2 = pairKeys.has('wind_2'); // 南
-  const hasWind3 = pairKeys.has('wind_3'); // 西
-  const hasWind4 = pairKeys.has('wind_4'); // 北
+  const hasWind1 = pairKeys.has(`${SUIT.WIND}_1`); // 東
+  const hasWind2 = pairKeys.has(`${SUIT.WIND}_2`); // 南
+  const hasWind3 = pairKeys.has(`${SUIT.WIND}_3`); // 西
+  const hasWind4 = pairKeys.has(`${SUIT.WIND}_4`); // 北
 
   if (hasWind1 && hasWind2 && hasWind3 && hasWind4) {
     results.push({ rule: '四喜嚦咕', fan: 40 });
@@ -149,9 +149,9 @@ export function evaluateLikGooSpecialPatterns(handTiles: Tile[],flags?: { countF
   // ----------------------------------------------------------------------
   let hasThreeColorSamePair = false;
   for (let num = 1; num <= 9; num++) {
-    const hasChar = pairKeys.has(`character_${num}`);
-    const hasDot = pairKeys.has(`dot_${num}`);
-    const hasBamboo = pairKeys.has(`bamboo_${num}`);
+    const hasChar = pairKeys.has(`${SUIT.CHARACTER}_${num}`);
+    const hasDot = pairKeys.has(`${SUIT.DOT}_${num}`);
+    const hasBamboo = pairKeys.has(`${SUIT.BAMBOO}_${num}`);
 
     if (hasChar && hasDot && hasBamboo) {
       hasThreeColorSamePair = true;
@@ -166,24 +166,24 @@ export function evaluateLikGooSpecialPatterns(handTiles: Tile[],flags?: { countF
   // ----------------------------------------------------------------------
   // 4. 連對系列 (三連對 ~ 八連對，支援多組獨立/跨花色疊加)
   // ----------------------------------------------------------------------
-  const suitPairs: Record<'character' | 'dot' | 'bamboo', number[]> = {
-    character: [],
-    dot: [],
-    bamboo: []
+  const suitPairs: Partial<Record<Suit, number[]>> = {
+    [SUIT.CHARACTER]: [],
+    [SUIT.DOT]: [],
+    [SUIT.BAMBOO]: []
   };
 
   for (const key of pairKeys) {
     const [suit, valStr] = key.split('_');
-    if (suit === 'character' || suit === 'dot' || suit === 'bamboo') {
-      suitPairs[suit as 'character' | 'dot' | 'bamboo'].push(Number(valStr));
+    if (suit === SUIT.CHARACTER || suit === SUIT.DOT || suit === SUIT.BAMBOO) {
+      (suitPairs[suit as Suit] ??= []).push(Number(valStr));
     }
   }
 
   // 拆出萬、筒、索三個花色中「所有獨立」的連對片段
   const allSegments: number[] = [
-    ...getConsecutiveSegments(suitPairs.character),
-    ...getConsecutiveSegments(suitPairs.dot),
-    ...getConsecutiveSegments(suitPairs.bamboo)
+    ...getConsecutiveSegments(suitPairs[SUIT.CHARACTER]!),
+    ...getConsecutiveSegments(suitPairs[SUIT.DOT]!),
+    ...getConsecutiveSegments(suitPairs[SUIT.BAMBOO]!)
   ];
 
   // 逐一計算每個獨立片段（例如：5連對 + 3連對 會各自獨立加總）

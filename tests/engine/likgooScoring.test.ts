@@ -1,29 +1,29 @@
 import { describe, it, expect } from 'vitest';
 import { calculateHandFan } from '../../src/engine/validator';
-import { Tile } from '../../src/types/mahjong';
+import { Tile, SUIT } from '../../src/types/mahjong';
 import { makeTile, expectRuleScored } from '../testHelpers';
 
 
 describe('validator kong-adjusted total', () => {
   it('嚦咕', () => {
     const handTiles: Tile[] = [];
-    handTiles.push(makeTile('dot', 2, 3));
-    handTiles.push(makeTile('dot', 2, 3));
-    handTiles.push(makeTile('bamboo', 3, 3));
-    handTiles.push(makeTile('bamboo', 3, 3));
-    handTiles.push(makeTile('dot', 4, 3));
-    handTiles.push(makeTile('dot', 4, 3));
-    handTiles.push(makeTile('bamboo', 5, 3));
-    handTiles.push(makeTile('bamboo', 5, 3));
-    handTiles.push(makeTile('dot', 6, 3));
-    handTiles.push(makeTile('dot', 6, 3));
-    handTiles.push(makeTile('wind', 1, 3));
-    handTiles.push(makeTile('wind', 1, 3));
-    handTiles.push(makeTile('dragon', 5, 1));
-    handTiles.push(makeTile('dragon', 5, 1));
-    handTiles.push(makeTile('character', 3, 1));
-    handTiles.push(makeTile('character', 3, 1));
-    handTiles.push(makeTile('character', 3, 2));
+    handTiles.push(makeTile(SUIT.DOT, 2, 3));
+    handTiles.push(makeTile(SUIT.DOT, 2, 3));
+    handTiles.push(makeTile(SUIT.BAMBOO, 3, 3));
+    handTiles.push(makeTile(SUIT.BAMBOO, 3, 3));
+    handTiles.push(makeTile(SUIT.DOT, 4, 3));
+    handTiles.push(makeTile(SUIT.DOT, 4, 3));
+    handTiles.push(makeTile(SUIT.BAMBOO, 5, 3));
+    handTiles.push(makeTile(SUIT.BAMBOO, 5, 3));
+    handTiles.push(makeTile(SUIT.DOT, 6, 3));
+    handTiles.push(makeTile(SUIT.DOT, 6, 3));
+    handTiles.push(makeTile(SUIT.WIND, 1, 3));
+    handTiles.push(makeTile(SUIT.WIND, 1, 3));
+    handTiles.push(makeTile(SUIT.DRAGON, 5, 1));
+    handTiles.push(makeTile(SUIT.DRAGON, 5, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 3, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 3, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 3, 2));
 
     // 執行算番 (假設 isSelfDrawn = false 代表非自摸，即靠他人出牌食糊)
     const isSelfDrawn = true;
@@ -40,24 +40,24 @@ describe('validator kong-adjusted total', () => {
   });
   it('八對嚦咕', () => {
     const handTiles: Tile[] = [];
-    handTiles.push(makeTile('dot', 2, 3));
-    handTiles.push(makeTile('dot', 2, 3));
-    handTiles.push(makeTile('bamboo', 3, 3));
-    handTiles.push(makeTile('bamboo', 3, 3));
-    handTiles.push(makeTile('dot', 4, 3));
-    handTiles.push(makeTile('dot', 4, 3));
-    handTiles.push(makeTile('bamboo', 5, 3));
-    handTiles.push(makeTile('bamboo', 5, 3));
-    handTiles.push(makeTile('dot', 6, 3));
-    handTiles.push(makeTile('dot', 6, 3));
-    handTiles.push(makeTile('wind', 1, 3));
-    handTiles.push(makeTile('wind', 1, 3));
-    handTiles.push(makeTile('dragon', 5, 1));
-    handTiles.push(makeTile('dragon', 5, 1));
-    handTiles.push(makeTile('character', 3, 1));
-    handTiles.push(makeTile('character', 3, 2));
+    handTiles.push(makeTile(SUIT.DOT, 2, 3));
+    handTiles.push(makeTile(SUIT.DOT, 2, 3));
+    handTiles.push(makeTile(SUIT.BAMBOO, 3, 3));
+    handTiles.push(makeTile(SUIT.BAMBOO, 3, 3));
+    handTiles.push(makeTile(SUIT.DOT, 4, 3));
+    handTiles.push(makeTile(SUIT.DOT, 4, 3));
+    handTiles.push(makeTile(SUIT.BAMBOO, 5, 3));
+    handTiles.push(makeTile(SUIT.BAMBOO, 5, 3));
+    handTiles.push(makeTile(SUIT.DOT, 6, 3));
+    handTiles.push(makeTile(SUIT.DOT, 6, 3));
+    handTiles.push(makeTile(SUIT.WIND, 1, 3));
+    handTiles.push(makeTile(SUIT.WIND, 1, 3));
+    handTiles.push(makeTile(SUIT.DRAGON, 5, 1));
+    handTiles.push(makeTile(SUIT.DRAGON, 5, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 3, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 3, 2));
 
-    const huTile = makeTile('character', 3, 2);
+    const huTile = makeTile(SUIT.CHARACTER, 3, 2);
     handTiles.push(huTile);
 
     // 執行算番 (假設 isSelfDrawn = false 代表非自摸，即靠他人出牌食糊)
@@ -75,23 +75,23 @@ describe('validator kong-adjusted total', () => {
   });
   it('三元嚦咕', () => {
     const handTiles: Tile[] = [];
-    handTiles.push(makeTile('dot', 2, 3));
-    handTiles.push(makeTile('dot', 2, 3));
-    handTiles.push(makeTile('bamboo', 3, 3));
-    handTiles.push(makeTile('bamboo', 3, 3));
-    handTiles.push(makeTile('dot', 4, 3));
-    handTiles.push(makeTile('dot', 4, 3));
-    handTiles.push(makeTile('bamboo', 5, 3));
-    handTiles.push(makeTile('bamboo', 5, 3));
-    handTiles.push(makeTile('dragon', 7, 3));
-    handTiles.push(makeTile('dragon', 7, 3));
-    handTiles.push(makeTile('dragon', 6, 3));
-    handTiles.push(makeTile('dragon', 6, 3));
-    handTiles.push(makeTile('dragon', 5, 1));
-    handTiles.push(makeTile('dragon', 5, 1));
-    handTiles.push(makeTile('character', 3, 1));
-    handTiles.push(makeTile('character', 3, 1));
-    handTiles.push(makeTile('character', 3, 2));
+    handTiles.push(makeTile(SUIT.DOT, 2, 3));
+    handTiles.push(makeTile(SUIT.DOT, 2, 3));
+    handTiles.push(makeTile(SUIT.BAMBOO, 3, 3));
+    handTiles.push(makeTile(SUIT.BAMBOO, 3, 3));
+    handTiles.push(makeTile(SUIT.DOT, 4, 3));
+    handTiles.push(makeTile(SUIT.DOT, 4, 3));
+    handTiles.push(makeTile(SUIT.BAMBOO, 5, 3));
+    handTiles.push(makeTile(SUIT.BAMBOO, 5, 3));
+    handTiles.push(makeTile(SUIT.DRAGON, 7, 3));
+    handTiles.push(makeTile(SUIT.DRAGON, 7, 3));
+    handTiles.push(makeTile(SUIT.DRAGON, 6, 3));
+    handTiles.push(makeTile(SUIT.DRAGON, 6, 3));
+    handTiles.push(makeTile(SUIT.DRAGON, 5, 1));
+    handTiles.push(makeTile(SUIT.DRAGON, 5, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 3, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 3, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 3, 2));
 
     // 執行算番 (假設 isSelfDrawn = false 代表非自摸，即靠他人出牌食糊)
     const isSelfDrawn = true;
@@ -108,23 +108,23 @@ describe('validator kong-adjusted total', () => {
   });
   it('四喜嚦咕', () => {
     const handTiles: Tile[] = [];
-    handTiles.push(makeTile('dot', 2, 3));
-    handTiles.push(makeTile('dot', 2, 3));
-    handTiles.push(makeTile('bamboo', 3, 3));
-    handTiles.push(makeTile('bamboo', 3, 3));
-    handTiles.push(makeTile('wind', 4, 3));
-    handTiles.push(makeTile('wind', 4, 3));
-    handTiles.push(makeTile('wind', 3, 3));
-    handTiles.push(makeTile('wind', 3, 3));
-    handTiles.push(makeTile('wind', 2, 3));
-    handTiles.push(makeTile('wind', 2, 3));
-    handTiles.push(makeTile('wind', 1, 3));
-    handTiles.push(makeTile('wind', 1, 3));
-    handTiles.push(makeTile('dragon', 5, 1));
-    handTiles.push(makeTile('dragon', 5, 1));
-    handTiles.push(makeTile('character', 3, 1));
-    handTiles.push(makeTile('character', 3, 1));
-    handTiles.push(makeTile('character', 3, 2));
+    handTiles.push(makeTile(SUIT.DOT, 2, 3));
+    handTiles.push(makeTile(SUIT.DOT, 2, 3));
+    handTiles.push(makeTile(SUIT.BAMBOO, 3, 3));
+    handTiles.push(makeTile(SUIT.BAMBOO, 3, 3));
+    handTiles.push(makeTile(SUIT.WIND, 4, 3));
+    handTiles.push(makeTile(SUIT.WIND, 4, 3));
+    handTiles.push(makeTile(SUIT.WIND, 3, 3));
+    handTiles.push(makeTile(SUIT.WIND, 3, 3));
+    handTiles.push(makeTile(SUIT.WIND, 2, 3));
+    handTiles.push(makeTile(SUIT.WIND, 2, 3));
+    handTiles.push(makeTile(SUIT.WIND, 1, 3));
+    handTiles.push(makeTile(SUIT.WIND, 1, 3));
+    handTiles.push(makeTile(SUIT.DRAGON, 5, 1));
+    handTiles.push(makeTile(SUIT.DRAGON, 5, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 3, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 3, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 3, 2));
 
     // 執行算番 (假設 isSelfDrawn = false 代表非自摸，即靠他人出牌食糊)
     const isSelfDrawn = true;
@@ -141,23 +141,23 @@ describe('validator kong-adjusted total', () => {
   });
   it('三色同對', () => {
     const handTiles: Tile[] = [];
-    handTiles.push(makeTile('dot', 3, 3));
-    handTiles.push(makeTile('dot', 3, 3));
-    handTiles.push(makeTile('bamboo', 3, 3));
-    handTiles.push(makeTile('bamboo', 3, 3));
-    handTiles.push(makeTile('wind', 4, 3));
-    handTiles.push(makeTile('wind', 4, 3));
-    handTiles.push(makeTile('wind', 3, 3));
-    handTiles.push(makeTile('wind', 3, 3));
-    handTiles.push(makeTile('wind', 2, 3));
-    handTiles.push(makeTile('wind', 2, 3));
-    handTiles.push(makeTile('wind', 1, 3));
-    handTiles.push(makeTile('wind', 1, 3));
-    handTiles.push(makeTile('dragon', 5, 1));
-    handTiles.push(makeTile('dragon', 5, 1));
-    handTiles.push(makeTile('character', 3, 1));
-    handTiles.push(makeTile('character', 3, 1));
-    handTiles.push(makeTile('character', 3, 2));
+    handTiles.push(makeTile(SUIT.DOT, 3, 3));
+    handTiles.push(makeTile(SUIT.DOT, 3, 3));
+    handTiles.push(makeTile(SUIT.BAMBOO, 3, 3));
+    handTiles.push(makeTile(SUIT.BAMBOO, 3, 3));
+    handTiles.push(makeTile(SUIT.WIND, 4, 3));
+    handTiles.push(makeTile(SUIT.WIND, 4, 3));
+    handTiles.push(makeTile(SUIT.WIND, 3, 3));
+    handTiles.push(makeTile(SUIT.WIND, 3, 3));
+    handTiles.push(makeTile(SUIT.WIND, 2, 3));
+    handTiles.push(makeTile(SUIT.WIND, 2, 3));
+    handTiles.push(makeTile(SUIT.WIND, 1, 3));
+    handTiles.push(makeTile(SUIT.WIND, 1, 3));
+    handTiles.push(makeTile(SUIT.DRAGON, 5, 1));
+    handTiles.push(makeTile(SUIT.DRAGON, 5, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 3, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 3, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 3, 2));
 
     // 執行算番 (假設 isSelfDrawn = false 代表非自摸，即靠他人出牌食糊)
     const isSelfDrawn = true;
@@ -174,23 +174,23 @@ describe('validator kong-adjusted total', () => {
   });
   it('三連對', () => {
     const handTiles: Tile[] = [];
-    handTiles.push(makeTile('dot', 2, 3));
-    handTiles.push(makeTile('dot', 2, 3));
-    handTiles.push(makeTile('dot', 3, 3));
-    handTiles.push(makeTile('dot', 3, 3));
-    handTiles.push(makeTile('dot', 4, 3));
-    handTiles.push(makeTile('dot', 4, 3));
-    handTiles.push(makeTile('wind', 3, 3));
-    handTiles.push(makeTile('wind', 3, 3));
-    handTiles.push(makeTile('wind', 2, 3));
-    handTiles.push(makeTile('wind', 2, 3));
-    handTiles.push(makeTile('wind', 1, 3));
-    handTiles.push(makeTile('wind', 1, 3));
-    handTiles.push(makeTile('dragon', 5, 1));
-    handTiles.push(makeTile('dragon', 5, 1));
-    handTiles.push(makeTile('character', 3, 1));
-    handTiles.push(makeTile('character', 3, 1));
-    handTiles.push(makeTile('character', 3, 2));
+    handTiles.push(makeTile(SUIT.DOT, 2, 3));
+    handTiles.push(makeTile(SUIT.DOT, 2, 3));
+    handTiles.push(makeTile(SUIT.DOT, 3, 3));
+    handTiles.push(makeTile(SUIT.DOT, 3, 3));
+    handTiles.push(makeTile(SUIT.DOT, 4, 3));
+    handTiles.push(makeTile(SUIT.DOT, 4, 3));
+    handTiles.push(makeTile(SUIT.WIND, 3, 3));
+    handTiles.push(makeTile(SUIT.WIND, 3, 3));
+    handTiles.push(makeTile(SUIT.WIND, 2, 3));
+    handTiles.push(makeTile(SUIT.WIND, 2, 3));
+    handTiles.push(makeTile(SUIT.WIND, 1, 3));
+    handTiles.push(makeTile(SUIT.WIND, 1, 3));
+    handTiles.push(makeTile(SUIT.DRAGON, 5, 1));
+    handTiles.push(makeTile(SUIT.DRAGON, 5, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 3, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 3, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 3, 2));
 
     // 執行算番 (假設 isSelfDrawn = false 代表非自摸，即靠他人出牌食糊)
     const isSelfDrawn = true;
@@ -207,23 +207,23 @@ describe('validator kong-adjusted total', () => {
   });
   it('四連對', () => {
     const handTiles: Tile[] = [];
-    handTiles.push(makeTile('dot', 2, 3));
-    handTiles.push(makeTile('dot', 2, 3));
-    handTiles.push(makeTile('dot', 3, 3));
-    handTiles.push(makeTile('dot', 3, 3));
-    handTiles.push(makeTile('dot', 4, 3));
-    handTiles.push(makeTile('dot', 4, 3));
-    handTiles.push(makeTile('dot', 5, 3));
-    handTiles.push(makeTile('dot', 5, 3));
-    handTiles.push(makeTile('wind', 2, 3));
-    handTiles.push(makeTile('wind', 2, 3));
-    handTiles.push(makeTile('wind', 1, 3));
-    handTiles.push(makeTile('wind', 1, 3));
-    handTiles.push(makeTile('dragon', 5, 1));
-    handTiles.push(makeTile('dragon', 5, 1));
-    handTiles.push(makeTile('character', 3, 1));
-    handTiles.push(makeTile('character', 3, 1));
-    handTiles.push(makeTile('character', 3, 2));
+    handTiles.push(makeTile(SUIT.DOT, 2, 3));
+    handTiles.push(makeTile(SUIT.DOT, 2, 3));
+    handTiles.push(makeTile(SUIT.DOT, 3, 3));
+    handTiles.push(makeTile(SUIT.DOT, 3, 3));
+    handTiles.push(makeTile(SUIT.DOT, 4, 3));
+    handTiles.push(makeTile(SUIT.DOT, 4, 3));
+    handTiles.push(makeTile(SUIT.DOT, 5, 3));
+    handTiles.push(makeTile(SUIT.DOT, 5, 3));
+    handTiles.push(makeTile(SUIT.WIND, 2, 3));
+    handTiles.push(makeTile(SUIT.WIND, 2, 3));
+    handTiles.push(makeTile(SUIT.WIND, 1, 3));
+    handTiles.push(makeTile(SUIT.WIND, 1, 3));
+    handTiles.push(makeTile(SUIT.DRAGON, 5, 1));
+    handTiles.push(makeTile(SUIT.DRAGON, 5, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 3, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 3, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 3, 2));
 
     // 執行算番 (假設 isSelfDrawn = false 代表非自摸，即靠他人出牌食糊)
     const isSelfDrawn = true;
@@ -240,23 +240,23 @@ describe('validator kong-adjusted total', () => {
   });
   it('五連對', () => {
     const handTiles: Tile[] = [];
-    handTiles.push(makeTile('dot', 2, 3));
-    handTiles.push(makeTile('dot', 2, 3));
-    handTiles.push(makeTile('dot', 3, 3));
-    handTiles.push(makeTile('dot', 3, 3));
-    handTiles.push(makeTile('dot', 4, 3));
-    handTiles.push(makeTile('dot', 4, 3));
-    handTiles.push(makeTile('dot', 5, 3));
-    handTiles.push(makeTile('dot', 5, 3));
-    handTiles.push(makeTile('dot', 6, 3));
-    handTiles.push(makeTile('dot', 6, 3));
-    handTiles.push(makeTile('wind', 1, 3));
-    handTiles.push(makeTile('wind', 1, 3));
-    handTiles.push(makeTile('dragon', 5, 1));
-    handTiles.push(makeTile('dragon', 5, 1));
-    handTiles.push(makeTile('character', 3, 1));
-    handTiles.push(makeTile('character', 3, 1));
-    handTiles.push(makeTile('character', 3, 2));
+    handTiles.push(makeTile(SUIT.DOT, 2, 3));
+    handTiles.push(makeTile(SUIT.DOT, 2, 3));
+    handTiles.push(makeTile(SUIT.DOT, 3, 3));
+    handTiles.push(makeTile(SUIT.DOT, 3, 3));
+    handTiles.push(makeTile(SUIT.DOT, 4, 3));
+    handTiles.push(makeTile(SUIT.DOT, 4, 3));
+    handTiles.push(makeTile(SUIT.DOT, 5, 3));
+    handTiles.push(makeTile(SUIT.DOT, 5, 3));
+    handTiles.push(makeTile(SUIT.DOT, 6, 3));
+    handTiles.push(makeTile(SUIT.DOT, 6, 3));
+    handTiles.push(makeTile(SUIT.WIND, 1, 3));
+    handTiles.push(makeTile(SUIT.WIND, 1, 3));
+    handTiles.push(makeTile(SUIT.DRAGON, 5, 1));
+    handTiles.push(makeTile(SUIT.DRAGON, 5, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 3, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 3, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 3, 2));
 
     // 執行算番 (假設 isSelfDrawn = false 代表非自摸，即靠他人出牌食糊)
     const isSelfDrawn = true;
@@ -273,23 +273,23 @@ describe('validator kong-adjusted total', () => {
   });
   it('六連對', () => {
     const handTiles: Tile[] = [];
-    handTiles.push(makeTile('dot', 2, 3));
-    handTiles.push(makeTile('dot', 2, 3));
-    handTiles.push(makeTile('dot', 3, 3));
-    handTiles.push(makeTile('dot', 3, 3));
-    handTiles.push(makeTile('dot', 4, 3));
-    handTiles.push(makeTile('dot', 4, 3));
-    handTiles.push(makeTile('dot', 5, 3));
-    handTiles.push(makeTile('dot', 5, 3));
-    handTiles.push(makeTile('dot', 6, 3));
-    handTiles.push(makeTile('dot', 6, 3));
-    handTiles.push(makeTile('dot', 7, 3));
-    handTiles.push(makeTile('dot', 7, 3));
-    handTiles.push(makeTile('dragon', 5, 1));
-    handTiles.push(makeTile('dragon', 5, 1));
-    handTiles.push(makeTile('character', 3, 1));
-    handTiles.push(makeTile('character', 3, 1));
-    handTiles.push(makeTile('character', 3, 2));
+    handTiles.push(makeTile(SUIT.DOT, 2, 3));
+    handTiles.push(makeTile(SUIT.DOT, 2, 3));
+    handTiles.push(makeTile(SUIT.DOT, 3, 3));
+    handTiles.push(makeTile(SUIT.DOT, 3, 3));
+    handTiles.push(makeTile(SUIT.DOT, 4, 3));
+    handTiles.push(makeTile(SUIT.DOT, 4, 3));
+    handTiles.push(makeTile(SUIT.DOT, 5, 3));
+    handTiles.push(makeTile(SUIT.DOT, 5, 3));
+    handTiles.push(makeTile(SUIT.DOT, 6, 3));
+    handTiles.push(makeTile(SUIT.DOT, 6, 3));
+    handTiles.push(makeTile(SUIT.DOT, 7, 3));
+    handTiles.push(makeTile(SUIT.DOT, 7, 3));
+    handTiles.push(makeTile(SUIT.DRAGON, 5, 1));
+    handTiles.push(makeTile(SUIT.DRAGON, 5, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 3, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 3, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 3, 2));
 
     // 執行算番 (假設 isSelfDrawn = false 代表非自摸，即靠他人出牌食糊)
     const isSelfDrawn = true;
@@ -306,23 +306,23 @@ describe('validator kong-adjusted total', () => {
   });
   it('七連對', () => {
     const handTiles: Tile[] = [];
-    handTiles.push(makeTile('dot', 2, 3));
-    handTiles.push(makeTile('dot', 2, 3));
-    handTiles.push(makeTile('dot', 3, 3));
-    handTiles.push(makeTile('dot', 3, 3));
-    handTiles.push(makeTile('dot', 4, 3));
-    handTiles.push(makeTile('dot', 4, 3));
-    handTiles.push(makeTile('dot', 5, 3));
-    handTiles.push(makeTile('dot', 5, 3));
-    handTiles.push(makeTile('dot', 6, 3));
-    handTiles.push(makeTile('dot', 6, 3));
-    handTiles.push(makeTile('dot', 7, 3));
-    handTiles.push(makeTile('dot', 7, 3));
-    handTiles.push(makeTile('dot', 8, 1));
-    handTiles.push(makeTile('dot', 8, 1));
-    handTiles.push(makeTile('character', 3, 1));
-    handTiles.push(makeTile('character', 3, 1));
-    handTiles.push(makeTile('character', 3, 2));
+    handTiles.push(makeTile(SUIT.DOT, 2, 3));
+    handTiles.push(makeTile(SUIT.DOT, 2, 3));
+    handTiles.push(makeTile(SUIT.DOT, 3, 3));
+    handTiles.push(makeTile(SUIT.DOT, 3, 3));
+    handTiles.push(makeTile(SUIT.DOT, 4, 3));
+    handTiles.push(makeTile(SUIT.DOT, 4, 3));
+    handTiles.push(makeTile(SUIT.DOT, 5, 3));
+    handTiles.push(makeTile(SUIT.DOT, 5, 3));
+    handTiles.push(makeTile(SUIT.DOT, 6, 3));
+    handTiles.push(makeTile(SUIT.DOT, 6, 3));
+    handTiles.push(makeTile(SUIT.DOT, 7, 3));
+    handTiles.push(makeTile(SUIT.DOT, 7, 3));
+    handTiles.push(makeTile(SUIT.DOT, 8, 1));
+    handTiles.push(makeTile(SUIT.DOT, 8, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 3, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 3, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 3, 2));
 
     // 執行算番 (假設 isSelfDrawn = false 代表非自摸，即靠他人出牌食糊)
     const isSelfDrawn = true;
@@ -339,23 +339,23 @@ describe('validator kong-adjusted total', () => {
   });
   it('八連對', () => {
     const handTiles: Tile[] = [];
-    handTiles.push(makeTile('dot', 2, 3));
-    handTiles.push(makeTile('dot', 2, 3));
-    handTiles.push(makeTile('dot', 3, 3));
-    handTiles.push(makeTile('dot', 3, 3));
-    handTiles.push(makeTile('dot', 4, 3));
-    handTiles.push(makeTile('dot', 4, 3));
-    handTiles.push(makeTile('dot', 5, 3));
-    handTiles.push(makeTile('dot', 5, 3));
-    handTiles.push(makeTile('dot', 6, 3));
-    handTiles.push(makeTile('dot', 6, 3));
-    handTiles.push(makeTile('dot', 7, 3));
-    handTiles.push(makeTile('dot', 7, 3));
-    handTiles.push(makeTile('dot', 8, 1));
-    handTiles.push(makeTile('dot', 8, 1));
-    handTiles.push(makeTile('dot', 9, 1));
-    handTiles.push(makeTile('dot', 9, 1));
-    handTiles.push(makeTile('dot', 9, 2));
+    handTiles.push(makeTile(SUIT.DOT, 2, 3));
+    handTiles.push(makeTile(SUIT.DOT, 2, 3));
+    handTiles.push(makeTile(SUIT.DOT, 3, 3));
+    handTiles.push(makeTile(SUIT.DOT, 3, 3));
+    handTiles.push(makeTile(SUIT.DOT, 4, 3));
+    handTiles.push(makeTile(SUIT.DOT, 4, 3));
+    handTiles.push(makeTile(SUIT.DOT, 5, 3));
+    handTiles.push(makeTile(SUIT.DOT, 5, 3));
+    handTiles.push(makeTile(SUIT.DOT, 6, 3));
+    handTiles.push(makeTile(SUIT.DOT, 6, 3));
+    handTiles.push(makeTile(SUIT.DOT, 7, 3));
+    handTiles.push(makeTile(SUIT.DOT, 7, 3));
+    handTiles.push(makeTile(SUIT.DOT, 8, 1));
+    handTiles.push(makeTile(SUIT.DOT, 8, 1));
+    handTiles.push(makeTile(SUIT.DOT, 9, 1));
+    handTiles.push(makeTile(SUIT.DOT, 9, 1));
+    handTiles.push(makeTile(SUIT.DOT, 9, 2));
 
     // 執行算番 (假設 isSelfDrawn = false 代表非自摸，即靠他人出牌食糊)
     const isSelfDrawn = true;

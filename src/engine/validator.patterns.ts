@@ -1,4 +1,4 @@
-import { Tile } from '../types/mahjong';
+import { Tile, SUIT, MELD } from '../types/mahjong';
 import {
   MeldEntry,
   FanResult,
@@ -51,7 +51,7 @@ export function detectWaitPattern(
     }
   }
 
-  if (['character', 'dot', 'bamboo'].includes(huSuit)) {
+  if (SUIT.CHARACTER === huSuit || SUIT.DOT === huSuit || SUIT.BAMBOO === huSuit) {
     if (huVal >= 2 && huVal <= 8) {
       const leftKey = `${huSuit}_${huVal - 1}`;
       const rightKey = `${huSuit}_${huVal + 1}`;
@@ -85,7 +85,7 @@ export function detectWaitPattern(
   if (!dukDukType) return { isDukDuk: false, isFakeDuk: false, dukDukType: null };
 
   const allPossibleTileKeys: string[] = [];
-  ['character', 'dot', 'bamboo'].forEach(s => {
+  [SUIT.CHARACTER, SUIT.DOT, SUIT.BAMBOO].forEach(s => {
     for (let i = 1; i <= 9; i++) allPossibleTileKeys.push(`${s}_${i}`);
   });
   for (let i = 1; i <= 4; i++) allPossibleTileKeys.push(`wind_${i}`);
@@ -174,7 +174,7 @@ export function analyzeWindPattern(
   if (meldMap) {
     for (const meld of Object.values(meldMap)) {
       if (
-        (meld.kind === 'pung' || meld.kind === 'kong') &&
+        (meld.kind === MELD.PUNG || meld.kind === MELD.KONG) &&
         meld.tiles.length > 0 &&
         meld.tiles[0].suit === 'wind'
       ) {
@@ -305,7 +305,7 @@ export function analyzeDragonPattern(
   if (meldMap) {
     for (const meld of Object.values(meldMap)) {
       if (
-        (meld.kind === 'pung' || meld.kind === 'kong') &&
+        (meld.kind === MELD.PUNG || meld.kind === MELD.KONG) &&
         meld.tiles.length > 0 &&
         meld.tiles[0].suit === 'dragon'
       ) {
@@ -394,14 +394,14 @@ function doesMeldPartMatchTile(
 ): boolean {
   // 萬、筒、索
   if (
-    tile.suit === 'character' ||
-    tile.suit === 'dot' ||
-    tile.suit === 'bamboo'
+    tile.suit === SUIT.CHARACTER ||
+    tile.suit === SUIT.DOT ||
+    tile.suit === SUIT.BAMBOO
   ) {
     const suitLabel =
-      tile.suit === 'character'
+      tile.suit === SUIT.CHARACTER
         ? '萬'
-        : tile.suit === 'dot'
+        : tile.suit === SUIT.DOT
           ? '筒'
           : '索';
 
@@ -409,13 +409,13 @@ function doesMeldPartMatchTile(
   }
 
   // 東、南、西、北
-  if (tile.suit === 'wind') {
+  if (tile.suit === SUIT.WIND) {
     const windChar = WIND_CHARS[tile.value];
     return !!windChar && part.includes(windChar);
   }
 
   // 中、發、白
-  if (tile.suit === 'dragon') {
+  if (tile.suit === SUIT.DRAGON) {
     const dragonChar = DRAGON_CHARS[tile.value];
     return !!dragonChar && part.includes(dragonChar);
   }

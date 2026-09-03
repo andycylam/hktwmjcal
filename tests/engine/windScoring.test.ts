@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { calculateHandFan } from '../../src/engine/validator';
-import { Tile } from '../../src/types/mahjong';
+import { Tile, MELD, SUIT } from '../../src/types/mahjong';
 import { expectRuleScored } from '../testHelpers';
 
 function makeTile(suit: Tile['suit'], value: number, idx: number): Tile {
@@ -10,34 +10,34 @@ function makeTile(suit: Tile['suit'], value: number, idx: number): Tile {
 describe('validator wind scoring', () => {
   it('awards +1 fan when seat wind matches a wind triplet in declared melds', () => {
     const kongTiles: Tile[] = [
-      makeTile('character', 1, 1),
-      makeTile('character', 1, 2),
-      makeTile('character', 1, 3),
-      makeTile('character', 1, 4),
+      makeTile(SUIT.CHARACTER, 1, 1),
+      makeTile(SUIT.CHARACTER, 1, 2),
+      makeTile(SUIT.CHARACTER, 1, 3),
+      makeTile(SUIT.CHARACTER, 1, 4),
     ];
 
     const pungTiles: Tile[] = [
-      makeTile('wind', 1, 1), // 東 x3, seat is east
-      makeTile('wind', 1, 2),
-      makeTile('wind', 1, 3),
+      makeTile(SUIT.WIND, 1, 1), // 東 x3, seat is east
+      makeTile(SUIT.WIND, 1, 2),
+      makeTile(SUIT.WIND, 1, 3),
     ];
 
     const handTiles: Tile[] = [];
-    handTiles.push(makeTile('dot', 1, 1));
-    handTiles.push(makeTile('dot', 2, 1));
-    handTiles.push(makeTile('dot', 3, 1));
-    handTiles.push(makeTile('dot', 4, 2));
-    handTiles.push(makeTile('dot', 5, 2));
-    handTiles.push(makeTile('dot', 6, 2));
-    handTiles.push(makeTile('bamboo', 1, 1));
-    handTiles.push(makeTile('bamboo', 2, 1));
-    handTiles.push(makeTile('bamboo', 3, 1));
-    handTiles.push(makeTile('character', 2, 1));
-    handTiles.push(makeTile('character', 2, 2));
+    handTiles.push(makeTile(SUIT.DOT, 1, 1));
+    handTiles.push(makeTile(SUIT.DOT, 2, 1));
+    handTiles.push(makeTile(SUIT.DOT, 3, 1));
+    handTiles.push(makeTile(SUIT.DOT, 4, 2));
+    handTiles.push(makeTile(SUIT.DOT, 5, 2));
+    handTiles.push(makeTile(SUIT.DOT, 6, 2));
+    handTiles.push(makeTile(SUIT.BAMBOO, 1, 1));
+    handTiles.push(makeTile(SUIT.BAMBOO, 2, 1));
+    handTiles.push(makeTile(SUIT.BAMBOO, 3, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 2, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 2, 2));
 
     const meldMap: Record<string, any> = {
-      'character_1@kong': { kind: 'kong', tiles: kongTiles },
-      'wind_1@pung': { kind: 'pung', tiles: pungTiles },
+      'character_1@kong': { kind: MELD.KONG, tiles: kongTiles },
+      'wind_1@pung': { kind: MELD.PUNG, tiles: pungTiles },
     };
 
     const res = calculateHandFan(handTiles, meldMap, false, undefined, {
@@ -51,29 +51,29 @@ describe('validator wind scoring', () => {
 
   it('awards +1 fan when prevailing wind matches a wind triplet in declared melds', () => {
     const pungTiles: Tile[] = [
-      makeTile('wind', 2, 1), // 南 x3, prevailing is south
-      makeTile('wind', 2, 2),
-      makeTile('wind', 2, 3),
+      makeTile(SUIT.WIND, 2, 1), // 南 x3, prevailing is south
+      makeTile(SUIT.WIND, 2, 2),
+      makeTile(SUIT.WIND, 2, 3),
     ];
 
     const handTiles: Tile[] = [];
-    handTiles.push(makeTile('dot', 1, 1));
-    handTiles.push(makeTile('dot', 2, 1));
-    handTiles.push(makeTile('dot', 3, 1));
-    handTiles.push(makeTile('dot', 4, 2));
-    handTiles.push(makeTile('dot', 5, 2));
-    handTiles.push(makeTile('dot', 6, 2));
-    handTiles.push(makeTile('bamboo', 1, 1));
-    handTiles.push(makeTile('bamboo', 2, 1));
-    handTiles.push(makeTile('bamboo', 3, 1));
-    handTiles.push(makeTile('bamboo', 4, 1));
-    handTiles.push(makeTile('bamboo', 5, 1));
-    handTiles.push(makeTile('bamboo', 6, 1));
-    handTiles.push(makeTile('character', 2, 1));
-    handTiles.push(makeTile('character', 2, 2));
+    handTiles.push(makeTile(SUIT.DOT, 1, 1));
+    handTiles.push(makeTile(SUIT.DOT, 2, 1));
+    handTiles.push(makeTile(SUIT.DOT, 3, 1));
+    handTiles.push(makeTile(SUIT.DOT, 4, 2));
+    handTiles.push(makeTile(SUIT.DOT, 5, 2));
+    handTiles.push(makeTile(SUIT.DOT, 6, 2));
+    handTiles.push(makeTile(SUIT.BAMBOO, 1, 1));
+    handTiles.push(makeTile(SUIT.BAMBOO, 2, 1));
+    handTiles.push(makeTile(SUIT.BAMBOO, 3, 1));
+    handTiles.push(makeTile(SUIT.BAMBOO, 4, 1));
+    handTiles.push(makeTile(SUIT.BAMBOO, 5, 1));
+    handTiles.push(makeTile(SUIT.BAMBOO, 6, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 2, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 2, 2));
 
     const meldMap: Record<string, any> = {
-      'wind_2@pung': { kind: 'pung', tiles: pungTiles },
+      'wind_2@pung': { kind: MELD.PUNG, tiles: pungTiles },
     };
 
     const res = calculateHandFan(handTiles, meldMap, false, undefined, {
@@ -88,28 +88,28 @@ describe('validator wind scoring', () => {
   it('awards +1 fan when seat wind matches a wind triplet in concealed hand', () => {
     const handTiles: Tile[] = [];
     // 東 x3 (seat is east)
-    handTiles.push(makeTile('wind', 1, 1));
-    handTiles.push(makeTile('wind', 1, 2));
-    handTiles.push(makeTile('wind', 1, 3));
+    handTiles.push(makeTile(SUIT.WIND, 1, 1));
+    handTiles.push(makeTile(SUIT.WIND, 1, 2));
+    handTiles.push(makeTile(SUIT.WIND, 1, 3));
     // 萬 1-2-3
-    handTiles.push(makeTile('character', 1, 1));
-    handTiles.push(makeTile('character', 2, 1));
-    handTiles.push(makeTile('character', 3, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 1, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 2, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 3, 1));
     // 萬 4-5-6
-    handTiles.push(makeTile('character', 4, 1));
-    handTiles.push(makeTile('character', 5, 1));
-    handTiles.push(makeTile('character', 6, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 4, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 5, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 6, 1));
     // 筒 1-2-3
-    handTiles.push(makeTile('dot', 1, 1));
-    handTiles.push(makeTile('dot', 2, 1));
-    handTiles.push(makeTile('dot', 3, 1));
+    handTiles.push(makeTile(SUIT.DOT, 1, 1));
+    handTiles.push(makeTile(SUIT.DOT, 2, 1));
+    handTiles.push(makeTile(SUIT.DOT, 3, 1));
     // 筒 4-5-6
-    handTiles.push(makeTile('dot', 4, 1));
-    handTiles.push(makeTile('dot', 5, 1));
-    handTiles.push(makeTile('dot', 6, 1));
+    handTiles.push(makeTile(SUIT.DOT, 4, 1));
+    handTiles.push(makeTile(SUIT.DOT, 5, 1));
+    handTiles.push(makeTile(SUIT.DOT, 6, 1));
     // pair: 索 1x2
-    handTiles.push(makeTile('bamboo', 1, 1));
-    handTiles.push(makeTile('bamboo', 1, 2));
+    handTiles.push(makeTile(SUIT.BAMBOO, 1, 1));
+    handTiles.push(makeTile(SUIT.BAMBOO, 1, 2));
 
     const res = calculateHandFan(handTiles, undefined, false, undefined, {
       prevailingWind: 'east',
@@ -123,28 +123,28 @@ describe('validator wind scoring', () => {
   it('awards +1 fan when prevailing wind matches a wind triplet in concealed hand', () => {
     const handTiles: Tile[] = [];
     // 北 x3 (prevailing is north)
-    handTiles.push(makeTile('wind', 4, 1));
-    handTiles.push(makeTile('wind', 4, 2));
-    handTiles.push(makeTile('wind', 4, 3));
+    handTiles.push(makeTile(SUIT.WIND, 4, 1));
+    handTiles.push(makeTile(SUIT.WIND, 4, 2));
+    handTiles.push(makeTile(SUIT.WIND, 4, 3));
     // 萬 1-2-3
-    handTiles.push(makeTile('character', 1, 1));
-    handTiles.push(makeTile('character', 2, 1));
-    handTiles.push(makeTile('character', 3, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 1, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 2, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 3, 1));
     // 萬 4-5-6
-    handTiles.push(makeTile('character', 4, 1));
-    handTiles.push(makeTile('character', 5, 1));
-    handTiles.push(makeTile('character', 6, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 4, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 5, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 6, 1));
     // 筒 1-2-3
-    handTiles.push(makeTile('dot', 1, 1));
-    handTiles.push(makeTile('dot', 2, 1));
-    handTiles.push(makeTile('dot', 3, 1));
+    handTiles.push(makeTile(SUIT.DOT, 1, 1));
+    handTiles.push(makeTile(SUIT.DOT, 2, 1));
+    handTiles.push(makeTile(SUIT.DOT, 3, 1));
     // 筒 4-5-6
-    handTiles.push(makeTile('dot', 4, 1));
-    handTiles.push(makeTile('dot', 5, 1));
-    handTiles.push(makeTile('dot', 6, 1));
+    handTiles.push(makeTile(SUIT.DOT, 4, 1));
+    handTiles.push(makeTile(SUIT.DOT, 5, 1));
+    handTiles.push(makeTile(SUIT.DOT, 6, 1));
     // pair: 索 1x2
-    handTiles.push(makeTile('bamboo', 1, 1));
-    handTiles.push(makeTile('bamboo', 1, 2));
+    handTiles.push(makeTile(SUIT.BAMBOO, 1, 1));
+    handTiles.push(makeTile(SUIT.BAMBOO, 1, 2));
 
     const res = calculateHandFan(handTiles, undefined, false, undefined, {
       prevailingWind: 'north',
@@ -158,28 +158,28 @@ describe('validator wind scoring', () => {
   it('awards both seat and prevailing fan when they match the same wind triplet', () => {
     const handTiles: Tile[] = [];
     // 東 x3 (both seat and prevailing are east)
-    handTiles.push(makeTile('wind', 1, 1));
-    handTiles.push(makeTile('wind', 1, 2));
-    handTiles.push(makeTile('wind', 1, 3));
+    handTiles.push(makeTile(SUIT.WIND, 1, 1));
+    handTiles.push(makeTile(SUIT.WIND, 1, 2));
+    handTiles.push(makeTile(SUIT.WIND, 1, 3));
     // 萬 1-2-3
-    handTiles.push(makeTile('character', 1, 1));
-    handTiles.push(makeTile('character', 2, 1));
-    handTiles.push(makeTile('character', 3, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 1, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 2, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 3, 1));
     // 萬 4-5-6
-    handTiles.push(makeTile('character', 4, 1));
-    handTiles.push(makeTile('character', 5, 1));
-    handTiles.push(makeTile('character', 6, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 4, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 5, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 6, 1));
     // 筒 1-2-3
-    handTiles.push(makeTile('dot', 1, 1));
-    handTiles.push(makeTile('dot', 2, 1));
-    handTiles.push(makeTile('dot', 3, 1));
+    handTiles.push(makeTile(SUIT.DOT, 1, 1));
+    handTiles.push(makeTile(SUIT.DOT, 2, 1));
+    handTiles.push(makeTile(SUIT.DOT, 3, 1));
     // 筒 4-5-6
-    handTiles.push(makeTile('dot', 4, 1));
-    handTiles.push(makeTile('dot', 5, 1));
-    handTiles.push(makeTile('dot', 6, 1));
+    handTiles.push(makeTile(SUIT.DOT, 4, 1));
+    handTiles.push(makeTile(SUIT.DOT, 5, 1));
+    handTiles.push(makeTile(SUIT.DOT, 6, 1));
     // pair: 索 1x2
-    handTiles.push(makeTile('bamboo', 1, 1));
-    handTiles.push(makeTile('bamboo', 1, 2));
+    handTiles.push(makeTile(SUIT.BAMBOO, 1, 1));
+    handTiles.push(makeTile(SUIT.BAMBOO, 1, 2));
 
     const res = calculateHandFan(handTiles, undefined, false, undefined, {
       prevailingWind: 'east',
@@ -194,28 +194,28 @@ describe('validator wind scoring', () => {
   it('東風', () => {
     const handTiles: Tile[] = [];
     // 東 x3
-    handTiles.push(makeTile('wind', 1, 1));
-    handTiles.push(makeTile('wind', 1, 2));
-    handTiles.push(makeTile('wind', 1, 3));
+    handTiles.push(makeTile(SUIT.WIND, 1, 1));
+    handTiles.push(makeTile(SUIT.WIND, 1, 2));
+    handTiles.push(makeTile(SUIT.WIND, 1, 3));
     // 萬 1-2-3
-    handTiles.push(makeTile('character', 1, 1));
-    handTiles.push(makeTile('character', 2, 1));
-    handTiles.push(makeTile('character', 3, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 1, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 2, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 3, 1));
     // 萬 4-5-6
-    handTiles.push(makeTile('character', 4, 1));
-    handTiles.push(makeTile('character', 5, 1));
-    handTiles.push(makeTile('character', 6, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 4, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 5, 1));
+    handTiles.push(makeTile(SUIT.CHARACTER, 6, 1));
     // 筒 1-2-3
-    handTiles.push(makeTile('dot', 1, 1));
-    handTiles.push(makeTile('dot', 2, 1));
-    handTiles.push(makeTile('dot', 3, 1));
+    handTiles.push(makeTile(SUIT.DOT, 1, 1));
+    handTiles.push(makeTile(SUIT.DOT, 2, 1));
+    handTiles.push(makeTile(SUIT.DOT, 3, 1));
     // 筒 4-5-6
-    handTiles.push(makeTile('dot', 4, 1));
-    handTiles.push(makeTile('dot', 5, 1));
-    handTiles.push(makeTile('dot', 6, 1));
+    handTiles.push(makeTile(SUIT.DOT, 4, 1));
+    handTiles.push(makeTile(SUIT.DOT, 5, 1));
+    handTiles.push(makeTile(SUIT.DOT, 6, 1));
     // pair: 索 1x2
-    handTiles.push(makeTile('bamboo', 1, 1));
-    handTiles.push(makeTile('bamboo', 1, 2));
+    handTiles.push(makeTile(SUIT.BAMBOO, 1, 1));
+    handTiles.push(makeTile(SUIT.BAMBOO, 1, 2));
 
     const res = calculateHandFan(handTiles, undefined, false, undefined, {
       prevailingWind: 'south',
@@ -227,23 +227,23 @@ describe('validator wind scoring', () => {
   });
   it('大四喜', () => {
     const handTiles: Tile[] = [];
-    handTiles.push(makeTile('wind', 1, 1));
-    handTiles.push(makeTile('wind', 1, 2));
-    handTiles.push(makeTile('wind', 1, 3));
-    handTiles.push(makeTile('wind', 2, 1));
-    handTiles.push(makeTile('wind', 2, 1));
-    handTiles.push(makeTile('wind', 2, 1));
-    handTiles.push(makeTile('wind', 3, 1));
-    handTiles.push(makeTile('wind', 3, 1));
-    handTiles.push(makeTile('wind', 3, 1));
-    handTiles.push(makeTile('wind', 4, 1));
-    handTiles.push(makeTile('wind', 4, 1));
-    handTiles.push(makeTile('wind', 4, 1));
-    handTiles.push(makeTile('dot', 4, 1));
-    handTiles.push(makeTile('dot', 5, 1));
-    handTiles.push(makeTile('dot', 6, 1));
-    handTiles.push(makeTile('bamboo', 1, 1));
-    handTiles.push(makeTile('bamboo', 1, 2));
+    handTiles.push(makeTile(SUIT.WIND, 1, 1));
+    handTiles.push(makeTile(SUIT.WIND, 1, 2));
+    handTiles.push(makeTile(SUIT.WIND, 1, 3));
+    handTiles.push(makeTile(SUIT.WIND, 2, 1));
+    handTiles.push(makeTile(SUIT.WIND, 2, 1));
+    handTiles.push(makeTile(SUIT.WIND, 2, 1));
+    handTiles.push(makeTile(SUIT.WIND, 3, 1));
+    handTiles.push(makeTile(SUIT.WIND, 3, 1));
+    handTiles.push(makeTile(SUIT.WIND, 3, 1));
+    handTiles.push(makeTile(SUIT.WIND, 4, 1));
+    handTiles.push(makeTile(SUIT.WIND, 4, 1));
+    handTiles.push(makeTile(SUIT.WIND, 4, 1));
+    handTiles.push(makeTile(SUIT.DOT, 4, 1));
+    handTiles.push(makeTile(SUIT.DOT, 5, 1));
+    handTiles.push(makeTile(SUIT.DOT, 6, 1));
+    handTiles.push(makeTile(SUIT.BAMBOO, 1, 1));
+    handTiles.push(makeTile(SUIT.BAMBOO, 1, 2));
 
     const res = calculateHandFan(handTiles, undefined, false, undefined, {
       prevailingWind: 'south',
@@ -255,23 +255,23 @@ describe('validator wind scoring', () => {
   });
   it('小四喜', () => {
     const handTiles: Tile[] = [];
-    handTiles.push(makeTile('wind', 1, 1));
-    handTiles.push(makeTile('wind', 1, 2));
-    handTiles.push(makeTile('wind', 1, 3));
-    handTiles.push(makeTile('wind', 2, 1));
-    handTiles.push(makeTile('wind', 2, 1));
-    handTiles.push(makeTile('wind', 2, 1));
-    handTiles.push(makeTile('wind', 3, 1));
-    handTiles.push(makeTile('wind', 3, 1));
-    handTiles.push(makeTile('wind', 3, 1));
-    handTiles.push(makeTile('wind', 4, 1));
-    handTiles.push(makeTile('wind', 4, 1));
-    handTiles.push(makeTile('bamboo', 1, 1));
-    handTiles.push(makeTile('dot', 4, 1));
-    handTiles.push(makeTile('dot', 5, 1));
-    handTiles.push(makeTile('dot', 6, 1));
-    handTiles.push(makeTile('bamboo', 1, 1));
-    handTiles.push(makeTile('bamboo', 1, 2));
+    handTiles.push(makeTile(SUIT.WIND, 1, 1));
+    handTiles.push(makeTile(SUIT.WIND, 1, 2));
+    handTiles.push(makeTile(SUIT.WIND, 1, 3));
+    handTiles.push(makeTile(SUIT.WIND, 2, 1));
+    handTiles.push(makeTile(SUIT.WIND, 2, 1));
+    handTiles.push(makeTile(SUIT.WIND, 2, 1));
+    handTiles.push(makeTile(SUIT.WIND, 3, 1));
+    handTiles.push(makeTile(SUIT.WIND, 3, 1));
+    handTiles.push(makeTile(SUIT.WIND, 3, 1));
+    handTiles.push(makeTile(SUIT.WIND, 4, 1));
+    handTiles.push(makeTile(SUIT.WIND, 4, 1));
+    handTiles.push(makeTile(SUIT.BAMBOO, 1, 1));
+    handTiles.push(makeTile(SUIT.DOT, 4, 1));
+    handTiles.push(makeTile(SUIT.DOT, 5, 1));
+    handTiles.push(makeTile(SUIT.DOT, 6, 1));
+    handTiles.push(makeTile(SUIT.BAMBOO, 1, 1));
+    handTiles.push(makeTile(SUIT.BAMBOO, 1, 2));
 
     const res = calculateHandFan(handTiles, undefined, false, undefined, {
       prevailingWind: 'south',
@@ -283,23 +283,23 @@ describe('validator wind scoring', () => {
   });
   it('大三風', () => {
     const handTiles: Tile[] = [];
-    handTiles.push(makeTile('wind', 1, 1));
-    handTiles.push(makeTile('wind', 1, 2));
-    handTiles.push(makeTile('wind', 1, 3));
-    handTiles.push(makeTile('wind', 2, 1));
-    handTiles.push(makeTile('wind', 2, 1));
-    handTiles.push(makeTile('wind', 2, 1));
-    handTiles.push(makeTile('wind', 3, 1));
-    handTiles.push(makeTile('wind', 3, 1));
-    handTiles.push(makeTile('wind', 3, 1));
-    handTiles.push(makeTile('dot', 4, 1));
-    handTiles.push(makeTile('dot', 4, 1));
-    handTiles.push(makeTile('bamboo', 1, 1));
-    handTiles.push(makeTile('dot', 4, 1));
-    handTiles.push(makeTile('dot', 5, 1));
-    handTiles.push(makeTile('dot', 6, 1));
-    handTiles.push(makeTile('bamboo', 1, 1));
-    handTiles.push(makeTile('bamboo', 1, 2));
+    handTiles.push(makeTile(SUIT.WIND, 1, 1));
+    handTiles.push(makeTile(SUIT.WIND, 1, 2));
+    handTiles.push(makeTile(SUIT.WIND, 1, 3));
+    handTiles.push(makeTile(SUIT.WIND, 2, 1));
+    handTiles.push(makeTile(SUIT.WIND, 2, 1));
+    handTiles.push(makeTile(SUIT.WIND, 2, 1));
+    handTiles.push(makeTile(SUIT.WIND, 3, 1));
+    handTiles.push(makeTile(SUIT.WIND, 3, 1));
+    handTiles.push(makeTile(SUIT.WIND, 3, 1));
+    handTiles.push(makeTile(SUIT.DOT, 4, 1));
+    handTiles.push(makeTile(SUIT.DOT, 4, 1));
+    handTiles.push(makeTile(SUIT.BAMBOO, 1, 1));
+    handTiles.push(makeTile(SUIT.DOT, 4, 1));
+    handTiles.push(makeTile(SUIT.DOT, 5, 1));
+    handTiles.push(makeTile(SUIT.DOT, 6, 1));
+    handTiles.push(makeTile(SUIT.BAMBOO, 1, 1));
+    handTiles.push(makeTile(SUIT.BAMBOO, 1, 2));
 
     const res = calculateHandFan(handTiles, undefined, false, undefined, {
       prevailingWind: 'south',
@@ -311,23 +311,23 @@ describe('validator wind scoring', () => {
   });
   it('小三風', () => {
     const handTiles: Tile[] = [];
-    handTiles.push(makeTile('wind', 1, 1));
-    handTiles.push(makeTile('wind', 1, 2));
-    handTiles.push(makeTile('wind', 1, 3));
-    handTiles.push(makeTile('wind', 2, 1));
-    handTiles.push(makeTile('wind', 2, 1));
-    handTiles.push(makeTile('wind', 2, 1));
-    handTiles.push(makeTile('wind', 3, 1));
-    handTiles.push(makeTile('wind', 3, 1));
-    handTiles.push(makeTile('dot', 4, 1));
-    handTiles.push(makeTile('dot', 4, 1));
-    handTiles.push(makeTile('dot', 4, 1));
-    handTiles.push(makeTile('bamboo', 1, 1));
-    handTiles.push(makeTile('dot', 4, 1));
-    handTiles.push(makeTile('dot', 5, 1));
-    handTiles.push(makeTile('dot', 6, 1));
-    handTiles.push(makeTile('bamboo', 1, 1));
-    handTiles.push(makeTile('bamboo', 1, 2));
+    handTiles.push(makeTile(SUIT.WIND, 1, 1));
+    handTiles.push(makeTile(SUIT.WIND, 1, 2));
+    handTiles.push(makeTile(SUIT.WIND, 1, 3));
+    handTiles.push(makeTile(SUIT.WIND, 2, 1));
+    handTiles.push(makeTile(SUIT.WIND, 2, 1));
+    handTiles.push(makeTile(SUIT.WIND, 2, 1));
+    handTiles.push(makeTile(SUIT.WIND, 3, 1));
+    handTiles.push(makeTile(SUIT.WIND, 3, 1));
+    handTiles.push(makeTile(SUIT.DOT, 4, 1));
+    handTiles.push(makeTile(SUIT.DOT, 4, 1));
+    handTiles.push(makeTile(SUIT.DOT, 4, 1));
+    handTiles.push(makeTile(SUIT.BAMBOO, 1, 1));
+    handTiles.push(makeTile(SUIT.DOT, 4, 1));
+    handTiles.push(makeTile(SUIT.DOT, 5, 1));
+    handTiles.push(makeTile(SUIT.DOT, 6, 1));
+    handTiles.push(makeTile(SUIT.BAMBOO, 1, 1));
+    handTiles.push(makeTile(SUIT.BAMBOO, 1, 2));
 
     const res = calculateHandFan(handTiles, undefined, false, undefined, {
       prevailingWind: 'south',

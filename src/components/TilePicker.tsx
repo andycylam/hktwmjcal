@@ -1,5 +1,5 @@
 import React from 'react';
-import { Tile, Suit } from '../types/mahjong';
+import { Tile, Suit, SUIT } from '../types/mahjong';
 
 interface Props {
   onSelectTile: (tile: Tile) => void;
@@ -15,72 +15,72 @@ const CHINESE_NUM = ['零','一','二','三','四','五','六','七','八','九'
 const TILE_GROUPS: { name: string; suit: Suit; items: { val: number; label: string; suit?: Suit }[] }[] = [
   {
     name: '萬子 (Characters)',
-    suit: 'character',
+    suit: SUIT.CHARACTER,
     items: [1, 2, 3, 4, 5, 6, 7, 8, 9].map(v => ({ val: v, label: `${CHINESE_NUM[v]}萬` }))
   },
   {
     name: '筒子 (Dots)',
-    suit: 'dot',
+    suit: SUIT.DOT,
     items: [1, 2, 3, 4, 5, 6, 7, 8, 9].map(v => ({ val: v, label: `${CHINESE_NUM[v]}筒` }))
   },
   {
     name: '索子 (Bamboo)',
-    suit: 'bamboo',
+    suit: SUIT.BAMBOO,
     items: [1, 2, 3, 4, 5, 6, 7, 8, 9].map(v => ({ val: v, label: `${CHINESE_NUM[v]}索` }))
   },
   {
     name: '字牌 (Winds & Dragons)',
-    suit: 'wind', // default suit, overridden per-item for dragons
+    suit: SUIT.WIND, // default suit, overridden per-item for dragons
     items: [
-      { val: 1, label: '東', suit: 'wind' },
-      { val: 2, label: '南', suit: 'wind' },
-      { val: 3, label: '西', suit: 'wind' },
-      { val: 4, label: '北', suit: 'wind' },
-      { val: 5, label: '中', suit: 'dragon' },
-      { val: 6, label: '發', suit: 'dragon' },
-      { val: 7, label: '白', suit: 'dragon' }
+      { val: 1, label: '東', suit: SUIT.WIND },
+      { val: 2, label: '南', suit: SUIT.WIND },
+      { val: 3, label: '西', suit: SUIT.WIND },
+      { val: 4, label: '北', suit: SUIT.WIND },
+      { val: 5, label: '中', suit: SUIT.DRAGON },
+      { val: 6, label: '發', suit: SUIT.DRAGON },
+      { val: 7, label: '白', suit: SUIT.DRAGON }
     ]
   },
   {
     name: '花牌 (Flowers)',
-    suit: 'flower',
+    suit: SUIT.FLOWER,
     items: [1, 2, 3, 4, 5, 6, 7, 8].map(v => ({ val: v, label: `🀦${v}` }))
   }
 ];
 
 // Vibrant colors for visibility on dark background
 const SUIT_COLORS: Record<Suit, { base: string; border: string; text: string; disabled: string }> = {
-  character: {
+  [SUIT.CHARACTER]: {
     base: 'bg-amber-300',
     border: 'border-amber-600',
     text: 'text-amber-950',
     disabled: 'bg-amber-300/40 border-amber-600/40 text-amber-950/40'
   },
-  dot: {
+  [SUIT.DOT]: {
     base: 'bg-red-300',
     border: 'border-red-600',
     text: 'text-red-950',
     disabled: 'bg-red-300/40 border-red-600/40 text-red-950/40'
   },
-  bamboo: {
+  [SUIT.BAMBOO]: {
     base: 'bg-emerald-300',
     border: 'border-emerald-600',
     text: 'text-emerald-950',
     disabled: 'bg-emerald-300/40 border-emerald-600/40 text-emerald-950/40'
   },
-  wind: {
+  [SUIT.WIND]: {
     base: 'bg-blue-300',
     border: 'border-blue-600',
     text: 'text-blue-950',
     disabled: 'bg-blue-300/40 border-blue-600/40 text-blue-950/40'
   },
-  dragon: {
+  [SUIT.DRAGON]: {
     base: 'bg-purple-300',
     border: 'border-purple-600',
     text: 'text-purple-950',
     disabled: 'bg-purple-300/40 border-purple-600/40 text-purple-950/40'
   },
-  flower: {
+  [SUIT.FLOWER]: {
     base: 'bg-lime-300',
     border: 'border-lime-600',
     text: 'text-lime-950',
@@ -120,7 +120,7 @@ export const TilePicker: React.FC<Props> = ({ onSelectTile, onAddFlower, hand, m
               const itemSuit = item.suit || group.suit;
               const key = `${itemSuit}_${item.val}`;
               const currentCount = counts.get(key) || 0;
-              const isFlower = itemSuit === 'flower';
+              const isFlower = itemSuit === SUIT.FLOWER;
               const effectiveMaxed = isFlower ? currentCount >= 1 : currentCount >= MAX_PER_TYPE;
               const colors = SUIT_COLORS[itemSuit];
 
@@ -134,7 +134,7 @@ export const TilePicker: React.FC<Props> = ({ onSelectTile, onAddFlower, hand, m
                       value: item.val,
                       label: item.label
                     } as Tile;
-                    if (itemSuit === 'flower') {
+                    if (itemSuit === SUIT.FLOWER) {
                       if (onAddFlower) onAddFlower(tile);
                       return;
                     }

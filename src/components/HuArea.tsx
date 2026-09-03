@@ -1,5 +1,5 @@
 import React from 'react';
-import { Tile, Suit } from '../types/mahjong';
+import { Tile, Suit, SUIT } from '../types/mahjong';
 
 interface Props {
   huTile?: Tile | null;
@@ -10,12 +10,12 @@ interface Props {
 
 // Reuse same suit color scheme as TilePicker/HandRack
 const SUIT_COLORS: Record<Suit, { base: string; border: string; text: string }> = {
-  character: { base: 'bg-amber-300', border: 'border-amber-600', text: 'text-amber-950' },
-  dot: { base: 'bg-red-300', border: 'border-red-600', text: 'text-red-950' },
-  bamboo: { base: 'bg-emerald-300', border: 'border-emerald-600', text: 'text-emerald-950' },
-  wind: { base: 'bg-blue-300', border: 'border-blue-600', text: 'text-blue-950' },
-  dragon: { base: 'bg-purple-300', border: 'border-purple-600', text: 'text-purple-950' },
-  flower: { base: 'bg-lime-300', border: 'border-lime-600', text: 'text-lime-950' }
+  [SUIT.CHARACTER]: { base: 'bg-amber-300', border: 'border-amber-600', text: 'text-amber-950' },
+  [SUIT.DOT]: { base: 'bg-red-300', border: 'border-red-600', text: 'text-red-950' },
+  [SUIT.BAMBOO]: { base: 'bg-emerald-300', border: 'border-emerald-600', text: 'text-emerald-950' },
+  [SUIT.WIND]: { base: 'bg-blue-300', border: 'border-blue-600', text: 'text-blue-950' },
+  [SUIT.DRAGON]: { base: 'bg-purple-300', border: 'border-purple-600', text: 'text-purple-950' },
+  [SUIT.FLOWER]: { base: 'bg-lime-300', border: 'border-lime-600', text: 'text-lime-950' }
 };
 
 export const HuArea: React.FC<Props> = ({ huTile, onRemoveHu, huIsZimo, onToggleZimo }) => {

@@ -1,4 +1,4 @@
-import { Tile, CalculationResult, GameContext } from '../types/mahjong';
+import { Tile, CalculationResult, GameContext, SUIT, MELD } from '../types/mahjong';
 import {
   MeldEntry,
   FanCalculator,
@@ -47,7 +47,7 @@ function calculateSingleHandForm(
   const seatWindNum = gameContext?.seatWind ? WIND_VALUE_MAP[gameContext.seatWind] : undefined;
   const prevailingWindNum = gameContext?.prevailingWind ? WIND_VALUE_MAP[gameContext.prevailingWind] : undefined;
 
-  const flowerMelds = meldMap ? Object.values(meldMap).filter(m => m.kind === 'flower') : [];
+  const flowerMelds = meldMap ? Object.values(meldMap).filter(m => m.kind === MELD.FLOWER) : [];
   const allFlowerTiles = flowerMelds.flatMap(meld => meld.tiles);
   const allFlowerValues = new Set(allFlowerTiles.map(tile => tile.value));
 
@@ -183,8 +183,8 @@ function calculateSingleHandForm(
 
   // 15. 字牌 及 16.正字
   if (formType === 'basic') {
-    const windMelds = meldMap ? Object.values(meldMap).filter(meld =>  (meld.kind === 'pung' || meld.kind === 'kong') && meld.tiles.length > 0 && meld.tiles[0].suit === 'wind') : [];
-    const dragonMelds = meldMap ? Object.values(meldMap).filter(meld => (meld.kind === 'pung' || meld.kind === 'kong') && meld.tiles.length > 0 && meld.tiles[0].suit === 'dragon') : [];
+    const windMelds = meldMap ? Object.values(meldMap).filter(meld =>  (meld.kind === MELD.PUNG || meld.kind === MELD.KONG) && meld.tiles.length > 0 && meld.tiles[0].suit === SUIT.WIND) : [];
+    const dragonMelds = meldMap ? Object.values(meldMap).filter(meld => (meld.kind === MELD.PUNG || meld.kind === MELD.KONG) && meld.tiles.length > 0 && meld.tiles[0].suit === SUIT.DRAGON) : [];
 
     // A. 計算副露中的風牌及三元牌
     if (countWind){
@@ -240,7 +240,7 @@ function calculateSingleHandForm(
 
   // 92. 槓 (僅限基本形)
   if (formType === 'basic' && meldMap) {
-    const kongs = Object.values(meldMap).filter(m => m.kind === 'kong' && !m.concealed).length;
+    const kongs = Object.values(meldMap).filter(m => m.kind === MELD.KONG && !m.concealed).length;
     if (kongs > 0){
       calc.add(`槓 x${kongs}`, kongs);
     }
@@ -248,7 +248,7 @@ function calculateSingleHandForm(
 
   // 4. 暗槓
   if (formType === 'basic' && meldMap) {
-    const concealedKongs = Object.values(meldMap).filter(m => m.kind === 'kong' && m.concealed).length;
+    const concealedKongs = Object.values(meldMap).filter(m => m.kind === MELD.KONG && m.concealed).length;
     if (concealedKongs > 0) {
       calc.add(`暗槓 x${concealedKongs}`, concealedKongs * 2);
     }
@@ -323,7 +323,7 @@ export function calculateHandFan(
   if (meldMap) {
     Object.values(meldMap).forEach(m => {
       meldTilesAll.push(...m.tiles);
-      if (m.kind !== 'flower') meldTilesCounted.push(...m.tiles);
+      if (m.kind !== MELD.FLOWER) meldTilesCounted.push(...m.tiles);
     });
   }
   const countedTiles = [...handTiles, ...meldTilesCounted];
@@ -375,7 +375,7 @@ export function calculateHandFan(
   let possibleCombinations: string[] | undefined;
   let canFormBasicHu = false;
 
-  const nonFlowerMelds = meldMap ? Object.values(meldMap).filter(m => m.kind !== 'flower') : [];
+  const nonFlowerMelds = meldMap ? Object.values(meldMap).filter(m => m.kind !== MELD.FLOWER) : [];
   const existingMeldCount = nonFlowerMelds.length;
   const neededMelds = 5 - existingMeldCount;
 

@@ -1,10 +1,10 @@
-import { Tile } from '../types/mahjong';
+import { Tile, SUIT, MELD, MeldKind } from '../types/mahjong';
 
 // ----------------------------------------------------------------------
 // Types
 // ----------------------------------------------------------------------
 
-export type MeldEntry = { kind: 'kong' | 'pung' | 'chow' | 'flower'; tiles: Tile[]; concealed?: boolean };
+export type MeldEntry = { kind: MeldKind; tiles: Tile[]; concealed?: boolean };
 
 // ----------------------------------------------------------------------
 // Helper Functions & Maps
@@ -68,14 +68,14 @@ export class FanCalculator {
 }
 
 export function getDeclaredKongCount(meldMap?: Record<string, MeldEntry>): number {
-  return meldMap ? Object.values(meldMap).filter(m => m.kind === 'kong').length : 0;
+  return meldMap ? Object.values(meldMap).filter(m => m.kind === MELD.KONG).length : 0;
 }
 
 
 // True if any meld is a concealed kong (暗槓)
 export function hasConcealedKong(meldMap?: Record<string, MeldEntry>): boolean {
   if (!meldMap) return false;
-  return Object.values(meldMap).some(m => m.kind === 'kong' && m.concealed === true);
+  return Object.values(meldMap).some(m => m.kind === MELD.KONG && m.concealed === true);
 }
 
 // 統計手牌中每種牌（suit_value）出現嘅次數
@@ -373,7 +373,7 @@ export function hasNonFlowerMelds(meldMap?: Record<string, MeldEntry>): boolean 
   if (!meldMap) return false;
 
   for (const key in meldMap) {
-    if (meldMap[key].kind !== 'flower') {
+    if (meldMap[key].kind !== MELD.FLOWER) {
       return true;
     }
   }
@@ -387,7 +387,7 @@ export function hasExposedNonKongMeld(meldMap?: Record<string, MeldEntry>): bool
   if (!meldMap) return false;
   for (const key in meldMap) {
     const kind = meldMap[key].kind;
-    if (kind !== 'flower' && kind !== 'kong') return true;
+    if (kind !== MELD.FLOWER && kind !== MELD.KONG) return true;
   }
   return false;
 }
@@ -397,7 +397,7 @@ export function isFullFlush(handTiles: Tile[], meldMap?: Record<string, MeldEntr
 
   if (meldMap) {
     Object.values(meldMap).forEach(meld => {
-      if (meld.kind !== 'flower') {
+      if (meld.kind !== MELD.FLOWER) {
         relevantTiles.push(...meld.tiles);
       }
     });
@@ -405,11 +405,11 @@ export function isFullFlush(handTiles: Tile[], meldMap?: Record<string, MeldEntr
 
   if (relevantTiles.length === 0) return false;
 
-  const hasHonorTiles = relevantTiles.some(t => t.suit === 'wind' || t.suit === 'dragon');
+  const hasHonorTiles = relevantTiles.some(t => t.suit === SUIT.WIND || t.suit === SUIT.DRAGON);
   if (hasHonorTiles) return false;
 
   const firstSuit = relevantTiles[0].suit;
-  if (!['character', 'dot', 'bamboo'].includes(firstSuit)) {
+  if (!(SUIT.CHARACTER === firstSuit || SUIT.DOT === firstSuit || SUIT.BAMBOO === firstSuit)) {
     return false;
   }
 
@@ -419,22 +419,22 @@ export function isFullFlush(handTiles: Tile[], meldMap?: Record<string, MeldEntr
 // 缺一門：無花牌，且萬筒索三門中至少缺其一門
 export function isVoidInOneSuit(handTiles: Tile[], meldMap?: Record<string, MeldEntry>): boolean {
   const hasFlower = meldMap
-    ? Object.values(meldMap).some(m => m.kind === 'flower')
+    ? Object.values(meldMap).some(m => m.kind === MELD.FLOWER)
     : false;
   if (hasFlower) return false;
 
   const relevantTiles: Tile[] = [...handTiles];
   if (meldMap) {
     Object.values(meldMap).forEach(meld => {
-      if (meld.kind !== 'flower') relevantTiles.push(...meld.tiles);
+      if (meld.kind !== MELD.FLOWER) relevantTiles.push(...meld.tiles);
     });
   }
 
   if (relevantTiles.length === 0) return false;
 
-  const hasChar = relevantTiles.some(t => t.suit === 'character');
-  const hasDot  = relevantTiles.some(t => t.suit === 'dot');
-  const hasBamboo = relevantTiles.some(t => t.suit === 'bamboo');
+  const hasChar = relevantTiles.some(t => t.suit === SUIT.CHARACTER);
+  const hasDot  = relevantTiles.some(t => t.suit === SUIT.DOT);
+  const hasBamboo = relevantTiles.some(t => t.suit === SUIT.BAMBOO);
 
   return !hasChar || !hasDot || !hasBamboo;
 }
@@ -443,14 +443,14 @@ export function isVoidInOneSuit(handTiles: Tile[], meldMap?: Record<string, Meld
 export function isAllChows(  handTiles: Tile[],  meldMap?: Record<string, MeldEntry>): boolean {
   const nonFlowerMelds = meldMap
     ? Object.values(meldMap).filter(
-        meld => meld.kind !== 'flower'
+        meld => meld.kind !== MELD.FLOWER
       )
     : [];
 
   // 平糊所有已完成面子都必須係順子
   if (
     nonFlowerMelds.some(
-      meld => meld.kind !== 'chow'
+      meld => meld.kind !== MELD.CHOW
     )
   ) {
     return false;

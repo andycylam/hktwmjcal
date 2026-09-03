@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { calculateHandFan } from '../src/engine/validator';
-import { Tile } from '../src/types/mahjong';
+import { Tile, MELD, MeldKind } from '../src/types/mahjong';
 
 function makeTile(suit: string, value: number, idSuffix: number): Tile {
   return { id: `${suit}_${value}_${idSuffix}`, suit: suit as any, value, label: `${value}${suit}` };
@@ -8,7 +8,7 @@ function makeTile(suit: string, value: number, idSuffix: number): Tile {
 
 describe('meld behaviors', () => {
   let hand: Tile[] = [];
-  let meldMap: Record<string, { kind: 'kong'|'pung'|'chow'|'flower'; tiles: Tile[]; concealed?: boolean }> = {};
+  let meldMap: Record<string, { kind: MeldKind; tiles: Tile[]; concealed?: boolean }> = {};
 
   beforeEach(() => {
     hand = [];
@@ -18,14 +18,14 @@ describe('meld behaviors', () => {
   it('selection kong -> downgrade -> remove returns correct tiles', () => {
     hand = [makeTile('character',1,1), makeTile('character',1,2), makeTile('character',1,3), makeTile('character',1,4)];
     // simulate creation of kong
-    meldMap['character_1@kong'] = { kind: 'kong', tiles: [...hand] };
+    meldMap['character_1@kong'] = { kind: MELD.KONG, tiles: [...hand] };
     hand = [];
 
     // downgrade by removing one tile
     const clicked = meldMap['character_1@kong'].tiles[0];
     const remaining = meldMap['character_1@kong'].tiles.filter(t => t.id !== clicked.id);
     delete meldMap['character_1@kong'];
-    meldMap['character_1@pung'] = { kind: 'pung', tiles: remaining };
+    meldMap['character_1@pung'] = { kind: MELD.PUNG, tiles: remaining };
     hand.push(clicked);
 
     expect(Object.keys(meldMap)).toContain('character_1@pung');
@@ -43,14 +43,14 @@ describe('meld behaviors', () => {
   it('chow detection works', () => {
     hand = [makeTile('bamboo',4,1), makeTile('bamboo',5,2), makeTile('bamboo',6,3)];
     // create chow
-    meldMap['bamboo_4@chow'] = { kind: 'chow', tiles: [...hand] };
+    meldMap['bamboo_4@chow'] = { kind: MELD.CHOW, tiles: [...hand] };
     hand = [];
     expect(Object.keys(meldMap).some(k => k.endsWith('@chow'))).toBe(true);
   });
 
   it('zimo and concealed scoring reflected in validator', () => {
     // Create a concealed kong and remaining tiles that form 3 melds + pair
-    meldMap['character_1@kong'] = { kind: 'kong', tiles: [makeTile('character',1,100), makeTile('character',1,101), makeTile('character',1,102), makeTile('character',1,103)], concealed: true };
+    meldMap['character_1@kong'] = { kind: MELD.KONG, tiles: [makeTile('character',1,100), makeTile('character',1,101), makeTile('character',1,102), makeTile('character',1,103)], concealed: true };
     // remaining hand should be 14 tiles (4 melds + pair) to satisfy total 17 when a kong exists
     hand = [
       // meld 1
@@ -73,11 +73,11 @@ describe('meld behaviors', () => {
 
   it('flower cancel removes flower meld', () => {
     // add two flowers then remove one
-    meldMap['flower_1@flower'] = { kind: 'flower', tiles: [makeTile('flower', 1, 1)] };
-    meldMap['flower_2@flower'] = { kind: 'flower', tiles: [makeTile('flower', 2, 2)] };
+    meldMap['flower_1@flower'] = { kind: MELD.FLOWER, tiles: [makeTile(MELD.FLOWER, 1, 1)] };
+    meldMap['flower_2@flower'] = { kind: MELD.FLOWER, tiles: [makeTile(MELD.FLOWER, 2, 2)] };
     expect(Object.keys(meldMap).some(k => k.endsWith('@flower'))).toBe(true);
     delete meldMap['flower_1@flower'];
-    const remaining = Object.keys(meldMap).filter(k => meldMap[k].kind === 'flower');
+    const remaining = Object.keys(meldMap).filter(k => meldMap[k].kind === MELD.FLOWER);
     expect(remaining.length).toBe(1);
     expect(remaining[0]).toBe('flower_2@flower');
   });
@@ -85,7 +85,7 @@ describe('meld behaviors', () => {
   it('flowers do not count toward 17 tiles requirement', () => {
     // hand of 16 tiles + 1 flower should still be invalid (flowers not counted)
     hand = new Array(16).fill(0).map((_,i) => makeTile('character', (i % 9) + 1, i+1));
-    meldMap['flower_1@flower'] = { kind: 'flower', tiles: [makeTile('flower', 1, 1)] };
+    meldMap['flower_1@flower'] = { kind: MELD.FLOWER, tiles: [makeTile(MELD.FLOWER, 1, 1)] };
     const res = calculateHandFan(hand as Tile[], meldMap, false);
     expect(res.isValid).toBe(false);
     expect(res.reason).toMatch(/目前手牌共有 16 張/);

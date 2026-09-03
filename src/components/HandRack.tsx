@@ -1,5 +1,6 @@
 import React from 'react';
-import { Tile, Suit } from '../types/mahjong';
+import { Tile, Suit, SUIT } from '../types/mahjong';
+import type { MeldKind } from '../types/mahjong';
 
 interface Props {
   hand: Tile[];
@@ -8,19 +9,19 @@ interface Props {
   onClear: () => void;
   onToggleSelect?: (id: string) => void;
   selection?: string[];
-  meldMap?: Record<string, { kind: 'kong' | 'pung' | 'chow' | 'flower'; tiles: Tile[] }>;
+  meldMap?: Record<string, { kind: MeldKind; tiles: Tile[] }>;
   totalTiles?: number;
   totalLimit?: number;
 }
 
 // Reuse same suit color scheme as TilePicker
 const SUIT_COLORS: Record<Suit, { base: string; border: string }> = {
-  character: { base: 'bg-amber-50', border: 'border-amber-700' },
-  dot: { base: 'bg-red-50', border: 'border-red-700' },
-  bamboo: { base: 'bg-emerald-50', border: 'border-emerald-700' },
-  wind: { base: 'bg-blue-50', border: 'border-blue-700' },
-  dragon: { base: 'bg-purple-50', border: 'border-purple-700' },
-  flower: { base: 'bg-lime-50', border: 'border-lime-700' }
+  [SUIT.CHARACTER]: { base: 'bg-amber-50', border: 'border-amber-700' },
+  [SUIT.DOT]: { base: 'bg-red-50', border: 'border-red-700' },
+  [SUIT.BAMBOO]: { base: 'bg-emerald-50', border: 'border-emerald-700' },
+  [SUIT.WIND]: { base: 'bg-blue-50', border: 'border-blue-700' },
+  [SUIT.DRAGON]: { base: 'bg-purple-50', border: 'border-purple-700' },
+  [SUIT.FLOWER]: { base: 'bg-lime-50', border: 'border-lime-700' }
 };
 
 // Render tiles individually in the hand (no grouping)
