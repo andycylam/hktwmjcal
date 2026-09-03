@@ -18,14 +18,18 @@ jobs:
       - name: Install
         run: npm ci
       - name: Run tests with coverage
-        run: npx vitest run --coverage --coverage.reporter=text --coverage.reporter=cobertura
+        run: npx vitest run --coverage --coverage.reporter=text --coverage.reporter=cobertura --coverage.reporter=lcov
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: coverage
-      - name: Coverage PR comment
-        uses: orgoro/coverage@v3
-        with:
-          coverageFile: coverage/cobertura-coverage.xml
-          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate coverage badge
+        run: npx coverage-badge -f coverage/lcov.info -o coverage-badge.svg
+      - name: Commit badge
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add coverage-badge.svg
+          git diff --staged --quiet || git commit -m "chore: update coverage badge"
+          git push
