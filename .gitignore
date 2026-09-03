@@ -39,6 +39,9 @@ coverage/
 # Vite
 .vite/
 
+# TypeScript build cache
+*.tsbuildinfo
+
 # Local npm cache and test outputs
 .npm-cache/
 test-results/
