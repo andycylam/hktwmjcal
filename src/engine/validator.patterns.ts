@@ -136,7 +136,7 @@ export function getJeungNgaanFromCombination(
     [2, 5, 8].includes(value)
   ) {
     return {
-      rule: `將眼 (${suitNumberLabel(value)}${suit})`
+      rule: `將眼 (${suitNumberLabel(value)}${suit})`,
       fan: 2
     };
   }
