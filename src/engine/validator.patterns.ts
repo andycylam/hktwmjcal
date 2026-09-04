@@ -136,7 +136,7 @@ export function getJeungNgaanFromCombination(
     [2, 5, 8].includes(value)
   ) {
     return {
-      rule: `將眼 (${value}${suit})`,
+      rule: `將眼 (${suitNumberLabel(value)}${suit})`
       fan: 2
     };
   }
@@ -464,10 +464,21 @@ export function isDoiPungWait(
   );
 
   return winningTriplet !== undefined;
+
+  const matchingTriplets = parts.filter(
+    part =>
+      part.includes('x3') &&
+      doesMeldPartMatchTile(part, huTile)
+  );
+
+  if (matchingTriplets.length !== 1) {
+    return false;
+  }
+
+  
 }
 
 
 // ----------------------------------------------------------------------
 // 通用單一形牌型番數計算器 (Unified Single Form Engine)
 // ----------------------------------------------------------------------
-
