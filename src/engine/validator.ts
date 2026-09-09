@@ -20,6 +20,7 @@ import {
   cloneCounts,
   canFormMelds,
   collectMeldCombinations,
+  isAllHonors
 } from './validator.helpers';
 import {
   detectWaitPattern,
