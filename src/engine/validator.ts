@@ -107,7 +107,6 @@ function calculateSingleHandForm(
       meldMap
     );
 
-
     // 93. 大四喜、94. 小四喜、95.大三風、96.小三風
     switch (windAnalysis.pattern) {
       case 'bigFourWinds':
@@ -144,6 +143,15 @@ function calculateSingleHandForm(
         break;
     }
   }
+
+  // 99. 字一色
+  if (isAllHonors(handTiles, meldMap)) {
+    calc.add('字一色', 240);
+
+    countNoHonor = false;
+    countNoHonorFlower = false;
+
+  }  
 
 
   // 114. 清一色 (共通)
