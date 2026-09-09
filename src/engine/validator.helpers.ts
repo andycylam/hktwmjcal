@@ -420,7 +420,7 @@ export function isFullFlush(handTiles: Tile[], meldMap?: Record<string, MeldEntr
 // 字一式 Helper
 // ----------------------------------------------------------------------
 
-function isAllHonors(
+export function isAllHonors(
   handTiles: Tile[],
   meldMap?: Record<string, MeldEntry>
 ): boolean {
