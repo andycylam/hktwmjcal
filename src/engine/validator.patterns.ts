@@ -432,7 +432,6 @@ function doesMeldPartMatchTile(
  *
  * 1. 食糊後的基本形拆解中有一對眼
  * 2. 食糊牌被用於一組刻子
- * 3. 扣除食糊牌後，該刻子原本是一對
  *
  * 即食糊前有兩對：
  * - 一對被食糊牌補成刻子
@@ -458,24 +457,11 @@ export function isDoiPungWait(
   }
 
   // 食糊牌必須完成其中一組刻子
-  const winningTriplet = parts.find(part =>
-    part.includes('x3') &&
-    doesMeldPartMatchTile(part, huTile)
-  );
-
-  return winningTriplet !== undefined;
-
-  const matchingTriplets = parts.filter(
+  return parts.some(
     part =>
       part.includes('x3') &&
       doesMeldPartMatchTile(part, huTile)
   );
-
-  if (matchingTriplets.length !== 1) {
-    return false;
-  }
-
-  
 }
 
 
