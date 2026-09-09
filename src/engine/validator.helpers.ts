@@ -416,6 +416,34 @@ export function isFullFlush(handTiles: Tile[], meldMap?: Record<string, MeldEntr
   return relevantTiles.every(t => t.suit === firstSuit);
 }
 
+// ----------------------------------------------------------------------
+// 字一式 Helper
+// ----------------------------------------------------------------------
+
+function isAllHonors(
+  handTiles: Tile[],
+  meldMap?: Record<string, MeldEntry>
+): boolean {
+  const relevantTiles: Tile[] = [...handTiles];
+
+  if (meldMap) {
+    Object.values(meldMap).forEach(meld => {
+      if (meld.kind !== 'flower') {
+        relevantTiles.push(...meld.tiles);
+      }
+    });
+  }
+
+  if (relevantTiles.length === 0) {
+    return false;
+  }
+
+  return relevantTiles.every(tile =>
+    tile.suit === 'wind' ||
+    tile.suit === 'dragon'
+  );
+}
+
 // 缺一門：無花牌，且萬筒索三門中至少缺其一門
 export function isVoidInOneSuit(handTiles: Tile[], meldMap?: Record<string, MeldEntry>): boolean {
   const hasFlower = meldMap
@@ -503,4 +531,3 @@ export function isAllChows(  handTiles: Tile[],  meldMap?: Record<string, MeldEn
 
   return false;
 }
-
