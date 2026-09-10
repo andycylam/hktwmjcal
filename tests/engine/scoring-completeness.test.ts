@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { calculateHandFan } from '../../src/engine/validator';
 import { detectWaitPattern } from '../../src/engine/validator.patterns';
+import { checkLikGoo } from '../../src/engine/likgoo.helper';
+import { getSixteenUnconnectedPattern, isAllChows, isAllHonors, isFullFlush, isSixteenUnconnectedWait, isThirteenOrphansWait } from '../../src/engine/validator.helpers';
+import { analyzeDragonPattern, isDoiPungWait } from '../../src/engine/validator.patterns';
 import { MELD, SUIT, Tile } from '../../src/types/mahjong';
 
 const t = (suit: Tile['suit'], value: number, id: number): Tile => ({
@@ -250,6 +253,109 @@ describe('scoring completeness regressions', () => {
       isFakeDuk: true,
       dukDukType: 'kaLung',
     });
+  });
+
+  it('rejects Lik Goo and chow checks at their invalid input boundaries', () => {
+    expect(checkLikGoo([]).isLikGoo).toBe(false);
+    expect(checkLikGoo(likGooHand(), {
+      exposed: {
+        kind: MELD.PUNG,
+        tiles: group(SUIT.DOT, 2, 310),
+      },
+    }).isLikGoo).toBe(false);
+    expect(isAllHonors([])).toBe(false);
+    expect(isFullFlush([t(SUIT.FLOWER, 1, 305)])).toBe(false);
+    expect(isAllChows([], {
+      extra: {
+        kind: MELD.PUNG,
+        tiles: group(SUIT.DOT, 1, 200),
+      },
+    })).toBe(false);
+    expect(isAllChows([], {
+      first: {
+        kind: MELD.CHOW,
+        tiles: chow(SUIT.DOT, 1, 210),
+      },
+      second: {
+        kind: MELD.CHOW,
+        tiles: chow(SUIT.DOT, 4, 220),
+      },
+      third: {
+        kind: MELD.CHOW,
+        tiles: chow(SUIT.DOT, 7, 230),
+      },
+      fourth: {
+        kind: MELD.CHOW,
+        tiles: chow(SUIT.BAMBOO, 1, 240),
+      },
+      fifth: {
+        kind: MELD.CHOW,
+        tiles: chow(SUIT.BAMBOO, 4, 250),
+      },
+    })).toBe(false);
+    expect(isAllChows([], {
+      ...['sixth', 'seventh'].reduce((melds, key, index) => ({
+        ...melds,
+        [key]: { kind: MELD.CHOW, tiles: chow(SUIT.CHARACTER, index + 1, 260 + index * 10) },
+      }), {
+        first: { kind: MELD.CHOW, tiles: chow(SUIT.DOT, 1, 210) },
+        second: { kind: MELD.CHOW, tiles: chow(SUIT.DOT, 4, 220) },
+        third: { kind: MELD.CHOW, tiles: chow(SUIT.DOT, 7, 230) },
+        fourth: { kind: MELD.CHOW, tiles: chow(SUIT.BAMBOO, 1, 240) },
+        fifth: { kind: MELD.CHOW, tiles: chow(SUIT.BAMBOO, 4, 250) },
+      }),
+    })).toBe(false);
+    expect(analyzeDragonPattern('紅中x2, 不明x3').pattern).toBeNull();
+    expect(getSixteenUnconnectedPattern([
+      t(SUIT.CHARACTER, 1, 320), t(SUIT.CHARACTER, 2, 321),
+      t(SUIT.DOT, 1, 322), t(SUIT.DOT, 2, 323),
+      t(SUIT.BAMBOO, 1, 324), t(SUIT.BAMBOO, 2, 325),
+    ])).toBeNull();
+    const unconnectedWait = [
+      t(SUIT.WIND, 1, 350), t(SUIT.WIND, 2, 351), t(SUIT.WIND, 3, 352), t(SUIT.WIND, 4, 353),
+      t(SUIT.DRAGON, 5, 354), t(SUIT.DRAGON, 6, 355), t(SUIT.DRAGON, 7, 356),
+      t(SUIT.CHARACTER, 1, 357), t(SUIT.CHARACTER, 4, 358), t(SUIT.CHARACTER, 9, 359),
+      t(SUIT.DOT, 1, 360), t(SUIT.DOT, 4, 361), t(SUIT.DOT, 9, 362),
+      t(SUIT.BAMBOO, 1, 363), t(SUIT.BAMBOO, 4, 364), t(SUIT.BAMBOO, 9, 365),
+      t(SUIT.WIND, 1, 366),
+    ];
+    expect(isSixteenUnconnectedWait(unconnectedWait, unconnectedWait[16], {
+      kong: {
+        kind: MELD.KONG,
+        concealed: true,
+        tiles: [1, 1, 1, 1].map((_, id) => t(SUIT.CHARACTER, 2, 370 + id)),
+      },
+    })).toBe(false);
+    expect(isThirteenOrphansWait([
+      t(SUIT.CHARACTER, 1, 380), t(SUIT.CHARACTER, 9, 381),
+      t(SUIT.DOT, 1, 382), t(SUIT.DOT, 9, 383),
+      t(SUIT.BAMBOO, 1, 384), t(SUIT.BAMBOO, 9, 385),
+      t(SUIT.WIND, 1, 386), t(SUIT.WIND, 2, 387), t(SUIT.WIND, 3, 388), t(SUIT.WIND, 4, 389),
+      t(SUIT.DRAGON, 5, 390), t(SUIT.DRAGON, 6, 391), t(SUIT.DRAGON, 7, 392),
+      t(SUIT.CHARACTER, 1, 393), t(SUIT.CHARACTER, 2, 394), t(SUIT.CHARACTER, 3, 395),
+    ], t(SUIT.CHARACTER, 1, 393), {
+      kong: {
+        kind: MELD.KONG,
+        concealed: true,
+        tiles: [1, 1, 1, 1].map((_, id) => t(SUIT.CHARACTER, 9, 400 + id)),
+      },
+    })).toBe(false);
+    expect(getSixteenUnconnectedPattern([
+      t(SUIT.WIND, 1, 330), t(SUIT.WIND, 2, 331), t(SUIT.WIND, 3, 332), t(SUIT.WIND, 4, 333),
+      t(SUIT.DRAGON, 5, 334), t(SUIT.DRAGON, 6, 335), t(SUIT.DRAGON, 7, 336),
+      t(SUIT.CHARACTER, 1, 337), t(SUIT.CHARACTER, 4, 338), t(SUIT.CHARACTER, 9, 339),
+      t(SUIT.DOT, 1, 340), t(SUIT.DOT, 4, 341), t(SUIT.DOT, 9, 342),
+      t(SUIT.BAMBOO, 2, 343), t(SUIT.BAMBOO, 5, 344), t(SUIT.BAMBOO, 8, 345),
+      t(SUIT.WIND, 1, 346),
+    ])).toBeNull();
+    expect(isDoiPungWait('一萬x3, 一筒x2', t(SUIT.FLOWER, 1, 300))).toBe(false);
+  });
+
+  it('adds the Lik Goo single-wait fan when the winning tile completes a pair', () => {
+    const hand = likGooHand();
+    const huTile = hand[0];
+    const result = calculateHandFan(hand, undefined, false, huTile);
+    expect(result.breakdown).toContainEqual({ rule: '獨獨 (單吊)', fan: 2 });
   });
 
 });
