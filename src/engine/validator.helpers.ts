@@ -619,6 +619,94 @@ export function getSixteenUnconnectedPattern(
   return null;
 }
 
+export interface FourReturnAnalysis {
+  groups: number;
+  concealed: boolean;
+}
+
+export function getFourReturnAnalyses(
+  handTiles: Tile[],
+  meldMap?: Record<string, MeldEntry>
+): FourReturnAnalysis[] {
+  const melds = meldMap
+    ? Object.values(meldMap).filter(meld => meld.kind !== MELD.FLOWER)
+    : [];
+  const exposedKeys = new Set(
+    melds
+      .filter(meld => meld.kind !== MELD.KONG && meld.concealed !== true)
+      .flatMap(meld => meld.tiles.map(tile => `${tile.suit}_${tile.value}`))
+  );
+  const counts = countTileOccurrences([
+    ...handTiles,
+    ...melds.flatMap(meld => meld.tiles)
+  ]);
+  const results: FourReturnAnalysis[] = [];
+
+  for (const [targetKey, totalCount] of counts) {
+    if (totalCount !== 4) continue;
+    const concealedCounts = countTileOccurrences(handTiles);
+    const targetInMelds = totalCount - (concealedCounts.get(targetKey) ?? 0);
+    const handCount = concealedCounts.get(targetKey) ?? 0;
+    if (handCount < 0) continue;
+    if (handCount === 4 && targetInMelds === 0) {
+      results.push({ groups: 2, concealed: !exposedKeys.has(targetKey) });
+      continue;
+    }
+
+    const tryDecompose = (remaining: Map<string, number>, pairUsed: boolean, groups: number): number[] => {
+      if (![...remaining.values()].some(count => count > 0)) {
+        return pairUsed ? [groups] : [];
+      }
+      const first = [...remaining.entries()].find(([, count]) => count > 0);
+      if (!first) return [];
+      const [key, count] = first;
+      const found: number[] = [];
+      if (!pairUsed && count >= 2) {
+        const next = removeTiles(remaining, [key, key]);
+        if (next) {
+          found.push(...tryDecompose(next, true, groups + (key === targetKey ? 1 : 0)));
+        }
+      }
+      if (count >= 3) {
+        const next = removeTiles(remaining, [key, key, key]);
+        if (next) {
+          found.push(...tryDecompose(next, pairUsed, groups + (key === targetKey ? 1 : 0)));
+        }
+      }
+      if (key.startsWith('character_') || key.startsWith('dot_') || key.startsWith('bamboo_')) {
+        const [suit, valueString] = key.split('_');
+        const value = Number(valueString);
+        for (const start of [value - 2, value - 1, value]) {
+          if (start < 1 || start > 7) continue;
+          const sequence = [`${suit}_${start}`, `${suit}_${start + 1}`, `${suit}_${start + 2}`];
+          if (!sequence.every(tile => (remaining.get(tile) ?? 0) > 0)) continue;
+          const next = removeTiles(remaining, sequence);
+          if (next) found.push(...tryDecompose(
+            next,
+            pairUsed,
+            groups + (sequence.includes(targetKey) ? 1 : 0)
+          ));
+        }
+      }
+      return found;
+    };
+
+    const remaining = cloneCounts(concealedCounts);
+    if (targetInMelds > 0) {
+      results.push({
+        groups: Math.max(...tryDecompose(remaining, false, targetInMelds) , 0),
+        concealed: !exposedKeys.has(targetKey)
+      });
+    } else {
+      const possible = tryDecompose(remaining, false, 0);
+      if (possible.length > 0) {
+        results.push({ groups: Math.max(...possible), concealed: !exposedKeys.has(targetKey) });
+      }
+    }
+  }
+  return results.filter(result => result.groups >= 2);
+}
+
 export function isFullFlush(handTiles: Tile[], meldMap?: Record<string, MeldEntry>): boolean {
   const relevantTiles: Tile[] = [...handTiles];
 

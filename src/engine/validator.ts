@@ -25,7 +25,8 @@ import {
   isThirteenOrphansWait,
   isSixteenUnconnected,
   isSixteenUnconnectedWait,
-  getSixteenUnconnectedPattern
+  getSixteenUnconnectedPattern,
+  getFourReturnAnalyses
 } from './validator.helpers';
 import type { SixteenUnconnectedPattern } from './validator.helpers';
 import {
@@ -98,6 +99,16 @@ function calculateSingleHandForm(
     if (sixteenUnconnectedPattern === 'mixed-dragon') calc.add('不搭雜龍', 30);
     countFullyConcealedHand = false;
   }
+
+  const fourReturnAnalyses = getFourReturnAnalyses(handTiles, meldMap);
+  for (const analysis of fourReturnAnalyses) {
+    const prefix = analysis.concealed ? '暗' : '明';
+    if (analysis.groups === 2) calc.add(`${prefix}四歸二`, analysis.concealed ? 10 : 5);
+    if (analysis.groups === 3) calc.add(`${prefix}四歸三`, analysis.concealed ? 30 : 15);
+    if (analysis.groups === 4) calc.add(`${prefix}四歸四`, analysis.concealed ? 120 : 60);
+  }
+  if (fourReturnAnalyses.length >= 2) calc.add('八歸', 20);
+  if (fourReturnAnalyses.length >= 3) calc.add('十二歸', 80);
 
   // 123. 形態專屬主牌型 (嚦咕嚦咕)
   if (formType === 'likGoo') {
