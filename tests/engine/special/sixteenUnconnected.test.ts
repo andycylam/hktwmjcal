@@ -70,4 +70,21 @@ describe('十六不搭', () => {
     const result = calculateHandFan(hand);
     expect(result.breakdown).toContainEqual({ rule: '不搭雜龍', fan: 30 });
   });
+
+  it('rejects an exposed pung', () => {
+    const hand: Tile[] = [
+      tile(SUIT.WIND, 1, 0), tile(SUIT.WIND, 2, 0), tile(SUIT.WIND, 3, 0), tile(SUIT.WIND, 4, 0),
+      tile(SUIT.DRAGON, 5, 0), tile(SUIT.DRAGON, 6, 0), tile(SUIT.DRAGON, 7, 0),
+      tile(SUIT.CHARACTER, 1, 0), tile(SUIT.CHARACTER, 4, 0), tile(SUIT.CHARACTER, 9, 0),
+      tile(SUIT.DOT, 1, 0), tile(SUIT.DOT, 4, 0), tile(SUIT.DOT, 9, 0),
+      tile(SUIT.BAMBOO, 1, 0), tile(SUIT.BAMBOO, 4, 0), tile(SUIT.BAMBOO, 9, 0),
+      tile(SUIT.WIND, 1, 1)
+    ];
+    expect(calculateHandFan(hand, {
+      exposed: {
+        kind: 'pung',
+        tiles: [tile(SUIT.WIND, 1, 2), tile(SUIT.WIND, 1, 3), tile(SUIT.WIND, 1, 4)]
+      }
+    }).breakdown).not.toContainEqual({ rule: '十六不搭', fan: 50 });
+  });
 });

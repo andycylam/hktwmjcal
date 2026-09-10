@@ -1,10 +1,17 @@
 import React from 'react';
-import { describe, it, expect } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { afterEach, describe, it, expect } from 'vitest';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../../src/App';
 
 describe('App flows (melds, flowers, hu)', () => {
+  afterEach(() => cleanup());
+
+  it('keeps calculation disabled until the counted hand reaches 17 tiles', async () => {
+    render(<App />);
+    expect((screen.getByText('算番 (Calculate Fan)') as HTMLButtonElement).disabled).toBe(true);
+  });
+
   it('can create and cancel a chow (sequence) via selection', async () => {
     const user = userEvent.setup();
     render(<App />);

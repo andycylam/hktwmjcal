@@ -54,4 +54,10 @@ describe('十三么', () => {
     expect(result.breakdown).toContainEqual({ rule: '十三么', fan: 100 });
     expect(result.breakdown).toContainEqual({ rule: '十三扉十三么', fan: 20 });
   });
+
+  it('does not add 十三扉十三么 when the winning tile is not a terminal or honor', () => {
+    const result = calculateHandFan(validHand(), undefined, false, validHand()[14]);
+    expect(result.breakdown).toContainEqual({ rule: '十三么', fan: 100 });
+    expect(result.breakdown).not.toContainEqual({ rule: '十三扉十三么', fan: 20 });
+  });
 });
