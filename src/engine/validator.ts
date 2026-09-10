@@ -20,7 +20,8 @@ import {
   cloneCounts,
   canFormMelds,
   collectMeldCombinations,
-  isAllHonors
+  isAllHonors,
+  isThirteenOrphans
 } from './validator.helpers';
 import {
   detectWaitPattern,
@@ -42,7 +43,8 @@ function calculateSingleHandForm(
   comboStr?: string,
   huTile?: Tile,
   remainingCounts?: Map<string, number>,
-  gameContext?: GameContext
+  gameContext?: GameContext,
+  isThirteenOrphansForm = false
 ): FanCalculator {
   const calc = new FanCalculator();
   const seatWindNum = gameContext?.seatWind ? WIND_VALUE_MAP[gameContext.seatWind] : undefined;
@@ -56,6 +58,7 @@ function calculateSingleHandForm(
   const hasFlower = allFlowerTiles.length > 0;
   const hasExposedNonKong = hasExposedNonKongMeld(meldMap);
 
+
   let countNoHonor = true;  //不計無字
   let countNoFlower = true; //不計無花
   let countNoHonorFlower = true; //不計無字花
@@ -67,8 +70,16 @@ function calculateSingleHandForm(
     countFullFlush: true //不計清一色
   };
   let countVoidInOneSuit = true; //不計缺一門
+  let countFullyConcealedHand = true; //不計門清
 
   const huKey = huTile? `${huTile.suit}_${huTile.value}` : undefined;
+
+  // 138. 十三么
+  if (isThirteenOrphansForm) {
+    calc.add('十三么', 100);
+    countFullyConcealedHand = false;
+  }
+
   // 123. 形態專屬主牌型 (嚦咕嚦咕)
   if (formType === 'likGoo') {
     calc.add('嚦咕嚦咕', 40);
@@ -306,7 +317,7 @@ function calculateSingleHandForm(
   }
 
   // 2. 門清 (僅基本形成立) — 槓子不影響門清
-  if (formType === 'basic' && !hasExposedNonKong && !hasFlower) {
+  if (countFullyConcealedHand && formType === 'basic' && !hasExposedNonKong && !hasFlower) {
     calc.add('門清', 5);
   }
 
@@ -378,6 +389,7 @@ export function calculateHandFan(
 
   // 1. 檢查嚦咕嚦咕
   const likGooResult = checkLikGoo(handTiles, meldMap);
+  const thirteenOrphansResult = isThirteenOrphans(handTiles, meldMap);
 
   // 2. 檢查基本形 (5面子 + 1眼)
   const remainingCounts = new Map<string, number>();
@@ -429,11 +441,11 @@ export function calculateHandFan(
   }
 
   // 若兩者皆不成立，回傳無法食糊
-  if (!canFormBasicHu && !likGooResult.isLikGoo) {
+  if (!canFormBasicHu && !likGooResult.isLikGoo && !thirteenOrphansResult) {
     return {
       isValid: false,
       totalFan: 0,
-      reason: '此手牌無法食糊：未能達成基本形（5組與一對）或嚦咕嚦咕牌型。',
+      reason: '此手牌無法食糊：未能達成基本形（5組與一對）或嚦咕嚦咕牌型或十三么。',
       breakdown: []
     };
   }
@@ -467,6 +479,13 @@ export function calculateHandFan(
     );
   }
 
+  let thirteenOrphansCalc: FanCalculator | null = null;
+  if (thirteenOrphansResult) {
+    thirteenOrphansCalc = calculateSingleHandForm(
+      'basic', handTiles, meldMap, huIsZimo, undefined, huTile, undefined, gameContext, true
+    );
+  }
+
   // ----------------------------------------------------------------------
   // 結算與兩食處理 (Double Eat Settlement)
   // ----------------------------------------------------------------------
@@ -477,7 +496,9 @@ export function calculateHandFan(
     allCombinations.push(...possibleCombinations);
   }
 
-  if (canFormBasicHu && likGooResult.isLikGoo && basicCalc && likGooCalc) {
+  if (thirteenOrphansCalc) {
+    finalCalc = thirteenOrphansCalc;
+  } else if (canFormBasicHu && likGooResult.isLikGoo && basicCalc && likGooCalc) {
     // 【嚦咕兩食】：直接將「基本形」與「嚦咕形」的番數完全加總（包含無花/自摸等雙重計算）
     finalCalc.addMany(basicCalc.breakdown);
     finalCalc.addMany(likGooCalc.breakdown);

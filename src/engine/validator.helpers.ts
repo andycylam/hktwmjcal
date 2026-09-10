@@ -392,6 +392,67 @@ export function hasExposedNonKongMeld(meldMap?: Record<string, MeldEntry>): bool
   return false;
 }
 
+export function isThirteenOrphans(
+  handTiles: Tile[],
+  meldMap?: Record<string, MeldEntry>
+): boolean {
+  if (hasExposedNonKongMeld(meldMap)) return false;
+  if (meldMap && Object.values(meldMap).some(meld => meld.kind === MELD.FLOWER)) return false;
+  if (meldMap && Object.values(meldMap).some(
+    meld => meld.kind === MELD.KONG && meld.concealed !== true
+  )) return false;
+
+  const tiles = [
+    ...handTiles,
+    ...(meldMap
+      ? Object.values(meldMap)
+        .filter(meld => meld.kind !== MELD.FLOWER)
+        .flatMap(meld => meld.tiles)
+      : [])
+  ];
+  if (tiles.length !== 17) return false;
+
+  const orphanKeys = [
+    `${SUIT.CHARACTER}_1`, `${SUIT.CHARACTER}_9`,
+    `${SUIT.DOT}_1`, `${SUIT.DOT}_9`,
+    `${SUIT.BAMBOO}_1`, `${SUIT.BAMBOO}_9`,
+    `${SUIT.WIND}_1`, `${SUIT.WIND}_2`, `${SUIT.WIND}_3`, `${SUIT.WIND}_4`,
+    `${SUIT.DRAGON}_5`, `${SUIT.DRAGON}_6`, `${SUIT.DRAGON}_7`
+  ];
+  const counts = countTileOccurrences(tiles);
+  if (orphanKeys.some(key => !counts.has(key))) return false;
+
+  const remaining = cloneCounts(counts);
+  for (const key of orphanKeys) {
+    const count = remaining.get(key) ?? 0;
+    if (count <= 1) remaining.delete(key);
+    else remaining.set(key, count - 1);
+  }
+
+  const nonFlowerMelds = meldMap
+    ? Object.values(meldMap).filter(meld => meld.kind !== MELD.FLOWER)
+    : [];
+  if (
+    nonFlowerMelds.length === 1 &&
+    nonFlowerMelds[0].kind === MELD.KONG &&
+    nonFlowerMelds[0].concealed === true &&
+    [...remaining.values()].reduce((sum, count) => sum + count, 0) === 4
+  ) {
+    return true;
+  }
+
+  // The four remaining tiles must be one duplicate orphan plus one concealed meld.
+  if ([...remaining.values()].reduce((sum, count) => sum + count, 0) !== 4) return false;
+  for (const [duplicateKey, duplicateCount] of remaining) {
+    if (duplicateCount < 1) continue;
+    const afterDuplicate = cloneCounts(remaining);
+    if (duplicateCount === 1) afterDuplicate.delete(duplicateKey);
+    else afterDuplicate.set(duplicateKey, duplicateCount - 1);
+    if (canFormMelds(afterDuplicate)) return true;
+  }
+  return false;
+}
+
 export function isFullFlush(handTiles: Tile[], meldMap?: Record<string, MeldEntry>): boolean {
   const relevantTiles: Tile[] = [...handTiles];
 

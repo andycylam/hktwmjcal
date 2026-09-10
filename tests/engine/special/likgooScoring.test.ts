@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { calculateHandFan } from '../../src/engine/validator';
-import { Tile, SUIT } from '../../src/types/mahjong';
-import { makeTile, expectRuleScored } from '../testHelpers';
+import { calculateHandFan } from '../../../src/engine/validator';
+import { Tile, SUIT } from '../../../src/types/mahjong';
+import { makeTile, expectRuleScored } from '../../testHelpers';
 
 
 describe('validator kong-adjusted total', () => {
