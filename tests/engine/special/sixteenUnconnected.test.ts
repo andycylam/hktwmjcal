@@ -44,4 +44,30 @@ describe('十六不搭', () => {
     const result = calculateHandFan(hand, undefined, false, hand[16]);
     expect(result.breakdown).toContainEqual({ rule: '十六扉不搭', fan: 20 });
   });
+
+  it('scores 不搭三相 when all suits use the same separated numbers', () => {
+    const hand: Tile[] = [
+      tile(SUIT.WIND, 1, 0), tile(SUIT.WIND, 2, 0), tile(SUIT.WIND, 3, 0), tile(SUIT.WIND, 4, 0),
+      tile(SUIT.DRAGON, 5, 0), tile(SUIT.DRAGON, 6, 0), tile(SUIT.DRAGON, 7, 0),
+      tile(SUIT.CHARACTER, 1, 0), tile(SUIT.CHARACTER, 4, 0), tile(SUIT.CHARACTER, 9, 0),
+      tile(SUIT.DOT, 1, 0), tile(SUIT.DOT, 4, 0), tile(SUIT.DOT, 9, 0),
+      tile(SUIT.BAMBOO, 1, 0), tile(SUIT.BAMBOO, 4, 0), tile(SUIT.BAMBOO, 9, 0),
+      tile(SUIT.WIND, 1, 1)
+    ];
+    const result = calculateHandFan(hand);
+    expect(result.breakdown).toContainEqual({ rule: '不搭三相', fan: 20 });
+  });
+
+  it('scores 不搭雜龍 for 147, 258, and 369 across the suits', () => {
+    const hand: Tile[] = [
+      tile(SUIT.WIND, 1, 0), tile(SUIT.WIND, 2, 0), tile(SUIT.WIND, 3, 0), tile(SUIT.WIND, 4, 0),
+      tile(SUIT.DRAGON, 5, 0), tile(SUIT.DRAGON, 6, 0), tile(SUIT.DRAGON, 7, 0),
+      tile(SUIT.CHARACTER, 1, 0), tile(SUIT.CHARACTER, 4, 0), tile(SUIT.CHARACTER, 7, 0),
+      tile(SUIT.DOT, 2, 0), tile(SUIT.DOT, 5, 0), tile(SUIT.DOT, 8, 0),
+      tile(SUIT.BAMBOO, 3, 0), tile(SUIT.BAMBOO, 6, 0), tile(SUIT.BAMBOO, 9, 0),
+      tile(SUIT.WIND, 1, 1)
+    ];
+    const result = calculateHandFan(hand);
+    expect(result.breakdown).toContainEqual({ rule: '不搭雜龍', fan: 30 });
+  });
 });

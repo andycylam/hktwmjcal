@@ -24,8 +24,10 @@ import {
   isThirteenOrphans,
   isThirteenOrphansWait,
   isSixteenUnconnected,
-  isSixteenUnconnectedWait
+  isSixteenUnconnectedWait,
+  getSixteenUnconnectedPattern
 } from './validator.helpers';
+import type { SixteenUnconnectedPattern } from './validator.helpers';
 import {
   detectWaitPattern,
   getJeungNgaanFromCombination,
@@ -50,7 +52,8 @@ function calculateSingleHandForm(
   isThirteenOrphansForm = false,
   isThirteenOrphansWaitForm = false,
   isSixteenUnconnectedForm = false,
-  isSixteenUnconnectedWaitForm = false
+  isSixteenUnconnectedWaitForm = false,
+  sixteenUnconnectedPattern: SixteenUnconnectedPattern = null
 ): FanCalculator {
   const calc = new FanCalculator();
   const seatWindNum = gameContext?.seatWind ? WIND_VALUE_MAP[gameContext.seatWind] : undefined;
@@ -91,6 +94,8 @@ function calculateSingleHandForm(
   if (formType === 'basic' && isSixteenUnconnectedForm) {
     calc.add('十六不搭', 50);
     if (isSixteenUnconnectedWaitForm) calc.add('十六扉不搭', 20);
+    if (sixteenUnconnectedPattern === 'three-suits') calc.add('不搭三相', 20);
+    if (sixteenUnconnectedPattern === 'mixed-dragon') calc.add('不搭雜龍', 30);
     countFullyConcealedHand = false;
   }
 
@@ -407,6 +412,7 @@ export function calculateHandFan(
   const thirteenOrphansWaitResult = isThirteenOrphansWait(handTiles, huTile, meldMap);
   const sixteenUnconnectedResult = isSixteenUnconnected(handTiles, meldMap);
   const sixteenUnconnectedWaitResult = isSixteenUnconnectedWait(handTiles, huTile, meldMap);
+  const sixteenUnconnectedPattern = getSixteenUnconnectedPattern(handTiles, meldMap);
 
   // 2. 檢查基本形 (5面子 + 1眼)
   const remainingCounts = new Map<string, number>();
@@ -508,8 +514,7 @@ export function calculateHandFan(
   if (sixteenUnconnectedResult) {
     sixteenUnconnectedCalc = calculateSingleHandForm(
       'basic', handTiles, meldMap, huIsZimo, undefined, huTile, undefined, gameContext,
-      false, false, true
-      , sixteenUnconnectedWaitResult
+      false, false, true, sixteenUnconnectedWaitResult, sixteenUnconnectedPattern
     );
   }
 

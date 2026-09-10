@@ -594,6 +594,31 @@ export function isSixteenUnconnectedWait(
   return winningKeys.size >= 16 && winningKeys.has(`${huTile.suit}_${huTile.value}`);
 }
 
+export type SixteenUnconnectedPattern = 'three-suits' | 'mixed-dragon' | null;
+
+export function getSixteenUnconnectedPattern(
+  handTiles: Tile[],
+  meldMap?: Record<string, MeldEntry>
+): SixteenUnconnectedPattern {
+  if (!isSixteenUnconnected(handTiles, meldMap)) return null;
+
+  const suitValues = [SUIT.CHARACTER, SUIT.DOT, SUIT.BAMBOO].map(suit =>
+    [...new Set(handTiles.filter(tile => tile.suit === suit).map(tile => tile.value))]
+      .sort((a, b) => a - b)
+  );
+  if (suitValues.every(values => values.join(',') === suitValues[0].join(','))) {
+    return 'three-suits';
+  }
+
+  const dragonSets = new Set(['1,4,7', '2,5,8', '3,6,9']);
+  if (suitValues.every(values => dragonSets.has(values.join(',')))
+      && new Set(suitValues.map(values => values.join(','))).size === 3) {
+    return 'mixed-dragon';
+  }
+
+  return null;
+}
+
 export function isFullFlush(handTiles: Tile[], meldMap?: Record<string, MeldEntry>): boolean {
   const relevantTiles: Tile[] = [...handTiles];
 
