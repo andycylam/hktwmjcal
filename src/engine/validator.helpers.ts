@@ -689,6 +689,7 @@ export function getFourReturnAnalyses(
     };
 
     const remaining = cloneCounts(concealedCounts);
+    let possible: number[] = [];
     if (targetInMelds > 0) {
       results.push({
         tileKey: targetKey,
@@ -696,12 +697,12 @@ export function getFourReturnAnalyses(
         concealed: !exposedKeys.has(targetKey)
       });
     } else {
-      const possible = tryDecompose(remaining, false, 0);
+      possible = tryDecompose(remaining, false, 0);
       if (possible.length > 0) {
         results.push({ tileKey: targetKey, groups: Math.max(...possible), concealed: !exposedKeys.has(targetKey) });
       }
     }
-    if (handCount === 4) {
+    if (handCount === 4 && possible.length === 0) {
       results.push({ tileKey: targetKey, groups: 2, concealed: !exposedKeys.has(targetKey) });
     }
   }
