@@ -40,4 +40,18 @@ describe('十三么', () => {
     });
     expect(result.isValid).toBe(false);
   });
+  it('adds 20 fan for a thirteen-sided 十三么 wait', () => {
+    const hand: Tile[] = [
+      tile(SUIT.CHARACTER, 1, 0), tile(SUIT.CHARACTER, 9, 0),
+      tile(SUIT.DOT, 1, 0), tile(SUIT.DOT, 9, 0),
+      tile(SUIT.BAMBOO, 1, 0), tile(SUIT.BAMBOO, 9, 0),
+      tile(SUIT.WIND, 1, 0), tile(SUIT.WIND, 2, 0), tile(SUIT.WIND, 3, 0), tile(SUIT.WIND, 4, 0),
+      tile(SUIT.DRAGON, 5, 0), tile(SUIT.DRAGON, 6, 0), tile(SUIT.DRAGON, 7, 0),
+      tile(SUIT.CHARACTER, 2, 0), tile(SUIT.CHARACTER, 3, 0), tile(SUIT.CHARACTER, 4, 0),
+      tile(SUIT.CHARACTER, 1, 1)
+    ];
+    const result = calculateHandFan(hand, undefined, false, hand[16]);
+    expect(result.breakdown).toContainEqual({ rule: '十三么', fan: 100 });
+    expect(result.breakdown).toContainEqual({ rule: '十三扉十三么', fan: 20 });
+  });
 });

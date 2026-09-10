@@ -453,6 +453,49 @@ export function isThirteenOrphans(
   return false;
 }
 
+export function isThirteenOrphansWait(
+  handTiles: Tile[],
+  huTile: Tile | undefined,
+  meldMap?: Record<string, MeldEntry>
+): boolean {
+  if (!huTile || hasExposedNonKongMeld(meldMap)) return false;
+  if (meldMap && Object.values(meldMap).some(meld => meld.kind === MELD.FLOWER)) return false;
+  if (meldMap && Object.values(meldMap).some(
+    meld => meld.kind === MELD.KONG && meld.concealed !== true
+  )) return false;
+
+  const tiles = [
+    ...handTiles,
+    ...(meldMap
+      ? Object.values(meldMap)
+        .filter(meld => meld.kind !== MELD.FLOWER)
+        .flatMap(meld => meld.tiles)
+      : [])
+  ];
+  const orphanKeys = [
+    `${SUIT.CHARACTER}_1`, `${SUIT.CHARACTER}_9`,
+    `${SUIT.DOT}_1`, `${SUIT.DOT}_9`,
+    `${SUIT.BAMBOO}_1`, `${SUIT.BAMBOO}_9`,
+    `${SUIT.WIND}_1`, `${SUIT.WIND}_2`, `${SUIT.WIND}_3`, `${SUIT.WIND}_4`,
+    `${SUIT.DRAGON}_5`, `${SUIT.DRAGON}_6`, `${SUIT.DRAGON}_7`
+  ];
+  const huKey = `${huTile.suit}_${huTile.value}`;
+  const counts = countTileOccurrences(tiles);
+  if (!orphanKeys.includes(huKey)) return false;
+  if (orphanKeys.some(key => (counts.get(key) ?? 0) !== (key === huKey ? 2 : 1))) return false;
+
+  const remaining = cloneCounts(counts);
+  for (const key of orphanKeys) {
+    const count = remaining.get(key) ?? 0;
+    if (count <= 1) remaining.delete(key);
+    else remaining.set(key, count - 1);
+  }
+  if ([...remaining.values()].reduce((sum, count) => sum + count, 0) !== 4) return false;
+  remaining.set(huKey, (remaining.get(huKey) ?? 0) - 1);
+  if (remaining.get(huKey) === 0) remaining.delete(huKey);
+  return canFormMelds(remaining);
+}
+
 export function isFullFlush(handTiles: Tile[], meldMap?: Record<string, MeldEntry>): boolean {
   const relevantTiles: Tile[] = [...handTiles];
 

@@ -21,7 +21,8 @@ import {
   canFormMelds,
   collectMeldCombinations,
   isAllHonors,
-  isThirteenOrphans
+  isThirteenOrphans,
+  isThirteenOrphansWait
 } from './validator.helpers';
 import {
   detectWaitPattern,
@@ -44,7 +45,8 @@ function calculateSingleHandForm(
   huTile?: Tile,
   remainingCounts?: Map<string, number>,
   gameContext?: GameContext,
-  isThirteenOrphansForm = false
+  isThirteenOrphansForm = false,
+  isThirteenOrphansWaitForm = false
 ): FanCalculator {
   const calc = new FanCalculator();
   const seatWindNum = gameContext?.seatWind ? WIND_VALUE_MAP[gameContext.seatWind] : undefined;
@@ -77,6 +79,7 @@ function calculateSingleHandForm(
   // 138. 十三么
   if (isThirteenOrphansForm) {
     calc.add('十三么', 100);
+    if (isThirteenOrphansWaitForm) calc.add('十三扉十三么', 20);
     countFullyConcealedHand = false;
   }
 
@@ -390,6 +393,7 @@ export function calculateHandFan(
   // 1. 檢查嚦咕嚦咕
   const likGooResult = checkLikGoo(handTiles, meldMap);
   const thirteenOrphansResult = isThirteenOrphans(handTiles, meldMap);
+  const thirteenOrphansWaitResult = isThirteenOrphansWait(handTiles, huTile, meldMap);
 
   // 2. 檢查基本形 (5面子 + 1眼)
   const remainingCounts = new Map<string, number>();
@@ -482,7 +486,8 @@ export function calculateHandFan(
   let thirteenOrphansCalc: FanCalculator | null = null;
   if (thirteenOrphansResult) {
     thirteenOrphansCalc = calculateSingleHandForm(
-      'basic', handTiles, meldMap, huIsZimo, undefined, huTile, undefined, gameContext, true
+      'basic', handTiles, meldMap, huIsZimo, undefined, huTile, undefined, gameContext,
+      true, thirteenOrphansWaitResult
     );
   }
 
