@@ -620,6 +620,7 @@ export function getSixteenUnconnectedPattern(
 }
 
 export interface FourReturnAnalysis {
+  tileKey: string;
   groups: number;
   concealed: boolean;
 }
@@ -648,10 +649,6 @@ export function getFourReturnAnalyses(
     const targetInMelds = totalCount - (concealedCounts.get(targetKey) ?? 0);
     const handCount = concealedCounts.get(targetKey) ?? 0;
     if (handCount < 0) continue;
-    if (handCount === 4 && targetInMelds === 0) {
-      results.push({ groups: 2, concealed: !exposedKeys.has(targetKey) });
-      continue;
-    }
 
     const tryDecompose = (remaining: Map<string, number>, pairUsed: boolean, groups: number): number[] => {
       if (![...remaining.values()].some(count => count > 0)) {
@@ -694,17 +691,25 @@ export function getFourReturnAnalyses(
     const remaining = cloneCounts(concealedCounts);
     if (targetInMelds > 0) {
       results.push({
+        tileKey: targetKey,
         groups: Math.max(...tryDecompose(remaining, false, targetInMelds) , 0),
         concealed: !exposedKeys.has(targetKey)
       });
     } else {
       const possible = tryDecompose(remaining, false, 0);
       if (possible.length > 0) {
-        results.push({ groups: Math.max(...possible), concealed: !exposedKeys.has(targetKey) });
+        results.push({ tileKey: targetKey, groups: Math.max(...possible), concealed: !exposedKeys.has(targetKey) });
       }
     }
+    if (handCount === 4) {
+      results.push({ tileKey: targetKey, groups: 2, concealed: !exposedKeys.has(targetKey) });
+    }
   }
-  return results.filter(result => result.groups >= 2);
+  return [...new Map(
+    results
+      .filter(result => result.groups >= 2)
+      .map(result => [`${result.tileKey}:${result.groups}:${result.concealed}`, result])
+  ).values()];
 }
 
 export function isFullFlush(handTiles: Tile[], meldMap?: Record<string, MeldEntry>): boolean {
