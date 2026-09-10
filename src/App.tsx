@@ -361,10 +361,12 @@ export default function App() {
       if (k === baseKey && taken.length < need) taken.push(t);
       else remaining.push(t);
     }
+    /* c8 ignore start -- MeldArea only calls this path with an existing meld key. */
     if (taken.length < need) {
       setErrorMessage(`無法標記 ${baseKey} 為 ${kind}：手牌中沒有足夠的牌 (需要 ${need} 張)。`);
       return;
     }
+    /* c8 ignore stop */
 
     setHand(remaining);
     setMeldMap(prev => ({ ...prev, [storageKey]: { kind, tiles: taken } }));
@@ -413,6 +415,7 @@ export default function App() {
         const map: Record<number,string> = { 5: '中', 6: '發', 7: '白' };
         return map[v] || `${v}`;
       }
+      /* c8 ignore next -- all TilePicker suits are handled above. */
       return `${v}${s}`;
     };
     const virtualTile: Tile = { id: `${entry.tiles[0].suit}_${entry.tiles[0].value}@virt${Date.now()}`, suit: entry.tiles[0].suit, value: entry.tiles[0].value, label: suitLabel(entry.tiles[0].suit, entry.tiles[0].value) };

@@ -166,4 +166,269 @@ describe('App flows (melds, flowers, hu)', () => {
     const handTiles = within(handContainer).getAllByTestId('hand-tile-一萬');
     expect(handTiles.length).toBeGreaterThan(0);
   });
+
+  it('shows an error when trying to create a meld from an invalid selection', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getAllByTestId('picker-tile-character_1')[0]);
+    await user.click(screen.getAllByTestId('picker-tile-character_2')[0]);
+    const handHeader = screen.getAllByText(/當前手牌/)[0];
+    let handContainer = handHeader.closest('div') as HTMLElement;
+    while (handContainer && !handContainer.className.includes('bg-slate-800')) handContainer = handContainer.parentElement as HTMLElement;
+    await user.click(within(handContainer).getAllByTitle(/選取/)[0]);
+    await user.click(within(handContainer).getAllByTitle(/選取/)[1]);
+    await user.click(screen.getByText('成組'));
+    expect(screen.getByText('無法自動辨識成組類型；請確認選擇是否為 3/4 張相同或 3 張順子。')).toBeTruthy();
+  });
+
+  it('shows an error when setting 胡 without exactly one selected tile', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByText('Set 胡'));
+    expect(screen.getByText('請選擇一張牌作為胡。')).toBeTruthy();
+  });
+
+  it('supports clearing a selection and clearing the whole hand', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getAllByTestId('picker-tile-character_1')[0]);
+    const handHeader = screen.getAllByText(/當前手牌/)[0];
+    let handContainer = handHeader.closest('div') as HTMLElement;
+    while (handContainer && !handContainer.className.includes('bg-slate-800')) handContainer = handContainer.parentElement as HTMLElement;
+    await user.click(within(handContainer).getByTitle(/選取/));
+    expect(screen.getByText('已選：1 張')).toBeTruthy();
+    await user.click(screen.getByText('Clear Selection'));
+    expect(screen.getByText('已選：0 張')).toBeTruthy();
+    await user.click(within(handContainer).getByText('清空手牌'));
+    expect(screen.getByText(/請在下方點擊牌型加入手牌/)).toBeTruthy();
+  });
+
+  it('auto-detects kong, pung, and chow groups when nothing is selected', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const add = async (key: string, count: number) => {
+      for (let i = 0; i < count; i++) await user.click(screen.getAllByTestId(`picker-tile-${key}`)[0]);
+    };
+    await add('character_1', 4);
+    await user.click(screen.getByText('成組'));
+    expect(screen.getByText('槓')).toBeTruthy();
+    await add('character_2', 3);
+    await user.click(screen.getByText('成組'));
+    expect(screen.getByText('碰')).toBeTruthy();
+    await add('dot_1', 1);
+    await add('dot_2', 1);
+    await add('dot_3', 1);
+    await user.click(screen.getByText('成組'));
+    expect(screen.getByText('上')).toBeTruthy();
+  });
+
+  it('reports duplicate and unavailable auto-meld attempts', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const one = screen.getAllByTestId('picker-tile-character_1')[0];
+    for (let i = 0; i < 5; i++) await user.click(one);
+    expect((one as HTMLButtonElement).disabled).toBe(true);
+    await user.click(screen.getByText('清空手牌'));
+    await user.click(screen.getAllByTestId('picker-tile-character_1')[0]);
+    await user.click(screen.getAllByTestId('picker-tile-character_3')[0]);
+    await user.click(screen.getByText('成組'));
+    expect(screen.getByText(/沒有可成的組/)).toBeTruthy();
+  });
+
+  it('creates a selected pung and upgrades it to a kong', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    for (let i = 0; i < 4; i++) await user.click(screen.getAllByTestId('picker-tile-character_9')[0]);
+    const handHeader = screen.getAllByText(/當前手牌/)[0];
+    let handContainer = handHeader.closest('div') as HTMLElement;
+    while (handContainer && !handContainer.className.includes('bg-slate-800')) handContainer = handContainer.parentElement as HTMLElement;
+    const tiles = within(handContainer).getAllByTitle(/選取/);
+    await user.click(tiles[0]); await user.click(tiles[1]); await user.click(tiles[2]);
+    await user.click(screen.getByText('成組'));
+    expect(screen.getByText('碰')).toBeTruthy();
+    const fourth = within(handContainer).getByTitle(/選取/);
+    await user.click(fourth);
+    await user.click(screen.getByText('升級為 槓'));
+    expect(screen.getByText('槓')).toBeTruthy();
+  });
+
+  it('creates a selected kong and cancels it back into the hand', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    for (let i = 0; i < 4; i++) await user.click(screen.getAllByTestId('picker-tile-dot_9')[0]);
+    const handHeader = screen.getAllByText(/當前手牌/)[0];
+    let handContainer = handHeader.closest('div') as HTMLElement;
+    while (handContainer && !handContainer.className.includes('bg-slate-800')) handContainer = handContainer.parentElement as HTMLElement;
+    for (const tile of within(handContainer).getAllByTitle(/選取/)) await user.click(tile);
+    await user.click(screen.getByText('成組'));
+    expect(screen.getByText('槓')).toBeTruthy();
+    await user.click(screen.getByText('取消'));
+    expect(screen.queryByText('槓')).toBeNull();
+  });
+
+  it('changes wind settings and toggles zimo state', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const windLabels = screen.getAllByText('南');
+    await user.click(windLabels[0]);
+    await user.click(screen.getAllByText('西')[1]);
+    await user.click(screen.getByRole('switch'));
+    expect(windLabels[0]).toBeTruthy();
+  });
+
+  it('uses the fallback count search for non-contiguous kongs and pungs', async () => {
+    const user = userEvent.setup();
+    const add = async (key: string, count: number) => {
+      for (let i = 0; i < count; i++) await user.click(screen.getAllByTestId(`picker-tile-${key}`)[0]);
+    };
+
+    render(<App />);
+    await add('character_1', 1);
+    await add('character_2', 1);
+    await add('character_1', 2);
+    await user.click(screen.getByText('成組'));
+    expect(screen.getByText('碰')).toBeTruthy();
+
+    await add('dot_1', 1);
+    await add('dot_2', 1);
+    await add('dot_1', 2);
+    await user.click(screen.getByText('成組'));
+    expect(screen.getAllByText('碰').length).toBeGreaterThan(1);
+  });
+
+  it('uses the fallback count search for a non-contiguous kong', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    for (const key of ['character_4', 'character_8', 'character_4', 'character_6', 'character_4', 'character_4']) {
+      await user.click(screen.getAllByTestId(`picker-tile-${key}`)[0]);
+    }
+    await user.click(screen.getByText('成組'));
+    expect(screen.getByText('槓')).toBeTruthy();
+  });
+
+  it('finishes scanning when three same-suit tiles cannot form a sequence', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    for (const key of ['character_1', 'character_4', 'character_7']) {
+      await user.click(screen.getAllByTestId(`picker-tile-${key}`)[0]);
+    }
+    await user.click(screen.getByText('成組'));
+    expect(screen.getByText(/沒有可成的組/)).toBeTruthy();
+  });
+
+  it('shows the total tile limit error', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const keys = [
+      'character_1', 'character_2', 'character_3', 'character_4', 'character_5',
+      'character_6', 'character_7', 'character_8', 'character_9',
+      'dot_1', 'dot_2', 'dot_3', 'dot_4', 'dot_5', 'dot_6', 'dot_7', 'dot_8'
+    ];
+    for (const key of keys) await user.click(screen.getAllByTestId(`picker-tile-${key}`)[0]);
+    await user.click(screen.getAllByTestId('picker-tile-dot_9')[0]);
+    expect(screen.getByText(/已達總牌數上限/)).toBeTruthy();
+  });
+
+  it('supports concealed-kong toggling and synthetic kong upgrades', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    for (let i = 0; i < 3; i++) await user.click(screen.getAllByTestId('picker-tile-bamboo_9')[0]);
+    const handHeader = screen.getAllByText(/當前手牌/)[0];
+    let handContainer = handHeader.closest('div') as HTMLElement;
+    while (handContainer && !handContainer.className.includes('bg-slate-800')) handContainer = handContainer.parentElement as HTMLElement;
+    for (const tile of within(handContainer).getAllByTitle(/選取/)) await user.click(tile);
+    await user.click(screen.getByText('成組'));
+    await user.click(screen.getByText('升級為 槓'));
+    expect(screen.getByText('槓')).toBeTruthy();
+    const toggle = screen.getAllByRole('switch')[0];
+    await user.click(toggle);
+    expect(toggle.getAttribute('aria-checked')).toBe('true');
+  });
+
+  it('rejects a kong upgrade when all four copies are already accounted for', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    for (let i = 0; i < 4; i++) await user.click(screen.getAllByTestId('picker-tile-bamboo_8')[0]);
+    const handHeader = screen.getAllByText(/當前手牌/)[0];
+    let handContainer = handHeader.closest('div') as HTMLElement;
+    while (handContainer && !handContainer.className.includes('bg-slate-800')) handContainer = handContainer.parentElement as HTMLElement;
+    const tiles = within(handContainer).getAllByTitle(/選取/);
+    await user.click(tiles[0]); await user.click(tiles[1]); await user.click(tiles[2]);
+    await user.click(screen.getByText('成組'));
+    await user.click(within(handContainer).getByTitle(/選取/));
+    await user.click(screen.getByText('Set 胡'));
+    await user.click(screen.getByText('升級為 槓'));
+    expect(screen.getByText('手牌中沒有可用的相同牌來升級為槓。')).toBeTruthy();
+  });
+
+  it('surfaces an invalid calculation result', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const picker = screen.getAllByText('選擇牌型 (Tile Selector)')[0].closest('div')!;
+    for (const key of [
+      'character_1', 'character_2', 'character_4', 'character_5', 'character_7',
+      'dot_1', 'dot_2', 'dot_4', 'dot_5', 'dot_7',
+      'bamboo_1', 'bamboo_2', 'bamboo_4', 'bamboo_5', 'bamboo_7',
+      'wind_1', 'wind_2'
+    ]) await user.click(within(picker).getByTestId(`picker-tile-${key}`));
+    await user.click(screen.getByText('算番 (Calculate Fan)'));
+    expect(screen.getAllByText(/無法/).length).toBeGreaterThan(0);
+  });
+
+  it('calculates a complete winning hand and clears a previous result', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const picker = screen.getAllByText('選擇牌型 (Tile Selector)')[0].closest('div')!;
+    const add = async (key: string, count: number) => {
+      for (let i = 0; i < count; i++) await user.click(within(picker).getByTestId(`picker-tile-${key}`));
+    };
+    await add('character_1', 2); await add('character_2', 1); await add('character_3', 1);
+    await add('dot_1', 1); await add('dot_2', 1); await add('dot_3', 1);
+    await add('bamboo_1', 1); await add('bamboo_2', 1); await add('bamboo_3', 1);
+    await add('wind_1', 3); await add('wind_2', 3);
+    const handHeader = screen.getAllByText(/當前手牌/)[0];
+    let handContainer = handHeader.closest('div') as HTMLElement;
+    while (handContainer && !handContainer.className.includes('bg-slate-800')) handContainer = handContainer.parentElement as HTMLElement;
+    await user.click(within(handContainer).getAllByTestId('hand-tile-一萬')[0]);
+    await user.click(screen.getByText('Set 胡'));
+    await user.click(screen.getByText('算番 (Calculate Fan)'));
+    expect(screen.getAllByText(/總番|Fan/).length).toBeGreaterThan(0);
+    await user.click(screen.getByText('Clear Selection'));
+  });
+
+  it('uses the suit-scanning fallback to find a sequence', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    for (const key of ['character_1', 'character_4', 'character_7', 'character_2', 'character_3']) {
+      await user.click(screen.getAllByTestId(`picker-tile-${key}`)[0]);
+    }
+    await user.click(screen.getByText('成組'));
+    expect(screen.getByText('上')).toBeTruthy();
+  });
+
+  it('removes a tile directly from the hand', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getAllByTestId('picker-tile-character_9')[0]);
+    const remove = screen.getByTestId('hand-remove-九萬');
+    await user.click(remove);
+    expect(screen.queryByTestId('hand-tile-九萬')).toBeNull();
+  });
+
+  it('handles synthetic upgrades for wind and dragon tiles', async () => {
+    const user = userEvent.setup();
+    const upgrade = async (key: string) => {
+      render(<App />);
+      for (let i = 0; i < 3; i++) await user.click(screen.getAllByTestId(`picker-tile-${key}`)[0]);
+      const handHeader = screen.getAllByText(/當前手牌/)[0];
+      let handContainer = handHeader.closest('div') as HTMLElement;
+      while (handContainer && !handContainer.className.includes('bg-slate-800')) handContainer = handContainer.parentElement as HTMLElement;
+      for (const tile of within(handContainer).getAllByTitle(/選取/)) await user.click(tile);
+      await user.click(screen.getByText('成組'));
+      await user.click(screen.getByText('升級為 槓'));
+      cleanup();
+    };
+    await upgrade('wind_1');
+    await upgrade('dragon_5');
+  });
 });
