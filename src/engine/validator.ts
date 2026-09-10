@@ -111,7 +111,7 @@ function calculateSingleHandForm(
     // 93. 大四喜、94. 小四喜、95.大三風、96.小三風
     switch (windAnalysis.pattern) {
       case 'bigFourWinds':
-        calc.add('大四喜', 180);
+        calc.add('大四喜', 160);
         countWind = false;
         break;
 
@@ -147,7 +147,7 @@ function calculateSingleHandForm(
 
   // 99. 字一色
   if (isAllHonors(handTiles, meldMap)) {
-    calc.add('字一色', 240);
+    calc.add('字一色', 120);
 
     countNoHonor = false;
     countNoHonorFlower = false;
