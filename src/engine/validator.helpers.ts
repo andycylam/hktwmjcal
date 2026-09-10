@@ -496,6 +496,104 @@ export function isThirteenOrphansWait(
   return canFormMelds(remaining);
 }
 
+export function isSixteenUnconnected(
+  handTiles: Tile[],
+  meldMap?: Record<string, MeldEntry>
+): boolean {
+  if (hasExposedNonKongMeld(meldMap)) return false;
+  if (meldMap && Object.values(meldMap).some(meld => meld.kind === MELD.FLOWER)) return false;
+  if (meldMap && Object.values(meldMap).some(
+    meld => meld.kind === MELD.KONG && meld.concealed !== true
+  )) return false;
+
+  const tiles = [
+    ...handTiles,
+    ...(meldMap
+      ? Object.values(meldMap)
+        .filter(meld => meld.kind !== MELD.FLOWER)
+        .flatMap(meld => meld.tiles)
+      : [])
+  ];
+  if (tiles.length !== 17) return false;
+
+  const counts = countTileOccurrences(tiles);
+  const honorKeys = [
+    `${SUIT.WIND}_1`, `${SUIT.WIND}_2`, `${SUIT.WIND}_3`, `${SUIT.WIND}_4`,
+    `${SUIT.DRAGON}_5`, `${SUIT.DRAGON}_6`, `${SUIT.DRAGON}_7`
+  ];
+  if (honorKeys.some(key => !counts.has(key))) return false;
+
+  for (const suit of [SUIT.CHARACTER, SUIT.DOT, SUIT.BAMBOO]) {
+    const values = tiles
+      .filter(tile => tile.suit === suit)
+      .map(tile => tile.value);
+    if (values.length !== 3 && values.length !== 4) return false;
+    const uniqueValues = [...new Set(values)].sort((a, b) => a - b);
+    if (uniqueValues.length !== 3) return false;
+    if (uniqueValues.some((value, index) => index > 0 && value - uniqueValues[index - 1] < 3)) {
+      return false;
+    }
+  }
+
+  // Exactly one tile is duplicated among the 16 distinct required tiles.
+  return [...counts.values()].filter(count => count === 2).length === 1
+    && [...counts.values()].every(count => count === 1 || count === 2);
+}
+
+export function isSixteenUnconnectedWait(
+  handTiles: Tile[],
+  huTile: Tile | undefined,
+  meldMap?: Record<string, MeldEntry>
+): boolean {
+  if (!huTile || hasExposedNonKongMeld(meldMap)) return false;
+  if (meldMap && Object.values(meldMap).some(meld => meld.kind === MELD.FLOWER)) return false;
+  if (meldMap && Object.values(meldMap).some(
+    meld => meld.kind === MELD.KONG && meld.concealed !== true
+  )) return false;
+
+  const concealedTiles = [...handTiles];
+  const huIndex = concealedTiles.findIndex(tile => tile.id === huTile.id);
+  if (huIndex >= 0) concealedTiles.splice(huIndex, 1);
+  else {
+    const key = `${huTile.suit}_${huTile.value}`;
+    const keyIndex = concealedTiles.findIndex(tile => `${tile.suit}_${tile.value}` === key);
+    if (keyIndex < 0) return false;
+    concealedTiles.splice(keyIndex, 1);
+  }
+
+  const candidates: Tile[] = [];
+  for (const suit of [SUIT.CHARACTER, SUIT.DOT, SUIT.BAMBOO]) {
+    for (let value = 1; value <= 9; value++) {
+      candidates.push({ id: `wait-${suit}-${value}`, suit, value, label: `${value}${suit}` });
+    }
+  }
+  for (let value = 1; value <= 4; value++) {
+    candidates.push({ id: `wait-${SUIT.WIND}-${value}`, suit: SUIT.WIND, value, label: `${value}wind` });
+  }
+  for (let value = 5; value <= 7; value++) {
+    candidates.push({ id: `wait-${SUIT.DRAGON}-${value}`, suit: SUIT.DRAGON, value, label: `${value}dragon` });
+  }
+
+  const winningKeys = new Set<string>();
+  for (const candidate of candidates) {
+    const key = `${candidate.suit}_${candidate.value}`;
+    const currentCount = countTileOccurrences([
+      ...concealedTiles,
+      ...(meldMap
+        ? Object.values(meldMap)
+          .filter(meld => meld.kind !== MELD.FLOWER)
+          .flatMap(meld => meld.tiles)
+        : [])
+    ]).get(key) ?? 0;
+    if (currentCount >= 4) continue;
+    if (isSixteenUnconnected([...concealedTiles, candidate], meldMap)) {
+      winningKeys.add(key);
+    }
+  }
+
+  return winningKeys.size >= 16 && winningKeys.has(`${huTile.suit}_${huTile.value}`);
+}
+
 export function isFullFlush(handTiles: Tile[], meldMap?: Record<string, MeldEntry>): boolean {
   const relevantTiles: Tile[] = [...handTiles];
 

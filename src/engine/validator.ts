@@ -22,7 +22,9 @@ import {
   collectMeldCombinations,
   isAllHonors,
   isThirteenOrphans,
-  isThirteenOrphansWait
+  isThirteenOrphansWait,
+  isSixteenUnconnected,
+  isSixteenUnconnectedWait
 } from './validator.helpers';
 import {
   detectWaitPattern,
@@ -46,7 +48,9 @@ function calculateSingleHandForm(
   remainingCounts?: Map<string, number>,
   gameContext?: GameContext,
   isThirteenOrphansForm = false,
-  isThirteenOrphansWaitForm = false
+  isThirteenOrphansWaitForm = false,
+  isSixteenUnconnectedForm = false,
+  isSixteenUnconnectedWaitForm = false
 ): FanCalculator {
   const calc = new FanCalculator();
   const seatWindNum = gameContext?.seatWind ? WIND_VALUE_MAP[gameContext.seatWind] : undefined;
@@ -76,10 +80,17 @@ function calculateSingleHandForm(
 
   const huKey = huTile? `${huTile.suit}_${huTile.value}` : undefined;
 
-  // 138. 十三么
+  // 138. 十三么, 139. 十三扉十三么
   if (isThirteenOrphansForm) {
     calc.add('十三么', 100);
     if (isThirteenOrphansWaitForm) calc.add('十三扉十三么', 20);
+    countFullyConcealedHand = false;
+  }
+
+  // 134. 十六不搭, 135. 十六扉不搭
+  if (formType === 'basic' && isSixteenUnconnectedForm) {
+    calc.add('十六不搭', 50);
+    if (isSixteenUnconnectedWaitForm) calc.add('十六扉不搭', 20);
     countFullyConcealedHand = false;
   }
 
@@ -394,6 +405,8 @@ export function calculateHandFan(
   const likGooResult = checkLikGoo(handTiles, meldMap);
   const thirteenOrphansResult = isThirteenOrphans(handTiles, meldMap);
   const thirteenOrphansWaitResult = isThirteenOrphansWait(handTiles, huTile, meldMap);
+  const sixteenUnconnectedResult = isSixteenUnconnected(handTiles, meldMap);
+  const sixteenUnconnectedWaitResult = isSixteenUnconnectedWait(handTiles, huTile, meldMap);
 
   // 2. 檢查基本形 (5面子 + 1眼)
   const remainingCounts = new Map<string, number>();
@@ -445,7 +458,7 @@ export function calculateHandFan(
   }
 
   // 若兩者皆不成立，回傳無法食糊
-  if (!canFormBasicHu && !likGooResult.isLikGoo && !thirteenOrphansResult) {
+  if (!canFormBasicHu && !likGooResult.isLikGoo && !thirteenOrphansResult && !sixteenUnconnectedResult) {
     return {
       isValid: false,
       totalFan: 0,
@@ -491,6 +504,15 @@ export function calculateHandFan(
     );
   }
 
+  let sixteenUnconnectedCalc: FanCalculator | null = null;
+  if (sixteenUnconnectedResult) {
+    sixteenUnconnectedCalc = calculateSingleHandForm(
+      'basic', handTiles, meldMap, huIsZimo, undefined, huTile, undefined, gameContext,
+      false, false, true
+      , sixteenUnconnectedWaitResult
+    );
+  }
+
   // ----------------------------------------------------------------------
   // 結算與兩食處理 (Double Eat Settlement)
   // ----------------------------------------------------------------------
@@ -503,6 +525,8 @@ export function calculateHandFan(
 
   if (thirteenOrphansCalc) {
     finalCalc = thirteenOrphansCalc;
+  } else if (sixteenUnconnectedCalc) {
+    finalCalc = sixteenUnconnectedCalc;
   } else if (canFormBasicHu && likGooResult.isLikGoo && basicCalc && likGooCalc) {
     // 【嚦咕兩食】：直接將「基本形」與「嚦咕形」的番數完全加總（包含無花/自摸等雙重計算）
     finalCalc.addMany(basicCalc.breakdown);
