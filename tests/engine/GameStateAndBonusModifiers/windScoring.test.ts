@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { calculateHandFan } from '../../src/engine/validator';
-import { Tile, MELD, SUIT } from '../../src/types/mahjong';
-import { expectRuleScored } from '../testHelpers';
+import { calculateHandFan } from '../../../src/engine/validator';
+import { Tile, MELD, SUIT } from '../../../src/types/mahjong';
+import { expectRuleScored } from '../../testHelpers';
 
 function makeTile(suit: Tile['suit'], value: number, idx: number): Tile {
   return { id: `${suit}_${value}_${idx}`, suit, value, label: `${value}${suit}` };

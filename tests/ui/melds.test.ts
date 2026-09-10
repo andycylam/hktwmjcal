@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { calculateHandFan } from '../src/engine/validator';
-import { Tile, MELD, MeldKind } from '../src/types/mahjong';
+import { calculateHandFan } from '../../src/engine/validator';
+import { Tile, MELD, MeldKind } from '../../src/types/mahjong';
 
 function makeTile(suit: string, value: number, idSuffix: number): Tile {
   return { id: `${suit}_${value}_${idSuffix}`, suit: suit as any, value, label: `${value}${suit}` };

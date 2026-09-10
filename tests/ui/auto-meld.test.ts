@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { Tile, MELD } from '../src/types/mahjong';
+import { Tile, MELD } from '../../src/types/mahjong';
 
 function makeTile(suit: string, value: number, idSuffix: number): Tile {
   return { id: `${suit}_${value}_${idSuffix}`, suit: suit as any, value, label: `${value}${suit}` };
