@@ -26,7 +26,8 @@ import {
   isSixteenUnconnected,
   isSixteenUnconnectedWait,
   getSixteenUnconnectedPattern,
-  getFourReturnAnalyses
+  getFourReturnAnalyses,
+  isMixedFlush
 } from './validator.helpers';
 import type { SixteenUnconnectedPattern } from './validator.helpers';
 import {
@@ -195,6 +196,12 @@ function calculateSingleHandForm(
 
   }  
 
+  // 混一色：單一數牌花色與風牌／三元牌混合
+  if (!isFullFlush(handTiles, meldMap) && !isAllHonors(handTiles, meldMap) && isMixedFlush(handTiles, meldMap)) {
+    calc.add('混一色', 40);
+    countNoHonor = false;
+    countNoHonorFlower = false;
+  }
 
   // 114. 清一色 (共通)
   if (flags.countFullFlush && isFullFlush(handTiles, meldMap)) {

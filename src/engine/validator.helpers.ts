@@ -733,6 +733,25 @@ export function isFullFlush(handTiles: Tile[], meldMap?: Record<string, MeldEntr
   return relevantTiles.every(t => t.suit === firstSuit);
 }
 
+export function isMixedFlush(handTiles: Tile[], meldMap?: Record<string, MeldEntry>): boolean {
+  const relevantTiles: Tile[] = [...handTiles];
+
+  if (meldMap) {
+    Object.values(meldMap).forEach(meld => {
+      if (meld.kind !== MELD.FLOWER) relevantTiles.push(...meld.tiles);
+    });
+  }
+
+  const numberSuits = new Set(
+    relevantTiles
+      .filter(tile => tile.suit === SUIT.CHARACTER || tile.suit === SUIT.DOT || tile.suit === SUIT.BAMBOO)
+      .map(tile => tile.suit)
+  );
+  const hasHonors = relevantTiles.some(tile => tile.suit === SUIT.WIND || tile.suit === SUIT.DRAGON);
+
+  return numberSuits.size === 1 && hasHonors;
+}
+
 // ----------------------------------------------------------------------
 // 字一式 Helper
 // ----------------------------------------------------------------------

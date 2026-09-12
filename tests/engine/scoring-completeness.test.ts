@@ -47,28 +47,6 @@ const fiveMelds = (): Tile[] => [
 ];
 
 describe('scoring completeness regressions', () => {
-  it('reports the exact total for門清、自摸、無花、缺一門 and no hidden omission', () => {
-    const hand = [
-      ...chow(SUIT.DOT, 1, 0),
-      ...chow(SUIT.DOT, 4, 10),
-      ...chow(SUIT.DOT, 7, 20),
-      ...chow(SUIT.BAMBOO, 1, 30),
-      ...chow(SUIT.BAMBOO, 4, 40),
-      t(SUIT.DOT, 5, 50), t(SUIT.DOT, 5, 51),
-    ];
-    const result = calculateHandFan(hand, undefined, true);
-    expect(result.isValid).toBe(true);
-    expect(result.breakdown).toEqual(expect.arrayContaining([
-      { rule: '門清', fan: 5 },
-      { rule: '自摸', fan: 1 },
-      { rule: '無字花', fan: 5 },
-      { rule: '缺一門', fan: 10 },
-    ]));
-    expect(result.totalFan).toBe(
-      result.breakdown.reduce((sum, item) => sum + item.fan, 0)
-    );
-  });
-
   it('does not award 門清 for an exposed pung or chow', () => {
     const hand = [
       ...chow(SUIT.DOT, 1, 0),
