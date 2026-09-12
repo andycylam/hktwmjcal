@@ -50,14 +50,28 @@ describe('缺一門', () => {
       expect(calculateHandFan(hand, melds).breakdown).toContainEqual({ rule: '小五門齊', fan: 10 });
     });
 
-    it('scores 大七門齊 and distinguishes the complete seven flower set', () => {
+    it('scores 大七門齊 with one flower and one season tile', () => {
       const meldMap = {
         ...fiveGateMelds,
-        flowers: { kind: MELD.FLOWER, tiles: [1, 2, 3, 4, 5, 6, 7, 8].map(value => tile(SUIT.FLOWER, value, 30 + value)) },
+        flowers: { kind: MELD.FLOWER, tiles: [tile(SUIT.FLOWER, 1, 31), tile(SUIT.FLOWER, 5, 35)] },
       };
       const result = calculateHandFan([tile(SUIT.CHARACTER, 2, 20), tile(SUIT.CHARACTER, 2, 21)], meldMap);
       expect(hasSevenGatesFlowers([], meldMap)).toBe(true);
       expect(result.breakdown).toContainEqual({ rule: '大七門齊', fan: 30 });
+    });
+
+    it('requires both a flower tile and a season tile for seven gates', () => {
+      const flowerOnly = {
+        ...fiveGateMelds,
+        flowers: { kind: MELD.FLOWER, tiles: [tile(SUIT.FLOWER, 1, 31)] },
+      };
+      const seasonOnly = {
+        ...fiveGateMelds,
+        flowers: { kind: MELD.FLOWER, tiles: [tile(SUIT.FLOWER, 5, 35)] },
+      };
+
+      expect(hasSevenGatesFlowers([], flowerOnly)).toBe(false);
+      expect(hasSevenGatesFlowers([], seasonOnly)).toBe(false);
     });
 
     it('scores 小七門齊 when the five-gate hand has all eight flower tiles', () => {

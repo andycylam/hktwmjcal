@@ -801,7 +801,9 @@ export function isBigFiveGates(handTiles: Tile[], meldMap?: Record<string, MeldE
 export function hasSevenGatesFlowers(handTiles: Tile[], meldMap?: Record<string, MeldEntry>): boolean {
   const flowers = (meldMap ? Object.values(meldMap).filter(meld => meld.kind === MELD.FLOWER).flatMap(meld => meld.tiles) : [])
     .concat(handTiles.filter(tile => tile.suit === SUIT.FLOWER));
-  return [1, 2, 3, 4, 5, 6, 7, 8].every(value => flowers.some(tile => tile.value === value));
+  const hasFlower = flowers.some(tile => tile.value >= 1 && tile.value <= 4);
+  const hasSeason = flowers.some(tile => tile.value >= 5 && tile.value <= 8);
+  return hasFlower && hasSeason;
 }
 
 // ----------------------------------------------------------------------
