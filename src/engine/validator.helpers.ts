@@ -806,6 +806,55 @@ export function hasSevenGatesFlowers(handTiles: Tile[], meldMap?: Record<string,
   return hasFlower && hasSeason;
 }
 
+type NumberPatternGroups = { values: number[]; hasHonor: boolean }[];
+
+const CHINESE_DIGITS: Record<string, number> = {
+  一: 1, 二: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9
+};
+
+function getNumberPatternGroups(comboStr?: string, meldMap?: Record<string, MeldEntry>): NumberPatternGroups {
+  const groups: NumberPatternGroups = [];
+  if (comboStr) {
+    for (const part of comboStr.split(', ')) {
+      const values = [...part].filter(char => CHINESE_DIGITS[char]).map(char => CHINESE_DIGITS[char]);
+      groups.push({ values, hasHonor: /[東南西北中發白]/.test(part) });
+    }
+  }
+  if (meldMap) {
+    for (const meld of Object.values(meldMap)) {
+      if (meld.kind === MELD.FLOWER || meld.tiles.length === 0) continue;
+      groups.push({
+        values: meld.tiles.filter(tile => tile.suit === SUIT.CHARACTER || tile.suit === SUIT.DOT || tile.suit === SUIT.BAMBOO).map(tile => tile.value),
+        hasHonor: meld.tiles.some(tile => tile.suit === SUIT.WIND || tile.suit === SUIT.DRAGON),
+      });
+    }
+  }
+  return groups;
+}
+
+export function getNumberPatternFlags(
+  handTiles: Tile[],
+  meldMap?: Record<string, MeldEntry>,
+  comboStr?: string
+): { duanYao: boolean; mixedDaiYao: boolean; fullDaiYao: boolean; mixedYaoJiu: boolean; pureYaoJiu: boolean; missingFive: boolean; mixedManting: boolean; manting: boolean } {
+  const groups = getNumberPatternGroups(comboStr, meldMap);
+  const tiles = gateTiles(handTiles, meldMap);
+  const numericTiles = tiles.filter(tile => tile.suit === SUIT.CHARACTER || tile.suit === SUIT.DOT || tile.suit === SUIT.BAMBOO);
+  const hasHonor = tiles.some(tile => tile.suit === SUIT.WIND || tile.suit === SUIT.DRAGON) || groups.some(group => group.hasHonor);
+  const noFive = !numericTiles.some(tile => tile.value === 5);
+  const duanYao = !hasHonor && numericTiles.length === tiles.length && numericTiles.every(tile => tile.value >= 2 && tile.value <= 8);
+  const mixedYaoJiu = groups.length > 0 && groups.every(group => group.hasHonor || group.values.some(value => value === 1 || value === 9)) && hasHonor && numericTiles.some(tile => tile.value === 1 || tile.value === 9);
+  const pureYaoJiu = !hasHonor && numericTiles.length === tiles.length && numericTiles.every(tile => tile.value === 1 || tile.value === 9);
+  const mixedDaiYao = groups.length > 0 && groups.every(group => group.hasHonor || group.values.some(value => value === 1 || value === 9));
+  const fullDaiYao = !hasHonor && groups.length > 0 && groups.every(group => group.values.some(value => value === 1 || value === 9));
+  const commonNumber = (allowHonors: boolean) => [1, 2, 3, 4, 5, 6, 7, 8, 9].find(value =>
+    groups.length > 0 && groups.every(group => group.hasHonor && allowHonors || group.values.includes(value))
+  );
+  const mixedManting = hasHonor && commonNumber(true) !== undefined;
+  const manting = !hasHonor && commonNumber(false) !== undefined;
+  return { duanYao, mixedDaiYao, fullDaiYao, mixedYaoJiu, pureYaoJiu, missingFive: !hasHonor && noFive, mixedManting, manting };
+}
+
 // ----------------------------------------------------------------------
 // 字一式 Helper
 // ----------------------------------------------------------------------

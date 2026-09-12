@@ -29,6 +29,7 @@ import {
   getFourReturnAnalyses,
   isMixedFlush
   ,isSmallFiveGates, isBigFiveGates, hasSevenGatesFlowers
+  ,getNumberPatternFlags
 } from './validator.helpers';
 import type { SixteenUnconnectedPattern } from './validator.helpers';
 import {
@@ -210,6 +211,21 @@ function calculateSingleHandForm(
     else if (sevenGates && isSmallFiveGates(handTiles, meldMap)) calc.add('小七門齊', 15);
     else if (isBigFiveGates(handTiles, meldMap)) calc.add('大五門齊', 20);
     else if (isSmallFiveGates(handTiles, meldMap)) calc.add('小五門齊', 10);
+
+    const numberPatterns = getNumberPatternFlags(handTiles, meldMap, comboStr);
+    if (numberPatterns.duanYao) calc.add('斷么九', 10);
+    if (numberPatterns.pureYaoJiu) calc.add('清么九', 420);
+    else if (numberPatterns.mixedYaoJiu) calc.add('混么九', 80);
+    else if (numberPatterns.fullDaiYao) calc.add('全帶么', 40);
+    else if (numberPatterns.mixedDaiYao) calc.add('混帶么', 40);
+    if (numberPatterns.mixedManting) calc.add('混滿庭芳', 40);
+    if (numberPatterns.manting) calc.add('滿庭芳', 120);
+    if (numberPatterns.duanYao || numberPatterns.fullDaiYao || numberPatterns.pureYaoJiu ||
+      numberPatterns.missingFive || numberPatterns.manting) {
+      countNoHonor = false;
+      countNoHonorFlower = false;
+    }
+    if (numberPatterns.missingFive && !numberPatterns.pureYaoJiu) calc.add('缺五', 10);
   }
 
   // 114. 清一色 (共通)
