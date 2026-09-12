@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { calculateHandFan } from '../../../src/engine/validator';
-import { isVoidInOneSuit } from '../../../src/engine/validator.helpers';
+import { hasSevenGatesFlowers, isBigFiveGates, isSmallFiveGates, isVoidInOneSuit } from '../../../src/engine/validator.helpers';
 import { MELD, SUIT, Tile } from '../../../src/types/mahjong';
 
 const tile = (suit: Tile['suit'], value: number, id: number): Tile => ({
@@ -21,6 +21,58 @@ describe('缺一門', () => {
   ])('detects %s', (_name, suits) => {
     const hand = suits.flatMap((suit, suitIndex) => chow(suit, 1, suitIndex * 10));
     expect(isVoidInOneSuit(hand)).toBe(true);
+  });
+
+  describe('五門齊／七門齊', () => {
+    const fiveGateMelds = {
+      c: { kind: MELD.PUNG, tiles: [tile(SUIT.CHARACTER, 1, 1), tile(SUIT.CHARACTER, 1, 2), tile(SUIT.CHARACTER, 1, 3)] },
+      d: { kind: MELD.PUNG, tiles: [tile(SUIT.DOT, 1, 4), tile(SUIT.DOT, 1, 5), tile(SUIT.DOT, 1, 6)] },
+      b: { kind: MELD.PUNG, tiles: [tile(SUIT.BAMBOO, 1, 7), tile(SUIT.BAMBOO, 1, 8), tile(SUIT.BAMBOO, 1, 9)] },
+      w: { kind: MELD.PUNG, tiles: [tile(SUIT.WIND, 1, 10), tile(SUIT.WIND, 1, 11), tile(SUIT.WIND, 1, 12)] },
+      r: { kind: MELD.PUNG, tiles: [tile(SUIT.DRAGON, 5, 13), tile(SUIT.DRAGON, 5, 14), tile(SUIT.DRAGON, 5, 15)] },
+    };
+
+    it('scores 大五門齊 when all five categories have a meld', () => {
+      const result = calculateHandFan([tile(SUIT.CHARACTER, 2, 20), tile(SUIT.CHARACTER, 2, 21)], fiveGateMelds);
+      expect(result.breakdown).toContainEqual({ rule: '大五門齊', fan: 20 });
+      expect(result.breakdown).not.toContainEqual({ rule: '小五門齊', fan: 10 });
+    });
+
+    it('scores 小五門齊 when one category is pair-only', () => {
+      const melds = { ...fiveGateMelds };
+      delete (melds as Record<string, unknown>).r;
+      const hand = [
+        tile(SUIT.DRAGON, 5, 20), tile(SUIT.DRAGON, 5, 21),
+        ...chow(SUIT.CHARACTER, 2, 22),
+      ];
+      expect(isSmallFiveGates(hand, melds)).toBe(true);
+      expect(isBigFiveGates(hand, melds)).toBe(false);
+      expect(calculateHandFan(hand, melds).breakdown).toContainEqual({ rule: '小五門齊', fan: 10 });
+    });
+
+    it('scores 大七門齊 and distinguishes the complete seven flower set', () => {
+      const meldMap = {
+        ...fiveGateMelds,
+        flowers: { kind: MELD.FLOWER, tiles: [1, 2, 3, 4, 5, 6, 7, 8].map(value => tile(SUIT.FLOWER, value, 30 + value)) },
+      };
+      const result = calculateHandFan([tile(SUIT.CHARACTER, 2, 20), tile(SUIT.CHARACTER, 2, 21)], meldMap);
+      expect(hasSevenGatesFlowers([], meldMap)).toBe(true);
+      expect(result.breakdown).toContainEqual({ rule: '大七門齊', fan: 30 });
+    });
+
+    it('scores 小七門齊 when the five-gate hand has all eight flower tiles', () => {
+      const melds = { ...fiveGateMelds };
+      delete (melds as Record<string, unknown>).r;
+      const meldMap = {
+        ...melds,
+        flowers: { kind: MELD.FLOWER, tiles: [1, 2, 3, 4, 5, 6, 7, 8].map(value => tile(SUIT.FLOWER, value, 40 + value)) },
+      };
+      const hand = [
+        tile(SUIT.DRAGON, 5, 20), tile(SUIT.DRAGON, 5, 21),
+        ...chow(SUIT.CHARACTER, 2, 22),
+      ];
+      expect(calculateHandFan(hand, meldMap).breakdown).toContainEqual({ rule: '小七門齊', fan: 15 });
+    });
   });
 
   it('does not detect 缺一門 when all three number suits are present', () => {

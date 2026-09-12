@@ -752,6 +752,58 @@ export function isMixedFlush(handTiles: Tile[], meldMap?: Record<string, MeldEnt
   return numberSuits.size === 1 && hasHonors;
 }
 
+type GateCategory = typeof SUIT.CHARACTER | typeof SUIT.DOT | typeof SUIT.BAMBOO | typeof SUIT.WIND | typeof SUIT.DRAGON;
+
+function gateTiles(handTiles: Tile[], meldMap?: Record<string, MeldEntry>): Tile[] {
+  return [
+    ...handTiles,
+    ...(meldMap ? Object.values(meldMap).filter(meld => meld.kind !== MELD.FLOWER).flatMap(meld => meld.tiles) : [])
+  ];
+}
+
+function gateCategory(tile: Tile): GateCategory | null {
+  return tile.suit === SUIT.CHARACTER || tile.suit === SUIT.DOT || tile.suit === SUIT.BAMBOO ||
+    tile.suit === SUIT.WIND || tile.suit === SUIT.DRAGON ? tile.suit : null;
+}
+
+function hasConcealedMeldForCategory(tiles: Tile[], category: GateCategory): boolean {
+  const relevant = tiles.filter(tile => tile.suit === category);
+  const counts = new Map<number, number>();
+  relevant.forEach(tile => counts.set(tile.value, (counts.get(tile.value) || 0) + 1));
+  if ([...counts.values()].some(count => count >= 3)) return true;
+  if (category === SUIT.WIND || category === SUIT.DRAGON) return false;
+  for (let start = 1; start <= 7; start++) {
+    if ([start, start + 1, start + 2].every(value => (counts.get(value) || 0) > 0)) return true;
+  }
+  return false;
+}
+
+function hasAllFiveGateCategories(handTiles: Tile[], meldMap?: Record<string, MeldEntry>): boolean {
+  const present = new Set(gateTiles(handTiles, meldMap).map(gateCategory).filter(Boolean));
+  return [SUIT.CHARACTER, SUIT.DOT, SUIT.BAMBOO, SUIT.WIND, SUIT.DRAGON].every(category => present.has(category));
+}
+
+export function isSmallFiveGates(handTiles: Tile[], meldMap?: Record<string, MeldEntry>): boolean {
+  if (!hasAllFiveGateCategories(handTiles, meldMap)) return false;
+  const tiles = gateTiles(handTiles, meldMap);
+  return [SUIT.CHARACTER, SUIT.DOT, SUIT.BAMBOO, SUIT.WIND, SUIT.DRAGON]
+    .some(category => !hasConcealedMeldForCategory(tiles, category) &&
+      tiles.filter(tile => tile.suit === category).length === 2);
+}
+
+export function isBigFiveGates(handTiles: Tile[], meldMap?: Record<string, MeldEntry>): boolean {
+  if (!hasAllFiveGateCategories(handTiles, meldMap)) return false;
+  const tiles = gateTiles(handTiles, meldMap);
+  return [SUIT.CHARACTER, SUIT.DOT, SUIT.BAMBOO, SUIT.WIND, SUIT.DRAGON]
+    .every(category => hasConcealedMeldForCategory(tiles, category));
+}
+
+export function hasSevenGatesFlowers(handTiles: Tile[], meldMap?: Record<string, MeldEntry>): boolean {
+  const flowers = (meldMap ? Object.values(meldMap).filter(meld => meld.kind === MELD.FLOWER).flatMap(meld => meld.tiles) : [])
+    .concat(handTiles.filter(tile => tile.suit === SUIT.FLOWER));
+  return [1, 2, 3, 4, 5, 6, 7, 8].every(value => flowers.some(tile => tile.value === value));
+}
+
 // ----------------------------------------------------------------------
 // 字一式 Helper
 // ----------------------------------------------------------------------

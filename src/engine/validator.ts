@@ -28,6 +28,7 @@ import {
   getSixteenUnconnectedPattern,
   getFourReturnAnalyses,
   isMixedFlush
+  ,isSmallFiveGates, isBigFiveGates, hasSevenGatesFlowers
 } from './validator.helpers';
 import type { SixteenUnconnectedPattern } from './validator.helpers';
 import {
@@ -201,6 +202,14 @@ function calculateSingleHandForm(
     calc.add('混一色', 40);
     countNoHonor = false;
     countNoHonorFlower = false;
+  }
+
+  if (formType === 'basic') {
+    const sevenGates = hasSevenGatesFlowers(handTiles, meldMap);
+    if (sevenGates && isBigFiveGates(handTiles, meldMap)) calc.add('大七門齊', 30);
+    else if (sevenGates && isSmallFiveGates(handTiles, meldMap)) calc.add('小七門齊', 15);
+    else if (isBigFiveGates(handTiles, meldMap)) calc.add('大五門齊', 20);
+    else if (isSmallFiveGates(handTiles, meldMap)) calc.add('小五門齊', 10);
   }
 
   // 114. 清一色 (共通)
