@@ -849,6 +849,7 @@ export function isVoidInOneSuit(handTiles: Tile[], meldMap?: Record<string, Meld
   }
 
   if (relevantTiles.length === 0) return false;
+  if (relevantTiles.some(t => t.suit === SUIT.WIND || t.suit === SUIT.DRAGON)) return false;
 
   const hasChar = relevantTiles.some(t => t.suit === SUIT.CHARACTER);
   const hasDot  = relevantTiles.some(t => t.suit === SUIT.DOT);

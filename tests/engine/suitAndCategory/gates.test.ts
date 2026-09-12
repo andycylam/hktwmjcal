@@ -114,6 +114,16 @@ describe('缺一門', () => {
     expect(isVoidInOneSuit(hand, meldMap)).toBe(false);
   });
 
+  it('does not detect 缺一門 when honor tiles are present', () => {
+    const hand = [
+      ...chow(SUIT.DOT, 1, 0),
+      ...chow(SUIT.BAMBOO, 1, 10),
+      tile(SUIT.WIND, 1, 20),
+    ];
+
+    expect(isVoidInOneSuit(hand)).toBe(false);
+  });
+
   it('awards the exact total alongside 門清、自摸、無字花', () => {
     const hand = [
       ...chow(SUIT.DOT, 1, 0),
