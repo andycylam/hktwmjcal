@@ -397,7 +397,6 @@ export function isThirteenOrphans(
   meldMap?: Record<string, MeldEntry>
 ): boolean {
   if (hasExposedNonKongMeld(meldMap)) return false;
-  if (meldMap && Object.values(meldMap).some(meld => meld.kind === MELD.FLOWER)) return false;
   if (meldMap && Object.values(meldMap).some(
     meld => meld.kind === MELD.KONG && meld.concealed !== true
   )) return false;
@@ -459,7 +458,6 @@ export function isThirteenOrphansWait(
   meldMap?: Record<string, MeldEntry>
 ): boolean {
   if (!huTile || hasExposedNonKongMeld(meldMap)) return false;
-  if (meldMap && Object.values(meldMap).some(meld => meld.kind === MELD.FLOWER)) return false;
   if (meldMap && Object.values(meldMap).some(
     meld => meld.kind === MELD.KONG && meld.concealed !== true
   )) return false;
@@ -501,7 +499,6 @@ export function isSixteenUnconnected(
   meldMap?: Record<string, MeldEntry>
 ): boolean {
   if (hasExposedNonKongMeld(meldMap)) return false;
-  if (meldMap && Object.values(meldMap).some(meld => meld.kind === MELD.FLOWER)) return false;
   if (meldMap && Object.values(meldMap).some(
     meld => meld.kind === MELD.KONG && meld.concealed !== true
   )) return false;
@@ -546,7 +543,6 @@ export function isSixteenUnconnectedWait(
   meldMap?: Record<string, MeldEntry>
 ): boolean {
   if (!huTile || hasExposedNonKongMeld(meldMap)) return false;
-  if (meldMap && Object.values(meldMap).some(meld => meld.kind === MELD.FLOWER)) return false;
   if (meldMap && Object.values(meldMap).some(
     meld => meld.kind === MELD.KONG && meld.concealed !== true
   )) return false;

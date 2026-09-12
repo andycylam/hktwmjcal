@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { calculateHandFan } from '../../../src/engine/validator';
-import { SUIT, Tile } from '../../../src/types/mahjong';
+import { MELD, SUIT, Tile } from '../../../src/types/mahjong';
 
 function tile(suit: Tile['suit'], value: number, index: number): Tile {
   return { id: `${suit}-${value}-${index}`, suit, value, label: `${suit}${value}` };
@@ -22,6 +22,17 @@ function validHand(): Tile[] {
 describe('十三么', () => {
   it('accepts all orphans with an extra pair and concealed meld', () => {
     const result = calculateHandFan(validHand());
+    expect(result.isValid).toBe(true);
+    expect(result.breakdown).toContainEqual({ rule: '十三么', fan: 100 });
+  });
+
+  it('accepts flowers alongside the special hand', () => {
+    const result = calculateHandFan(validHand(), {
+      flower: {
+        kind: MELD.FLOWER,
+        tiles: [tile(SUIT.FLOWER, 1, 90)]
+      }
+    });
     expect(result.isValid).toBe(true);
     expect(result.breakdown).toContainEqual({ rule: '十三么', fan: 100 });
   });
