@@ -271,6 +271,18 @@ function calculateSingleHandForm(
           calc.addMany(result.breakdown);
         }
       }
+    } else if (formType === 'basic') {
+      // Special forms do not have a basic decomposition string, but a
+      // concealed honor triplet can still contribute its honor fan.
+      const honorCounts = countTileOccurrences(handTiles);
+      for (const [key, count] of honorCounts) {
+        if (count < 3) continue;
+        const [suit, valueText] = key.split('_');
+        if (suit !== SUIT.WIND && suit !== SUIT.DRAGON) continue;
+        const value = Number(valueText);
+        const honorResult = scoreHonorTriplet(value, seatWindNum, prevailingWindNum);
+        calc.addMany(honorResult.breakdown);
+      }
     }
 }
 

@@ -37,6 +37,22 @@ describe('十三么', () => {
     expect(result.breakdown).toContainEqual({ rule: '十三么', fan: 100 });
   });
 
+  it('counts a concealed red-dragon triplet in the thirteen-orphans hand', () => {
+    const hand = validHand().filter(tile => !(
+      tile.suit === SUIT.CHARACTER &&
+      [2, 3, 4].includes(tile.value)
+    ));
+    hand.push(
+      tile(SUIT.DRAGON, 5, 10),
+      tile(SUIT.DRAGON, 5, 11),
+      tile(SUIT.DRAGON, 5, 12)
+    );
+    const result = calculateHandFan(hand);
+    expect(result.isValid).toBe(true);
+    expect(result.breakdown).toContainEqual({ rule: '十三么', fan: 100 });
+    expect(result.breakdown).toContainEqual({ rule: '字牌 (中)', fan: 1 });
+  });
+
   it('rejects an exposed meld', () => {
     const hand = [...validHand().slice(0, 13), tile(SUIT.CHARACTER, 1, 1)];
     const result = calculateHandFan(hand, {
